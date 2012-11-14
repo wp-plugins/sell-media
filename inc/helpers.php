@@ -452,7 +452,7 @@ function sell_media_get_currency_symbol( $currency = '' ) {
         case 'CHF' :
         case 'TWD' :
         case 'THB' : $currency_symbol = $currency; break;
-        case 'GBP' :
+        case 'GBP' : $currency_symbol = '&pound;'; break;
         default    : $currency_symbol = '&#36;'; break;
     endswitch;
     return apply_filters( 'sell_media_currency_symbol', $currency_symbol, $currency );
@@ -744,3 +744,29 @@ function sell_media_admin_menu_icon() {
     <?php
 }
 add_action( 'admin_head', 'sell_media_admin_menu_icon' );
+
+
+/**
+ * Echos the pagination for Archive pages.
+ *
+ * @since 1.0.1
+ */
+function sell_media_pagination_filter(){
+
+    global $wp_query;
+
+    $big = 999999999; // need an unlikely integer
+
+    $params = array(
+        'base' => str_replace( $big, '%#%', esc_url( get_pagenum_link( $big ) ) ),
+        'format' => '?paged=%#%',
+        'current' => max( 1, get_query_var('paged') ),
+        'total' => $wp_query->max_num_pages
+        );
+
+    $params = apply_filters( 'sell_media_pagination', $params );
+
+    $links = paginate_links( $params );
+
+    print '<div class="sell-media-pagination-container">' . $links . '</div>';
+}

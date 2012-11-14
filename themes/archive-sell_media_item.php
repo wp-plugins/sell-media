@@ -43,11 +43,12 @@ get_header(); ?>
 							$end = null;
 					?>
 					<div class="sell-media-grid<?php echo $end; ?>">
-						<a href="<?php the_permalink(); ?>"><?php the_post_thumbnail( 'medium' ); ?></a>
+						<a href="<?php the_permalink(); ?>"><?php sell_media_item_icon( get_post_thumbnail_id( $post->ID ) ); ?></a>
 						<h3><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h3>
 						<?php sell_media_item_buy_button( $post->ID, 'text', 'Purchase' ); ?>
 					</div>
 				<?php endwhile; ?>
+    			<?php sell_media_pagination_filter(); ?>
 			</div><!-- .sell-media-grid-container -->
 			<?php else : ?>
 				<p><?php _e( 'Nothing Found', 'sell_media' ); ?></p>
