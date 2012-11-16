@@ -4,27 +4,32 @@
 Plugin Name: Sell Media
 Plugin URI: http://graphpaperpress.com/plugins/sell-media
 Description: A plugin for selling digital downloads and reprints.
-Version: 1.0.1
+Version: 1.0.2
 Author: Graph Paper Press
 Author URI: http://graphpaperpress.com
 Author Email: support@graphpaperpress.com
 License: GPL
 */
 
-define( 'SELL_MEDIA_VERSION', '1.0.1' );
+define( 'SELL_MEDIA_VERSION', '1.0.2' );
 
-include( dirname(__FILE__) . '/inc/attachments.php' );
 include( dirname(__FILE__) . '/inc/cart.php' );
 include( dirname(__FILE__) . '/inc/downloads.php' );
-include( dirname(__FILE__) . '/inc/gateways/paypal.php' );
 include( dirname(__FILE__) . '/inc/helpers.php');
-include( dirname(__FILE__) . '/inc/items.php' );
-include( dirname(__FILE__) . '/inc/payments.php' );
-include( dirname(__FILE__) . '/inc/settings.php' );
+include( dirname(__FILE__) . '/inc/gateways/paypal.php' );
 include( dirname(__FILE__) . '/inc/shortcodes.php' );
 include( dirname(__FILE__) . '/inc/template-tags.php' );
 include( dirname(__FILE__) . '/inc/term-meta.php' );
-include( dirname(__FILE__) . '/inc/mime-types.php' );
+
+if ( is_admin() ) {
+    include( dirname(__FILE__) . '/inc/admin-attachments.php' );
+    include( dirname(__FILE__) . '/inc/admin-items.php' );
+    include( dirname(__FILE__) . '/inc/admin-extensions.php' );
+    include( dirname(__FILE__) . '/inc/admin-mime-types.php' );
+    include( dirname(__FILE__) . '/inc/admin-payments.php' );
+    include( dirname(__FILE__) . '/inc/admin-settings.php' );
+}
+
 
 /**
  * Start our PHP session for shopping cart
@@ -49,6 +54,7 @@ class SellMedia {
         register_activation_hook( __FILE__, array( &$this, 'install' ) );
         add_action( 'init', array( &$this, 'init' ) );
         add_action( 'admin_init', array( &$this, 'initAdmin' ) );
+        add_action( 'admin_menu', array( &$this, 'adminMenus' ) );
 
     }
 
@@ -128,6 +134,13 @@ class SellMedia {
         $this->init();
         flush_rewrite_rules();
 
+
+        // Update script to new settings
+        if ( $version <= '1.0.1' ){
+            include( dirname(__FILE__) . '/inc/admin-upgrade.php' );
+        }
+
+
     } // end install();
 
 
@@ -162,6 +175,17 @@ class SellMedia {
             global $wp_rewrite;
             $wp_rewrite->flush_rules();
         }
+    }
+
+    public function adminMenus(){
+
+        $permission = 'manage_options';
+
+        //add_submenu_page( 'edit.php?post_type=sell_media_item', __('Settings', 'sell_media'), __('Settings', 'sell_media'),  $permission, 'sell_media_settings', array( SellMediaSettings, 'plugin_options_tabs' ) );
+        add_submenu_page( 'edit.php?post_type=sell_media_item', __('Payments', 'sell_media'), __('Payments', 'sell_media'),  $permission, 'sell_media_payments', 'sell_media_payments_callback_fn' );
+        add_submenu_page( 'edit.php?post_type=sell_media_item', __('Extensions', 'sell_media'), __('Extensions', 'sell_media'),  $permission, 'sell_media_extensions', 'sell_media_extensions_callback_fn' );
+
+        do_action( 'sell_media_menu_hook' );
     }
 
 

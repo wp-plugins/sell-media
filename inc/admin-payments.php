@@ -58,7 +58,7 @@ add_action( 'add_meta_boxes', 'sell_media_add_payment_meta_boxes' );
 
 
 /**
- * Our call back for the payment meta fields, this prints out
+ * Our callback for the payment meta fields, this prints out
  * the html form on the edit payment page
  *
  * @access public
