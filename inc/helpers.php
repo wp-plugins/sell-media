@@ -108,7 +108,7 @@ function sell_media_redirect(){
      * a template for EACH term in that taxonomy.
      * i.e., taxonomy-$term.php
      */
-    elseif ( is_tax() ) {
+    elseif ( is_tax() && 'sell_media_item' == $post_type ) {
         if ( ! empty( $taxonomies ) ){
             foreach( $taxonomies as $tax ){
                 if ( $queried_tax == $tax ) {
@@ -771,4 +771,28 @@ function sell_media_pagination_filter(){
     $links = paginate_links( $params );
 
     print '<div class="sell-media-pagination-container">' . $links . '</div>';
+}
+
+
+/**
+ * Determine if the payment reports page is being displayed on the admin
+ *
+ * @since 1.2
+ */
+function sell_media_is_reports_page(){
+
+    if ( 'post_type=sell_media_item&page=sell_media_reports' == $_SERVER['QUERY_STRING'] )
+        return true;
+    else
+        return false;
+}
+
+/**
+ * Get Plugin data
+ *
+ * @since 1.2
+ */
+function sell_media_plugin_data( $field=null ){
+    $plugin_data = get_plugin_data( SELL_MEDIA_PLUGIN_FILE, $markup = true, $translate = true );
+    return $plugin_data[$field];
 }
