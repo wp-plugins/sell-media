@@ -4,14 +4,14 @@
 Plugin Name: Sell Media
 Plugin URI: http://graphpaperpress.com/plugins/sell-media
 Description: A plugin for selling digital downloads and reprints.
-Version: 1.0.3
+Version: 1.0.4
 Author: Graph Paper Press
 Author URI: http://graphpaperpress.com
 Author Email: support@graphpaperpress.com
 License: GPL
 */
 
-define( 'SELL_MEDIA_VERSION', '1.0.3' );
+define( 'SELL_MEDIA_VERSION', '1.0.4' );
 define( 'SELL_MEDIA_PLUGIN_FILE', plugin_dir_path(__FILE__) . 'sell-media.php' );
 
 include( dirname(__FILE__) . '/inc/cart.php' );
@@ -137,7 +137,7 @@ class SellMedia {
 
 
         // Update script to new settings
-        if ( $version <= '1.0.1' ){
+        if ( $version <= '1.0.4' ){
             include( dirname(__FILE__) . '/inc/admin-upgrade.php' );
         }
 
@@ -178,11 +178,15 @@ class SellMedia {
         }
     }
 
+    /**
+     * Add all menus under Sell Media. Settings are added on admin-settings.php
+     *
+     * @since 1.0
+     */
     public function adminMenus(){
 
         $permission = 'manage_options';
 
-        //add_submenu_page( 'edit.php?post_type=sell_media_item', __('Settings', 'sell_media'), __('Settings', 'sell_media'),  $permission, 'sell_media_settings', array( SellMediaSettings, 'plugin_options_tabs' ) );
         add_submenu_page( 'edit.php?post_type=sell_media_item', __('Payments', 'sell_media'), __('Payments', 'sell_media'),  $permission, 'sell_media_payments', 'sell_media_payments_callback_fn' );
         add_submenu_page( 'edit.php?post_type=sell_media_item', __('Reports', 'sell_media'), __('Reports', 'sell_media'),  $permission, 'sell_media_reports', 'sell_media_reports_callback_fn' );
         add_submenu_page( 'edit.php?post_type=sell_media_item', __('Extensions', 'sell_media'), __('Extensions', 'sell_media'),  $permission, 'sell_media_extensions', 'sell_media_extensions_callback_fn' );
@@ -512,12 +516,31 @@ class SellMedia {
 
 
     /**
-     * Registers and enqueues stylesheets for the administration panel and the
-     * public facing site.
+     * Registers and enqueues stylesheets for the administration panel
+     * and the public facing site.
      */
     private function enqueueScripts() {
 
-        if ( is_admin() && sell_media_is_sell_media_post_type_page() ) {
+        global $pagenow;
+
+        /**
+         * For easier enqueueing
+         */
+        wp_register_script( 'sell_media-admin-uploader', plugin_dir_url( __FILE__ ) . 'js/sell_media-admin-uploader.js', array( 'jquery', 'media-upload' ) );
+
+        /**
+         * For Sell All Uploads checkbox on media uploader
+         */
+        function sell_media_upload_popup_scripts() {
+            wp_enqueue_script( 'sell_media-admin-uploader' );
+        }
+        add_action( 'admin_head-media-upload-popup', 'sell_media_upload_popup_scripts' );
+
+
+        if ( $pagenow == 'media-new.php' ) {
+            wp_enqueue_script( 'sell_media-admin-uploader' );
+        }
+        if ( is_admin() && ( sell_media_is_sell_media_post_type_page() || $pagenow == 'post.php' ) ) {
             wp_enqueue_style( 'sell_media-admin', plugin_dir_url( __FILE__ ) . 'css/sell_media-admin.css', array( 'thickbox' ) );
             if ( sell_media_is_license_page() || sell_media_is_license_term_page() ) {
                 wp_enqueue_script( 'sell_media-admin', plugin_dir_url( __FILE__ ) . 'js/sell_media-admin.js', array( 'jquery', 'jquery-ui-sortable' ) );

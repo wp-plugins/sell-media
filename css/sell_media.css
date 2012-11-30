@@ -67,7 +67,9 @@
   font-weight: 700;
   border: 0;
 }
-
+#sell-media-single .gallery .gallery-item a img {
+  max-width: 95%;
+}
 /*= Archives
 -------------------------------------------------------------- */
 .sell-media .sell-media-grid {
@@ -348,7 +350,7 @@ input[type="submit"].sell-media-buy-button:active,
 input[type="submit"].sell-media-buy-button-success {
   padding: 10px 20px;
   margin-bottom: 2em;
-  width: 100%;
+  width: auto;
   font-size: 16px;
   color: #ffffff;
   text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
@@ -382,4 +384,38 @@ input[type="submit"].sell-media-buy-button-success:hover {
 .sell-media-buy-button-success.active,
 input[type="submit"].sell-media-buy-button-success:active {
   background-color: #408140 \9;
+}
+
+/*= Short code all
+-------------------------------------------------------------- */
+.sell-media-short-code-all h3 {
+  float: left;
+  font-size: 1.2em;
+  margin: 0;
+  padding: 0;
+  width: 70%;
+  line-height: 1em;
+}
+.sell-media .sell-media-short-code-all .sell-media-grid .sell-media-buy-text {
+  font-size: 1em;
+}
+
+/*= sell_media_download_list shortcode
+------------------------------------------------------------------- */
+
+.download_lists {
+	clear:both;
+}
+.download_lists img {
+	float:left;
+	margin:0 20px 20px 0;
+}
+.sell-media-ajax-loader {
+  background: url( ../images/ajax-loader.gif) no-repeat center top;
+  height: 58px;
+  width: 100%;
+  text-align: center;
+  padding-top: 20px;
+  color: #BBB;
+  font-size: 12px;
 }

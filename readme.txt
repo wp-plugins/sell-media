@@ -5,7 +5,7 @@ Donate link: http://graphpaperpress.com/plugins/sell-media/
 Tags: commerce, digital downloads, download, downloads, e-commerce, paypal, photography, sell digital, sell download, selling, sell photos, sell videos, sell media, stock photos
 Requires at least: 3.4
 Tested up to: 3.5-beta
-Stable tag: 1.0.3
+Stable tag: 1.0.4
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -170,6 +170,18 @@ Action hooks available:
  * Double check your Sell Media Settings after upgrading
 
 == Changelog ==
+
+= 1.0.4 =
+* Added Loading gif on purchase dialog
+* Users can now manually upload a file to the sell_media folder
+  then add the path to the file on the "Add Item" page.
+* Better handling of template redirection
+* Item description now has a Text Editor
+* Added shortcode sell_media_all_items
+* Added shortcode sell_media_download_list
+* Zip file support
+* Added bulk "Sell This" option
+* Bug fixes
 
 = 1.0.3 =
 * Added Google Charts on Reports page

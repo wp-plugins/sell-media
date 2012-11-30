@@ -14,11 +14,19 @@ function sell_media_attachment_fields_to_edit( $form_fields, $post ) {
 
     $image_meta_a = wp_get_attachment_metadata( $post->ID );
     $upload_url_a = wp_upload_dir();
+
+    if ( empty( $image_meta_a ) ){
+        $att_arr = explode( 'uploads/', $post->guid );
+        $file = $att_arr[1];
+    } else {
+        $file = $image_meta_a['file'];
+    }
+
     ?>
     <script type="text/javascript">
     jQuery( document ).ready(function( $ ){
         if ( $('.media-item input[type="checkbox"]').attr('checked') != undefined ) {
-            $('.urlfield').val("<?php print $upload_url_a['baseurl'] . SellMedia::upload_dir . '/'.$image_meta_a['file']; ?>");
+            $('.urlfield').val("<?php print $upload_url_a['baseurl'] . SellMedia::upload_dir . '/' . $file; ?>");
         }
     });
     </script>
@@ -112,6 +120,11 @@ function sell_media_attachment_field_sell_save( $post, $attachment ) {
 
         update_post_meta( $product_id, '_thumbnail_id', $post['ID'] );
         update_post_meta( $product_id, 'sell_media_description', $post['post_content'] );
+
+        $dir = wp_upload_dir();
+        $file_path = $dir['basedir'] . SellMedia::upload_dir . '/' . date('Y') . '/' . date('m') . '/' . basename( $attachment['url'] );
+        update_post_meta( $product_id, '_sell_media_file', $file_path );
+
         update_post_meta( $post['ID'], '_sell_media_for_sale', true );
         update_post_meta( $post['ID'], '_sell_media_for_sale_product_id', $product_id );
 
@@ -140,6 +153,8 @@ function sell_media_attachment_field_sell_save( $post, $attachment ) {
         // Image mime type support
         if ( in_array( $mime_type['type'], $image_mimes ) ){
             sell_media_move_image_from_attachment( $attached_file, $product_id );
+        } else {
+            sell_media_default_move( $attached_file );
         }
         // Support for different mime types here
 
