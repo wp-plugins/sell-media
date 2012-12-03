@@ -1,11 +1,11 @@
 === Sell Media ===
 
-Contributors: endortrails, kolnik, ZaneMatthew
+Contributors: endortrails, zanematthew
 Donate link: http://graphpaperpress.com/plugins/sell-media/
 Tags: commerce, digital downloads, download, downloads, e-commerce, paypal, photography, sell digital, sell download, selling, sell photos, sell videos, sell media, stock photos
 Requires at least: 3.4
 Tested up to: 3.5-beta
-Stable tag: 1.0.4
+Stable tag: 1.0.5
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -170,6 +170,10 @@ Action hooks available:
  * Double check your Sell Media Settings after upgrading
 
 == Changelog ==
+
+= 1.0.5 =
+* Fixed transients
+* Fixed issue where button was not showing on cart
 
 = 1.0.4 =
 * Added Loading gif on purchase dialog

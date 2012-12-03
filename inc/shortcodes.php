@@ -241,19 +241,19 @@ function sell_media_cart_shortcode($atts, $content = null) {
                                     <span id="email-error" class="error" style="display:none;"><?php _e( 'Email isn\'t valid', 'sell_media' ); ?></span>
                                     </p>
                                 <?php else : ?>
-                                    <?php if ( current_user_can( 'manage_options' ) ) : ?>
-                                        <?php _e('You are logged in as an admin and cannot purchase this item from yourself.', 'sell_media' ); ?>
-                                    <?php else : ?>
                                         <?php $current_user = wp_get_current_user(); ?>
                                         <input type="hidden" id="sell_media_first_name_field" name="first_name" value="<?php print $current_user->user_firstname; ?>" />
                                         <input type="hidden" id="sell_media_last_name_field" name="last_name" value="<?php print $current_user->user_lastname; ?>" />
                                         <input type="hidden" id="sell_media_email_field" name="email" value="<?php print $current_user->user_email; ?>" />
                                     <?php do_action('sell_media_below_registration_form'); ?>
+                                <?php endif; ?>
+                                <?php if ( current_user_can( 'activate_plugins' ) ) : ?>
+                                        <?php _e('You are logged in as an Admin and cannont purchase this item from yourself.', 'sell_media' ); ?>
+                                <?php else : ?>
                                     <div class="button-container">
                                         <input type="submit" class="sell-media-buy-button sell-media-buy-button-success sell-media-buy-button-checkout" value="<?php _e('Checkout', 'sell_media'); ?>" />
                                     </div>
                                 <?php endif; ?>
-                            <?php endif; ?>
                             </form>
                         </td>
                     </tr>
@@ -358,37 +358,37 @@ add_shortcode('sell_media_all_items', 'sell_media_all_items_shortcode');
  */
 function sell_media_download_shortcode( $atts ) {
 
-	if ( is_user_logged_in() ) {
-		global $current_user, $wpdb;
-		get_currentuserinfo();
-		$payment_lists = $wpdb->get_results( "SELECT * FROM $wpdb->postmeta WHERE meta_key = '_sell_media_payment_meta'", ARRAY_A );
-		//print_r($payment_lists);
-		foreach( $payment_lists as $key=>$value ) {
-			$details = unserialize($value[ 'meta_value' ]);
-			if($current_user->user_email == $details[ 'email' ] ){
-				$product_details = unserialize( $details[ 'products' ] );
-				//print_r($product_details[0]);
-				foreach( $product_details as $product_detail ) {
-					?>
-					<div class="download_lists">
-					<?php
-					echo wp_get_attachment_image( $product_detail[ 'AttachmentID' ] );
-					?>
-						<span class="download_details">
-							<?php
-							echo "Product = ".get_the_title( $product_detail[ 'ProductID' ] )."<br />";
-							echo "Price = $".$product_detail[ 'CalculatedPrice' ]."<br />";
-							?>
-						</span>
-					</div>
-					<?php
-				}
+    if ( is_user_logged_in() ) {
+        global $current_user, $wpdb;
+        get_currentuserinfo();
+        $payment_lists = $wpdb->get_results( "SELECT * FROM $wpdb->postmeta WHERE meta_key = '_sell_media_payment_meta'", ARRAY_A );
+        //print_r($payment_lists);
+        foreach( $payment_lists as $key=>$value ) {
+            $details = unserialize($value[ 'meta_value' ]);
+            if($current_user->user_email == $details[ 'email' ] ){
+                $product_details = unserialize( $details[ 'products' ] );
+                //print_r($product_details[0]);
+                foreach( $product_details as $product_detail ) {
+                    ?>
+                    <div class="download_lists">
+                    <?php
+                    echo wp_get_attachment_image( $product_detail[ 'AttachmentID' ] );
+                    ?>
+                        <span class="download_details">
+                            <?php
+                            echo "Product = ".get_the_title( $product_detail[ 'ProductID' ] )."<br />";
+                            echo "Price = $".$product_detail[ 'CalculatedPrice' ]."<br />";
+                            ?>
+                        </span>
+                    </div>
+                    <?php
+                }
 
-				//
-			}
-		}
-	} else {
-		echo "You must be logged in to view the download lists!";
-	}
+                //
+            }
+        }
+    } else {
+        echo "You must be logged in to view the download lists!";
+    }
 }
 add_shortcode('sell_media_download_list', 'sell_media_download_shortcode');
