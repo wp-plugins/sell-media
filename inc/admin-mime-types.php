@@ -45,7 +45,6 @@ function sell_media_move_image_from_meta( $moved_file=null, $file_name=null ){
     $new_resize_location = dirname( $destination_file ) . '/' . basename( $resized_image );
 
     @copy( $resized_image, $new_resize_location );
-    unlink( $resized_image );
 
     // Get iptc info
     $city = sell_media_iptc_parser( 'city', $destination_file );
@@ -126,11 +125,13 @@ function sell_media_move_image_from_attachment( $attached_file=null, $attachment
         $resized_image = image_resize( $original_file, get_option('large_size_w'), get_option('large_size_h'), false, null, $wp_upload_dir['path'], 90 );
     }
 
-    // Copy original to our protected area
-    @copy( $original_file, $destination_file );
+    if ( ! file_exists( $destination_file ) ){
+        // Copy original to our protected area
+        @copy( $original_file, $destination_file );
 
-    // Copy (rename) our resized image to the original
-    @copy( $resized_image, dirname( $resized_image ) . '/' . basename( $original_file ) );
+        // Copy (rename) our resized image to the original
+        @copy( $resized_image, dirname( $resized_image ) . '/' . basename( $original_file ) );
+    }
 }
 
 
@@ -147,14 +148,13 @@ function sell_media_default_move( $original_file=null ){
     $original_file_path = $dir['basedir'] . '/' . $original_file;
     $destination_file = $dir['basedir'] . SellMedia::upload_dir . '/' . $original_file;
 
-
     if ( file_exists( $original_file_path ) ){
         // Check if the destinatin dir is exists, i.e.
         // sell_media/YYYY/MM if not we create it first
         $destination_dir = dirname( $destination_file );
 
         if ( ! file_exists( $destination_dir ) ){
-            wp_mkdir_p( $destination_dir );
+            wp_mkdir_p( dirname( $destination_dir ) );
         }
 
         // Copy original to our protected area

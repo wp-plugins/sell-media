@@ -5,7 +5,7 @@ Donate link: http://graphpaperpress.com/plugins/sell-media/
 Tags: commerce, digital downloads, download, downloads, e-commerce, paypal, photography, sell digital, sell download, selling, sell photos, sell videos, sell media, stock photos
 Requires at least: 3.4
 Tested up to: 3.5-beta
-Stable tag: 1.0.5
+Stable tag: 1.0.6
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -42,6 +42,15 @@ Sell Media extensions will soon include:
 3. Insert the **required Sell Media shortcodes** onto your preferred Pages (see FAQ section).
 4. Visit Sell Media -> Licenses and add or configure your default licenses for new uploads.
 5. Visit Sell Media -> Add New and upload an image, video, audio file or pdf for sale.
+
+= IMPORTANT: Final Step For PayPay Setup =
+
+You must setup your Paypal IPN URL for Sell Media to work.
+
+1. Login to your PayPal account.
+2. Mouse over the Profile menu option and then click on the Selling Tools menu option.
+3. Scroll down to "Getting paid and managing my risk" and click the Update link beside "Instant payment notifications".
+4. Paste your Paypal IPN URL onto that page in Paypal. Your Paypal IPN URL is located on the Sell Media Settings page.
 
 == Frequently Asked Questions ==
 
@@ -170,6 +179,13 @@ Action hooks available:
  * Double check your Sell Media Settings after upgrading
 
 == Changelog ==
+
+= 1.0.6 =
+* License descriptions now show on the checkout page and option boxes when hovered
+* Fixed bug when Attachments are no longer marked for sale.
+* Fixed issue when Item is emptied from trash bin
+* Fixed bug where editor appeared on other Add New pages.
+* Adding hook for single theme.
 
 = 1.0.5 =
 * Fixed transients

@@ -122,6 +122,7 @@ function sell_media_build_options( $taxonomy=null ) {
                 data-name="<?php echo $term->name; ?>"
                 data-price="<?php echo $price; ?>"
                 id="<?php echo $taxonomy; ?>-<?php echo $term->slug; ?>"
+                title="<?php echo $term->description; ?>"
                 name="<?php echo $taxonomy; ?>"
                 >
             <?php echo $term->name; ?> <?php if ( $price ) : ?>+<?php echo $price; ?>%<?php endif; ?>
@@ -432,8 +433,18 @@ function sell_media_get_cusotmer_products( $payment_id=null ){
  *
  * @since 0.1
  */
-function sell_media_build_download_link( $attachment_id=null ){
-    return site_url() . '/' . sell_media_get_attachment_file( $attachment_id, false );
+function sell_media_build_download_link( $payment_id=null, $customer_email=null ){
+    $payment_meta = get_post_meta( $payment_id, '_sell_media_payment_meta', true );
+    $products = maybe_unserialize( $payment_meta['products'] );
+
+    $tmp_links = null;
+    $links = null;
+
+    foreach( $products as $product ) {
+        $tmp_links['url'] = site_url() . '?download=' . $payment_meta['purchase_key'] . '&email=' . $customer_email . '&id=' . $product['AttachmentID'];
+        $links[] = $tmp_links;
+    }
+    return $links;
 }
 
 
