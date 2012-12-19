@@ -81,3 +81,8 @@
 /* Payments Report
 -------------------------------------------------------------- */
 .earnings_chart { margin-bottom: 40px; }
+
+
+/* Media attachment edit page
+-------------------------------------------------------------- */
+.compat-field-sell th { display: none; }
