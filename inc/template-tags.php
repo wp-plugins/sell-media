@@ -105,13 +105,12 @@ function sell_media_image_keywords( $post_id=null ) {
  * @since       0.1
  * @return      html
  */
-function sell_media_item_buy_button( $post_id=null, $button=null, $text=null ) {
+function sell_media_item_buy_button( $post_id=null, $button=null, $text=null, $echo=true ) {
 
     $thumb_id = get_post_thumbnail_id( $post_id );
     $html = '<a href="javascript:void(0)" data-sell_media-product-id="' . esc_attr( $post_id ) . '" data-sell_media-thumb-id="' . esc_attr( $thumb_id ) . '" class="sell-media-cart-trigger sell-media-buy-' . $button . '">' . $text . '</a>';
 
-    print $html;
-
+    if ( $echo ) print $html; else return $html;
 }
 
 
@@ -195,20 +194,26 @@ function sell_media_item_price( $post_id=null, $currency=true ){
  * Determines the default icon used for an Attachment. If an
  * image mime type is detected than the attachment image is used.
  */
-function sell_media_item_icon( $attachment_id=null, $size='medium' ){
+function sell_media_item_icon( $attachment_id=null, $size='medium', $echo=true ){
 
     if ( empty( $attachment_id ) )
         return;
 
     $mime_type = get_post_mime_type( $attachment_id );
+    $image_height = null;
+    $image_width = null;
+    $sell_media_item_id = get_post_meta( $attachment_id, '_sell_media_for_sale_product_id', true );
+    $image_title = get_the_title( $sell_media_item_id );
 
     switch( $mime_type ){
         case 'image/jpeg':
         case 'image/png':
         case 'image/gif':
                 $image = wp_get_attachment_image_src( $attachment_id, $size );
-                echo  '<img src="'.$image[0].'" class="sell_media_image wp-post-image" alt="" height="'.$image[2].'" width="'.$image[1].'" style="max-width:100%;height:auto;"/>';
-            return;
+                $image_src = $image[0];
+                $image_height = $image[2];
+                $image_width = $image[1];
+            break;
         case 'video/mpeg':
         case 'video/mp4':
         case 'video/quicktime':
@@ -223,8 +228,22 @@ function sell_media_item_icon( $attachment_id=null, $size='medium' ){
             $mime_type = 'text/document';
             break;
         case 'application/zip':
-            echo  '<img src="' . includes_url() . 'images/crystal/archive.png" class="sell_media_image wp-post-image" alt="" height="" width="" style="max-width:100%;height:auto;"/>';
-            return;
+            $image_src = includes_url() . 'images/crystal/archive.png';
+            break;
+        default:
+            $image_src = wp_mime_type_icon( $mime_type );
     }
-    print '<img src="' . wp_mime_type_icon( $mime_type ) . '" />';
+
+    $medium_url = wp_get_attachment_image_src( $attachment_id, 'medium' );
+    if ( $medium_url )
+        $medium_url = $medium_url[0];
+    else
+        $medium_url = null;
+
+    $icon =  '<img src="' . $image_src . '" class="sell_media_image wp-post-image" title="' . $image_title . '" alt="' . $image_title . '" data-sell_media_medium_url="' . $medium_url . '" data-sell_media_item_id="' . $sell_media_item_id . '" height="' . $image_height . '" width="' . $image_width . '" style="max-width:100%;height:auto;"/>';
+
+    if ( $echo )
+        print $icon;
+    else
+        return $icon;
 }
