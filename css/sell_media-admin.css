@@ -85,4 +85,30 @@
 
 /* Media attachment edit page
 -------------------------------------------------------------- */
-.compat-field-sell th { display: none; }
+#poststuff #sell-media-bulk-tabs { margin-top: 0; padding-bottom: 0; }
+.field-has-button { margin-right: 10px; float: left; }
+.sell-media-image { margin: 1em 0 0; }
+.sell-media-bulk-list-item { width: 150px; height: 150px; background: #000; }
+.sell-media-bulk-list-item .sell-media-bulk-list-item-img { position: absolute; top: 0; left: 0;}
+.sell-media-bulk-list-item .sell-media-bulk-list-item-img img { max-width: 100%; max-height: 100%; }
+.sell-media-bulk-list-item-edit { display: none; position: absolute; top: 40%; left: 40%; text-align: center; color: #fff; text-decoration: none; text-transform: uppercase; }
+.sell-media-bulk-list-item-edit:hover { color: #fff; }
+.uploader { background: #F9F9F9; padding: 4em; text-align: center; border: 1px solid #EEE; }
+.uploader .button { font-size: 14px; height: 46px; line-height: 44px; padding: 0 36px; }
+.compat-field-sell th { padding: 0 5px 0 0; }
+.compat-field-sell input[type="checkbox"] { width: auto; }
+.sell-media-item-table .sell-media-upload-trigger { cursor: pointer; }
+.sell_media_item_page_sell_media_add_bulk .media-sidebar .compat-field-sell,
+.media-sidebar .compat-field-sell { display: none; }
+.sell-media-ajax-loader { background: url( ../images/ajax-loader.gif) no-repeat center top; height: 58px; width: 100%; text-align: center; padding-top: 20px; color: #BBB; font-size: 12px; }
+
+/* Settings Page
+-------------------------------------------------------------- */
+.sell-media-settings-size-item { float: left; width: 50px; line-height: 12px; }
+.sell-media-settings-size-item .desc { font-size: 10px; }
+
+/* Item meta section
+-------------------------------------------------------------- */
+.sell-media-item-table th { width: 100%; display: block; font-weight: bold; padding: 10px 10px 0 10px; }
+.sell-media-item-table td { display: block; padding: 5px 10px 0; }
+.sell-media-item-table .sell-media-item-path { padding: 4px; margin: 0 5px 10px 0; }

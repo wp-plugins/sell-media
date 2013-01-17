@@ -25,7 +25,13 @@ jQuery( document ).ready(function( $ ){
      *
      * Formula: price + (( percent * .01 ) * price ))
      */
-    function calculate_price(){
+    function calculate_total(){
+
+        if ( $('#sell_media_price').length ){
+            price = $('#sell_media_price').val();
+        } else {
+            price = $('#sell_media_size_select option:selected').val();
+        }
 
         /**
          * If this item has NO license selected we default
@@ -37,18 +43,13 @@ jQuery( document ).ready(function( $ ){
             markUp = 0;
         }
 
-        price = $('#sell_media_size_select').attr('value');
-        data_price = $('#sell_media_single_price').attr('data-price');
+        finalPrice = ( +price + ( +markUp * .01 ) * price ).toFixed(2);
 
-        if ( markUp != undefined && price != undefined ) {
-            finalPrice = +price + ( ( +markUp * .01 ) * price );
-            finalPrice = finalPrice.toFixed(2);
-            $('#price_target').html( finalPrice );
-            $('.price-target').val( finalPrice );
-        } else {
-            $('#price_target').html( data_price );
-            $('.price-target').val( data_price );
-        }
+        /**
+         * Update our price that the user sees and update the price being passed onto $_POST
+         */
+        $('.price-target').html( finalPrice );
+        $('.price-target').val( finalPrice );
     }
 
 
@@ -108,7 +109,6 @@ jQuery( document ).ready(function( $ ){
         return new Array(xScroll,yScroll)
     }
 
-
     /**
      * Run the following code below the DOM is ready update the cart count
      */
@@ -149,7 +149,7 @@ jQuery( document ).ready(function( $ ){
             success: function( msg ){
                 $( ".sell-media-cart-dialog-target" ).fadeIn().html( msg ); // Give a smooth fade in effect
                 cart_count();
-                calculate_price();
+                calculate_total();
             }
         });
 
@@ -168,23 +168,31 @@ jQuery( document ).ready(function( $ ){
         }
     });
 
-
-    $('.close').live('click', function(){
+    $( document ).on( 'click', '.close', function(){
         $('.sell-media-cart-dialog').hide();
         $('#overlay').remove();
     });
 
-
     /**
-     * On change run the calculate_price() function
+     * On change run the calculate_total() function
      */
-    $('#sell_media_license_select, #sell_media_size_select').live('change', function(){
+    $( document ).on('change', '#sell_media_license_select', function(){
         $("option:selected", this).each(function(){
-            calculate_price();
+            calculate_total();
         });
     });
 
-    $('#sell_media_cart_form').live('submit', function(){
+    /**
+     * On change run the calculate_total() function
+     */
+    $( document ).on('change', '#sell_media_size_select', function(){
+        $("option:selected", this).each(function(){
+            calculate_total();
+        });
+    });
+
+
+    $( document ).one('submit', '#sell_media_cart_form', function(){
 
         var _data = "action=sell_media_add_items&taxonomy=licenses&" + $( this ).serialize();
 
@@ -198,12 +206,17 @@ jQuery( document ).ready(function( $ ){
             data: _data,
             success: function( msg ) {
                 cart_count();
+                $('.sell-media-buy-button').addClass('sell-media-purchased').val('Checkout');
             }
         });
         return false;
     });
 
-    $('.remove-item-handle').live('click', function(){
+    $( document ).on( 'click', '.sell-media-purchased', function(){
+        location.href = checkouturl;
+    });
+
+    $( document ).on('click', '.remove-item-handle', function(){
 
         $(this).closest('tr').hide();
 
@@ -232,7 +245,7 @@ jQuery( document ).ready(function( $ ){
         });
     });
 
-    $('.cart-handle').live('click', function(){
+    $( document ).on('click', '.cart-handle', function(){
         $.ajax({
             data: "action=sell_media_show_cart",
             success: function( msg ){
@@ -243,7 +256,7 @@ jQuery( document ).ready(function( $ ){
         });
     });
 
-    $('#checkout_handle').live('click', function(){
+    $( document ).on('click', '#checkout_handle', function(){
         $('.cart-container').hide();
         $('.payment-form-container').show();
     });
@@ -280,10 +293,8 @@ jQuery( document ).ready(function( $ ){
         // Validation
     });
 
-    $("table tr:nth-child(odd)").addClass("odd-row");
-        /* For cell text alignment */
-    $("table td:first-child, table th:first-child").addClass("first");
-        /* For removing the last border */
-    $("table td:last-child, table th:last-child").addClass("last");
+    $("#sell-media-checkout table tr:nth-child(odd)").addClass("odd-row");
+    $("#sell-media-checkout table td:first-child, #sell-media-checkout table th:first-child").addClass("first");
+    $("#sell-media-checkout table td:last-child, #sell-media-checkout table th:last-child").addClass("last");
 
 });

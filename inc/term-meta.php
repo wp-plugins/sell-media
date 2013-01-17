@@ -232,7 +232,7 @@ function sell_media_the_default_checkbox( $term_id=null, $desc=null ){
         </th>
         <td>
             <input name="meta_value[default]" style="width: auto;" id="meta_value[default]" type="checkbox" <?php checked( get_term_meta($term_id, 'default', true), "on" ); ?> size="40" />
-            <span class="description"><?php echo $desc; ?></span>
+            <span class="description"><label for="meta_value[default]"><?php echo $desc; ?></label></span>
         </td>
     </tr>
 <?php }
@@ -310,7 +310,7 @@ function sell_media_save_extra_taxonomy_fields( $term_id ) {
         foreach ( $cat_keys as $key ) {
             if ( ! empty( $_POST['meta_value'][$key] ) ) {
                 $meta_value[$key] = $_POST['meta_value'][$key];
-                update_term_meta( $term_id, $key, $meta_value[$key]);
+                update_term_meta( $term_id, $key, wp_filter_nohtml_kses( $meta_value[$key]) );
             } else {
                 delete_term_meta( $term_id, $key );
             }

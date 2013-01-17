@@ -67,14 +67,15 @@ function sell_media_get_image_size( $post_id=null ) {
  * @since       0.1
  * @return      html
  */
-function sell_media_image_filename( $post_id=null ) {
+function sell_media_image_filename( $post_id=null, $echo=true ) {
 
     $thumb_id = get_post_thumbnail_id( $post_id );
     $filename = basename( get_attached_file( $thumb_id ) );
 
-    if ( $filename )
+    if ( $echo )
         print $filename;
-
+    else
+        return $filename;
 }
 
 
@@ -173,13 +174,22 @@ function sell_media_item_size( $post_id=null ){
  * @since 0.1
  * @return string
  */
-function sell_media_item_price( $post_id=null, $currency=true ){
+function sell_media_item_price( $post_id=null, $currency=true, $size=null ){
 
-    if ( get_post_meta( $post_id, 'sell_media_price', true ) ){
-        $price = get_post_meta( $post_id, 'sell_media_price', true );
+    if ( empty( $size ) ){
+        if ( get_post_meta( $post_id, 'sell_media_price', true ) ){
+            $price = get_post_meta( $post_id, 'sell_media_price', true );
+        } else {
+            $payment_settings = get_option( 'sell_media_payment_settings' );
+            $price = $payment_settings['default_price'];
+        }
     } else {
-        $payment_settings = get_option( 'sell_media_payment_settings' );
-        $price = $payment_settings['default_price'];
+        if ( get_post_meta( $post_id, 'sell_media_price_' . $size, true ) ){
+            $price = get_post_meta( $post_id, 'sell_media_price_' . $size, true );
+        } else {
+            $size_settings = get_option('sell_media_size_settings');
+            $price = $size_settings['small_size_price'];
+        }
     }
 
     if ( $currency ){
@@ -240,7 +250,7 @@ function sell_media_item_icon( $attachment_id=null, $size='medium', $echo=true )
     else
         $medium_url = null;
 
-    $icon =  '<img src="' . $image_src . '" class="sell_media_image wp-post-image" title="' . $image_title . '" alt="' . $image_title . '" data-sell_media_medium_url="' . $medium_url . '" data-sell_media_item_id="' . $sell_media_item_id . '" height="' . $image_height . '" width="' . $image_width . '" style="max-width:100%;height:auto;"/>';
+    $icon =  '<img src="' . $image_src . '" class="sell_media_image wp-post-image icon" title="' . $image_title . '" alt="' . $image_title . '" data-sell_media_medium_url="' . $medium_url . '" data-sell_media_item_id="' . $sell_media_item_id . '" height="' . $image_height . '" width="' . $image_width . '" style="max-width:100%;height:auto;"/>';
 
     if ( $echo )
         print $icon;

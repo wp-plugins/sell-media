@@ -4,14 +4,14 @@
 Plugin Name: Sell Media
 Plugin URI: http://graphpaperpress.com/plugins/sell-media
 Description: A plugin for selling digital downloads and reprints.
-Version: 1.0.8
+Version: 1.0.9
 Author: Graph Paper Press
 Author URI: http://graphpaperpress.com
 Author Email: support@graphpaperpress.com
 License: GPL
 */
 
-define( 'SELL_MEDIA_VERSION', '1.0.6' );
+define( 'SELL_MEDIA_VERSION', '1.0.9' );
 define( 'SELL_MEDIA_PLUGIN_FILE', plugin_dir_path(__FILE__) . 'sell-media.php' );
 
 include( dirname(__FILE__) . '/inc/cart.php' );
@@ -23,6 +23,7 @@ include( dirname(__FILE__) . '/inc/template-tags.php' );
 include( dirname(__FILE__) . '/inc/term-meta.php' );
 
 if ( is_admin() ) {
+    include( dirname(__FILE__) . '/inc/admin-bulk.php' );
     include( dirname(__FILE__) . '/inc/admin-attachments.php' );
     include( dirname(__FILE__) . '/inc/admin-items.php' );
     include( dirname(__FILE__) . '/inc/admin-extensions.php' );
@@ -30,6 +31,18 @@ if ( is_admin() ) {
     include( dirname(__FILE__) . '/inc/admin-payments.php' );
     include( dirname(__FILE__) . '/inc/admin-settings.php' );
 }
+
+/**
+ * Screen Icon for Sell Media
+ * Better place for this?
+ */
+function sell_media_screen_icon() {
+    global $post_type;
+    if ( ! empty( $_GET['post_type'] ) && 'sell_media_item' == $_GET['post_type'] || 'sell_media_item' == $post_type ) :
+        print '<style type="text/css">#icon-edit { background:transparent url("' . plugin_dir_url( __FILE__ ) . '/images/sell_media_icon.png") no-repeat; }</style>';
+    endif;
+}
+add_action( 'admin_head', 'sell_media_screen_icon' );
 
 
 /**
@@ -141,7 +154,6 @@ class SellMedia {
             include( dirname(__FILE__) . '/inc/admin-upgrade.php' );
         }
 
-
     } // end install();
 
 
@@ -187,6 +199,7 @@ class SellMedia {
 
         $permission = 'manage_options';
 
+        add_submenu_page( 'edit.php?post_type=sell_media_item', __('Add Bulk', 'sell_media'), __('Add Bulk', 'sell_media'),  $permission, 'sell_media_add_bulk', 'sell_media_add_bulk_callback_fn' );
         add_submenu_page( 'edit.php?post_type=sell_media_item', __('Payments', 'sell_media'), __('Payments', 'sell_media'),  $permission, 'sell_media_payments', 'sell_media_payments_callback_fn' );
         add_submenu_page( 'edit.php?post_type=sell_media_item', __('Reports', 'sell_media'), __('Reports', 'sell_media'),  $permission, 'sell_media_reports', 'sell_media_reports_callback_fn' );
         add_submenu_page( 'edit.php?post_type=sell_media_item', __('Extensions', 'sell_media'), __('Extensions', 'sell_media'),  $permission, 'sell_media_extensions', 'sell_media_extensions_callback_fn' );
@@ -437,15 +450,15 @@ class SellMedia {
     public function registerItem() {
 
         $labels = array(
-            'name' => _x( 'Items', 'sell_media_item' ),
-            'singular_name' => _x( 'Item', 'sell_media_item' ),
+            'name' => _x( 'Sell Media Items', 'sell_media_item' ),
+            'singular_name' => _x( 'Sell Media Item', 'sell_media_item' ),
             'all_items' => _x( 'All Items', 'sell_media_item' ),
             'add_new' => _x( 'Add New', 'sell_media_item' ),
-            'add_new_item' => _x( 'Add New Item', 'sell_media_item' ),
+            'add_new_item' => _x( 'Sell Media', 'sell_media_item' ),
             'edit_item' => _x( 'Edit Item', 'sell_media_item' ),
             'new_item' => _x( 'New Item', 'sell_media_item' ),
             'view_item' => _x( 'View Item', 'sell_media_item' ),
-            'search_items' => _x( 'Search Items', 'sell_media_item' ),
+            'search_items' => _x( 'Search Sell Media Items', 'sell_media_item' ),
             'not_found' => _x( 'No items found', 'sell_media_item' ),
             'not_found_in_trash' => _x( 'No items found in Trash', 'sell_media_item' ),
             'parent_item_colon' => _x( 'Parent Item:', 'sell_media_item' ),
@@ -540,8 +553,12 @@ class SellMedia {
         if ( $pagenow == 'media-new.php' ) {
             wp_enqueue_script( 'sell_media-admin-uploader' );
         }
-        if ( is_admin() && ( sell_media_is_sell_media_post_type_page() || $pagenow == 'post.php' ) ) {
+        if ( is_admin() && ( sell_media_is_sell_media_post_type_page() || $pagenow == 'post.php' || $pagenow == 'post-new.php' ) ) {
             wp_enqueue_style( 'sell_media-admin', plugin_dir_url( __FILE__ ) . 'css/sell_media-admin.css', array( 'thickbox' ) );
+
+            wp_enqueue_media();
+            wp_enqueue_script( 'sell_media-admin-items', plugin_dir_url( __FILE__ ) . 'js/admin-items.js', array( 'jquery' ) );
+
             if ( sell_media_is_license_page() || sell_media_is_license_term_page() ) {
                 wp_enqueue_script( 'sell_media-admin', plugin_dir_url( __FILE__ ) . 'js/sell_media-admin.js', array( 'jquery', 'jquery-ui-sortable' ) );
                 wp_enqueue_script( 'jquery-ui-slider' );

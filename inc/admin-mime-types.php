@@ -1,75 +1,6 @@
 <?php
 
 /**
- * Process the image that was uploaded from a meta field. Creates new image
- * sizes, moves the original image to the proctected area, and also saves IPTC
- * data if any as taxonomies/terms.
- *
- * @param $moved_file The file we are referencing
- * @param $file_name The name of the file.
- * @since 1.0.1
- * @return $destination_file The location to the new file
- */
-function sell_media_move_image_from_meta( $moved_file=null, $file_name=null ){
-
-    $wp_upload_dir = wp_upload_dir();
-
-    // Would rather check if the correct function exists
-    // but the function 'image_make_intermediate_size' uses other
-    // functions that are in trunk and not in 3.4
-    global $wp_version;
-    if ( version_compare( $wp_version, '3.5', '>=' ) ){
-        $image_new_size = image_make_intermediate_size( $moved_file, get_option('large_size_w'), get_option('large_size_h'), $crop=false );
-
-        /**
-         * If for some reason the image resize fails we just fall back to the original image.
-         * Example, the image the user is trying to sell is smaller than our "max width".
-         */
-        if ( empty( $image_new_size ) ){
-            $image_new_size = basename( $moved_file );
-            $keep_original = true;
-        } else {
-            $image_new_size = $image_new_size['file'];
-            $keep_original = false;
-        }
-        $resized_image = $wp_upload_dir['path'] . '/' . $image_new_size;
-        $tmp_resized_image = $wp_upload_dir['basedir'] . SellMedia::upload_dir . '/' . date('Y') . '/' . date('m') . '/' . $image_new_size;
-
-    } else {
-        $resized_image = image_resize( $moved_file, get_option('large_size_w'), get_option('large_size_h'), false, null, $wp_upload_dir['path'], 90 );
-    }
-
-    if ( is_wp_error( $resized_image ) ){
-        $resized_image = $moved_file;
-    }
-
-    $destination_file = $wp_upload_dir['path'] . '/' . $file_name;
-
-    do_action( 'sell_media_after_upload' );
-
-    // We still don't have an original, so we copy the resized image to.
-    copy( $tmp_resized_image, $destination_file );
-
-    // Finally we delete the temporary resized image we made
-    if ( ! $keep_original ) unlink( $tmp_resized_image );
-
-    // Get iptc info
-    $city = sell_media_iptc_parser( 'city', $destination_file );
-    $state = sell_media_iptc_parser( 'state', $destination_file );
-    $creator = sell_media_iptc_parser( 'creator', $destination_file );
-    $keywords = sell_media_iptc_parser( 'keywords', $destination_file );
-
-    // If we have iptc info save it
-    if ( $city ) sell_media_iptc_save( 'city', $city, $post_id );
-    if ( $state ) sell_media_iptc_save( 'state', $state, $post_id );
-    if ( $creator ) sell_media_iptc_save( 'creator', $creator, $post_id );
-    if ( $keywords ) sell_media_iptc_save( 'keywords', $keywords, $post_id );
-
-    return $destination_file;
-}
-
-
-/**
  * Parse IPTC info and move the uploaded file into the proctected area
  *
  * In order to "protect" our uploaded file, we resize the original
@@ -112,6 +43,7 @@ function sell_media_move_image_from_attachment( $attached_file=null, $attachment
 
     // Assign the FULL PATH to our destination file.
     $destination_file = $wp_upload_dir['basedir'] . SellMedia::upload_dir . '/' . $attached_file;
+    $destination_dir  = $wp_upload_dir['basedir'] . SellMedia::upload_dir . '/' . date('Y') . '/' . date('m') . '/';
 
     // Check if the destinatin directory exists, i.e.
     // wp-content/uploads/sell_media/YYYY/MM if not we create it.
@@ -129,6 +61,32 @@ function sell_media_move_image_from_attachment( $attached_file=null, $attachment
     if ( version_compare( $wp_version, '3.5', '>=' ) ){
 
         $image_new_size = image_make_intermediate_size( $original_file, get_option('large_size_w'), get_option('large_size_h'), $crop = false );
+
+        $size_settings = get_option('sell_media_size_settings');
+
+        // @todo these should be an array and we can just foreach over it!
+        // $size['small']['width']
+        // $size['small']['height']
+        // $size['small']['price']
+        // and so on, but settings is a pain!
+        $image_small_size = image_make_intermediate_size( $original_file, $size_settings['small_size_width'], $size_settings['small_size_height'], $crop = false );
+        if ( $image_small_size ){
+            @rename( $wp_upload_dir['path'] . '/' . $image_small_size['file'], $destination_dir . $image_small_size['file'] );
+            update_post_meta( $attachment_id, 'sell_media_small_file', date('Y') . '/' . date('m') . '/' . $image_small_size['file'] );
+        }
+
+        $image_medium_size = image_make_intermediate_size( $original_file, $size_settings['medium_size_width'], $size_settings['medium_size_height'], $crop = false );
+        if ( $image_medium_size ){
+            @rename( $wp_upload_dir['path'] . '/' . $image_medium_size['file'], $destination_dir . $image_medium_size['file'] );
+            update_post_meta( $attachment_id, 'sell_media_medium_file', date('Y') . '/' . date('m') . '/' . $image_medium_size['file'] );
+        }
+
+        $image_large_size = image_make_intermediate_size( $original_file, $size_settings['large_size_width'], $size_settings['large_size_height'], $crop = false );
+        if ( $image_large_size ){
+            @rename( $wp_upload_dir['path'] . '/' . $image_large_size['file'], $destination_dir . $image_large_size['file'] );
+            update_post_meta( $attachment_id, 'sell_media_large_file', date('Y') . '/' . date('m') . '/' . $image_large_size['file'] );
+        }
+        //
 
         /**
          * If for some reason the image resize fails we just fall back to the original image.
