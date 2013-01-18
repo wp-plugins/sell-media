@@ -149,7 +149,7 @@ class SellMediaSettings {
      * key to the plugin settings tabs array.
      */
     function register_size_settings() {
-        $this->plugin_settings_tabs[$this->size_settings_key] = 'Size';
+        $this->plugin_settings_tabs[$this->size_settings_key] = 'Size & Price';
 
         register_setting( $this->size_settings_key, $this->size_settings_key, array( &$this, 'register_settings_validate') );
         add_settings_section( 'section_size', 'Image Size Settings', array( &$this, 'section_size_desc' ), $this->size_settings_key );
@@ -184,42 +184,44 @@ class SellMediaSettings {
 
         $valid_inputs = array();
 
-        foreach( $fields as $field => $value ){
+        if ( ! empty( $fields ) ){
+            foreach( $fields as $field => $value ){
 
-            switch( $field ){
+                switch( $field ){
 
-                /**
-                 * Ensure that only integers are saved.
-                 */
-                case 'small_size_width' :
-                case 'small_size_height' :
-                case 'small_size_price' :
-                case 'medium_size_width' :
-                case 'medium_size_height' :
-                case 'medium_size_price' :
-                case 'large_size_width' :
-                case 'large_size_height' :
-                case 'large_size_price' :
-                    $value = (int)$value;
-                    break;
+                    /**
+                     * Ensure that only integers are saved.
+                     */
+                    case 'small_size_width' :
+                    case 'small_size_height' :
+                    case 'small_size_price' :
+                    case 'medium_size_width' :
+                    case 'medium_size_height' :
+                    case 'medium_size_price' :
+                    case 'large_size_width' :
+                    case 'large_size_height' :
+                    case 'large_size_price' :
+                        $value = (int)$value;
+                        break;
 
-                /**
-                 * Ensure that float is saved, i.e. 10.55 vs. 10.55the
-                 */
-                case 'default_price' :
-                    $value = floatval( $value );
-                    break;
+                    /**
+                     * Ensure that float is saved, i.e. 10.55 vs. 10.55the
+                     */
+                    case 'default_price' :
+                        $value = floatval( $value );
+                        break;
 
-                /**
-                 * Ensure that only valid email address is saved
-                 */
-                case 'paypal_email' :
-                case 'from_email' :
-                    if ( ! is_email( $value ) )
-                        $value = null;
-                    break;
+                    /**
+                     * Ensure that only valid email address is saved
+                     */
+                    case 'paypal_email' :
+                    case 'from_email' :
+                        if ( ! is_email( $value ) )
+                            $value = null;
+                        break;
+                }
+                $valid_inputs[ $field ] = wp_filter_nohtml_kses( $value );
             }
-            $valid_inputs[ $field ] = wp_filter_nohtml_kses( $value );
         }
         return $valid_inputs;
     }
@@ -405,6 +407,7 @@ class SellMediaSettings {
             <input type="text" name="<?php echo $this->size_settings_key; ?>[small_size_price]" value="<?php echo wp_filter_nohtml_kses( $this->size_settings['small_size_price'] ); ?>" size="3" />
             <span class="desc"><?php _e( 'Price', 'sell_media' ); ?></span>
         </div>
+        <span class="desc"><?php _e( 'Low resolution in pixels for print or web use', 'sell_media' ); ?></span>
         <?php
 
     }
@@ -426,6 +429,7 @@ class SellMediaSettings {
             <input type="text" name="<?php echo $this->size_settings_key; ?>[medium_size_price]" value="<?php echo wp_filter_nohtml_kses( $this->size_settings['medium_size_price'] ); ?>" size="3" />
             <span class="desc"><?php _e( 'Price', 'sell_media' ); ?></span>
         </div>
+        <span class="desc"><?php _e( 'Medium resolution in pixels for print or web use', 'sell_media' ); ?></span>
         <?php
 
     }
@@ -447,6 +451,7 @@ class SellMediaSettings {
             <input type="text" name="<?php echo $this->size_settings_key; ?>[large_size_price]" value="<?php echo wp_filter_nohtml_kses( $this->size_settings['large_size_price'] ); ?>" size="3" />
             <span class="desc"><?php _e( 'Price', 'sell_media' ); ?></span>
         </div>
+        <span class="desc"><?php _e( 'High resolution in pixels for print or web use', 'sell_media' ); ?></span>
         <?php
 
     }
