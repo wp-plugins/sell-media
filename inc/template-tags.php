@@ -176,20 +176,26 @@ function sell_media_item_size( $post_id=null ){
  */
 function sell_media_item_price( $post_id=null, $currency=true, $size=null ){
 
-    if ( empty( $size ) ){
-        if ( get_post_meta( $post_id, 'sell_media_price', true ) ){
-            $price = get_post_meta( $post_id, 'sell_media_price', true );
-        } else {
-            $payment_settings = get_option( 'sell_media_payment_settings' );
-            $price = $payment_settings['default_price'];
-        }
+    $original_price = get_post_meta( $post_id, 'sell_media_price', true );
+
+    /**
+     * If this Item has a default price we use it, i.e., "original price".
+     * Else we fall back on the price that is set in settings.
+     */
+    if ( $original_price ){
+        $price = $original_price;
     } else {
-        if ( get_post_meta( $post_id, 'sell_media_price_' . $size, true ) ){
-            $price = get_post_meta( $post_id, 'sell_media_price_' . $size, true );
-        } else {
-            $size_settings = get_option('sell_media_size_settings');
-            $price = $size_settings['small_size_price'];
+        $size_settings = get_option('sell_media_size_settings');
+        if ( ! empty( $size_settings['default_price'] ) ){
+            $price = $size_settings['default_price'];
         }
+    }
+
+    /**
+     * If we have a size we get the size from the post meta
+     */
+    if ( ! empty( $size ) ){
+        $price = get_post_meta( $post_id, 'sell_media_price_' . $size, true );
     }
 
     if ( $currency ){
@@ -206,6 +212,10 @@ function sell_media_item_price( $post_id=null, $currency=true, $size=null ){
  */
 function sell_media_item_icon( $attachment_id=null, $size='medium', $echo=true ){
 
+    if ( ! empty( $_POST['attachment_id'] ) ){
+        $attachment_id = $_POST['attachment_id'];
+    }
+
     if ( empty( $attachment_id ) )
         return;
 
@@ -214,15 +224,28 @@ function sell_media_item_icon( $attachment_id=null, $size='medium', $echo=true )
     $image_width = null;
     $sell_media_item_id = get_post_meta( $attachment_id, '_sell_media_for_sale_product_id', true );
     $image_title = get_the_title( $sell_media_item_id );
+    $_thumbnail_id = get_post_meta( $sell_media_item_id, '_thumbnail_id', true );
+
+    /**
+     * Since we always want to return the actual image associated with this item for sale
+     * on the edit/add new item page. We check the global $pagenow variable, vs. adding
+     * coniditionals through out the code.
+     */
+    global $pagenow;
+    global $post_type;
+    if ( ! empty( $_thumbnail_id ) && $post_type == 'sell_media_item' && $pagenow != 'post.php' ){
+        $attachment_id = $_thumbnail_id;
+    }
+
+    $image = wp_get_attachment_image_src( $attachment_id, $size );
 
     switch( $mime_type ){
         case 'image/jpeg':
         case 'image/png':
         case 'image/gif':
-                $image = wp_get_attachment_image_src( $attachment_id, $size );
-                $image_src = $image[0];
-                $image_height = $image[2];
-                $image_width = $image[1];
+            $image_src = $image[0];
+            $image_height = $image[2];
+            $image_width = $image[1];
             break;
         case 'video/mpeg':
         case 'video/mp4':
@@ -235,13 +258,31 @@ function sell_media_item_icon( $attachment_id=null, $size='medium', $echo=true )
         case 'text/xml':
         case 'text/document':
         case 'application/pdf':
-            $mime_type = 'text/document';
+            if ( $image ){
+                $image_src = $image[0];
+                $image_height = $image[2];
+                $image_width = $image[1];
+            } else {
+                $image_src = wp_mime_type_icon( 'text/document' );
+            }
             break;
         case 'application/zip':
-            $image_src = includes_url() . 'images/crystal/archive.png';
+            if ( $image ){
+                $image_src = $image[0];
+                $image_height = $image[2];
+                $image_width = $image[1];
+            } else {
+                $image_src = includes_url() . 'images/crystal/archive.png';
+            }
             break;
         default:
-            $image_src = wp_mime_type_icon( $mime_type );
+            if ( $image ){
+                $image_src = $image[0];
+                $image_height = $image[2];
+                $image_width = $image[1];
+            } else {
+                $image_src = wp_mime_type_icon( $mime_type );
+            }
     }
 
     $medium_url = wp_get_attachment_image_src( $attachment_id, 'medium' );
@@ -256,4 +297,11 @@ function sell_media_item_icon( $attachment_id=null, $size='medium', $echo=true )
         print $icon;
     else
         return $icon;
+
+    /**
+     * If attachment ID is set via $_POST we are doing ajax. So we
+     * must die.
+     */
+    if ( ! empty( $_POST['action'] ) && $_POST['action'] == 'sell_media_item_icon' ) die();
 }
+add_action( 'wp_ajax_sell_media_item_icon', 'sell_media_item_icon' );

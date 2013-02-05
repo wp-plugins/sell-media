@@ -31,80 +31,80 @@ add_action( 'add_meta_boxes', 'sell_media_add_price_meta_box' );
  * @author Thad Allender
  * @since 0.1
  */
-global $sell_media_item_meta_fields;
-$prefix = 'sell_media';
-$payment_settings = get_option( 'sell_media_payment_settings' );
-$default_price = $payment_settings['default_price'];
+function sell_media_admin_items_init(){
+    global $sell_media_item_meta_fields;
+    $prefix = 'sell_media';
+    $payment_settings = get_option( 'sell_media_payment_settings' );
+    $default_price = $payment_settings['default_price'];
 
-$size_settings = get_option('sell_media_size_settings');
+    $size_settings = get_option('sell_media_size_settings');
+    if ( ! empty( $_GET['post'] ) ) {
+        $post_id = $_GET['post'];
+    } elseif( ! empty( $_POST['post_ID'] ) ) {
+        $post_id = $_POST['post_ID'];
+    }else {
+        $post_id = null;
+    }
 
-if ( ! empty( $_GET['post'] ) ) {
-    $post_id = $_GET['post'];
-} elseif( ! empty( $_POST['post_ID'] ) ) {
-    $post_id = $_POST['post_ID'];
-}else {
-    $post_id = null;
-}
 
+    $sell_media_item_meta_fields = array(
+        array(
+            'label' => 'File',
+            'desc'  => 'A description for the field.',
+            'id'    => $prefix . '_file',
+            'type'  => 'file'
+        ),
+        array(
+            'label' => 'Original File Price',
+            'desc'  => 'Numbers only.', // this needs validation
+            'id'    => $prefix . '_price',
+            'type'  => 'text',
+            'std'   => $default_price,
+            'value' => get_post_meta( $post_id, $prefix . '_price', true )
+        )
+    );
 
-$sell_media_item_meta_fields = array(
-    array(
-        'label' => 'File',
-        'desc'  => 'A description for the field.',
-        'id'    => $prefix . '_file',
-        'type'  => 'file'
-    ),
-    array(
-        'label' => 'Original File Price',
-        'desc'  => 'Numbers only.', // this needs validation
-        'id'    => $prefix . '_price',
-        'type'  => 'text',
-        'std'   => $default_price,
-        'value' => get_post_meta( $post_id, $prefix . '_price', true )
-    )
-);
+    if ( get_post_meta( $post_id, 'sell_media_small_file', true ) ){
+        $sell_media_item_meta_fields[] = array(
+            'label' => 'Small <span class="description">'.$size_settings['small_size_width'].' x '.$size_settings['small_size_height'].'</span>',
+            'desc'  => 'Numbers only.', // this needs validation
+            'id'    => $prefix . '_price_small',
+            'type'  => 'text',
+            'std'   => $size_settings['small_size_price'],
+            'value' => get_post_meta( $post_id, $prefix . '_price_small', true )
+        );
+    }
 
-if ( get_post_meta( $post_id, 'sell_media_small_file', true ) ){
+    if ( get_post_meta( $post_id, 'sell_media_medium_file', true ) ){
+        $sell_media_item_meta_fields[] = array(
+            'label'=> 'Medium <span class="description">'.$size_settings['medium_size_width'].' x '.$size_settings['medium_size_height'].'</span>',
+            'desc'  => 'Numbers only.', // this needs validation
+            'id'    => $prefix . '_price_medium',
+            'type'  => 'text',
+            'std'   => $size_settings['medium_size_price'],
+            'value' => get_post_meta( $post_id, $prefix . '_price_medium', true )
+        );
+    }
+
+    if ( get_post_meta( $post_id, 'sell_media_large_file', true ) ){
+        $sell_media_item_meta_fields[] = array(
+            'label'=> 'Large <span class="description">'.$size_settings['large_size_width'].' x '.$size_settings['large_size_height'].'</span>',
+            'desc'  => 'Numbers only.', // this needs validation
+            'id'    => $prefix . '_price_large',
+            'type'  => 'text',
+            'std'   => $size_settings['large_size_price'],
+            'value' => get_post_meta( $post_id, $prefix . '_price_large', true )
+        );
+    }
     $sell_media_item_meta_fields[] = array(
-        'label' => 'Small <span class="description">'.$size_settings['small_size_width'].' x '.$size_settings['small_size_height'].'</span>',
-        'desc'  => 'Numbers only.', // this needs validation
-        'id'    => $prefix . '_price_small',
-        'type'  => 'text',
-        'std'   => $size_settings['small_size_price'],
-        'value' => get_post_meta( $post_id, $prefix . '_price_small', true )
-    );
+            'label' => 'Shortcode',
+            'desc'  => 'The permalink for this item is displayed below the title above. The archive page showing all items for sale can be viewed <a href="'.get_post_type_archive_link('sell_media_item').'">here</a>. You can optionally use shortcode to display this specific item on other Posts or Pages. Options include: text="purchase | buy" style="button | text" size="thumbnail | medium | large" align="left | center | right"',
+            'id'    => $prefix . '_shortcode',
+            'type'  => 'html'
+        );
+    do_action('sell_media_extra_meta_fields', 'sell_media_item_meta_fields');
 }
-
-if ( get_post_meta( $post_id, 'sell_media_medium_file', true ) ){
-    $sell_media_item_meta_fields[] = array(
-        'label'=> 'Medium <span class="description">'.$size_settings['medium_size_width'].' x '.$size_settings['medium_size_height'].'</span>',
-        'desc'  => 'Numbers only.', // this needs validation
-        'id'    => $prefix . '_price_medium',
-        'type'  => 'text',
-        'std'   => $size_settings['medium_size_price'],
-        'value' => get_post_meta( $post_id, $prefix . '_price_medium', true )
-    );
-}
-
-if ( get_post_meta( $post_id, 'sell_media_large_file', true ) ){
-    $sell_media_item_meta_fields[] = array(
-        'label'=> 'Large <span class="description">'.$size_settings['large_size_width'].' x '.$size_settings['large_size_height'].'</span>',
-        'desc'  => 'Numbers only.', // this needs validation
-        'id'    => $prefix . '_price_large',
-        'type'  => 'text',
-        'std'   => $size_settings['large_size_price'],
-        'value' => get_post_meta( $post_id, $prefix . '_price_large', true )
-    );
-}
-
-$sell_media_item_meta_fields[] = array(
-        'label' => 'Shortcode',
-        'desc'  => 'Copy and paste this shortcode to show the file and buy button anywhere on your site. Options include: text="purchase | buy" style="button | text" size="thumbnail | medium | large" align="left | center | right"', // this needs validation
-        'id'    => $prefix . '_shortcode',
-        'type'  => 'html'
-    );
-do_action('sell_media_extra_meta_fields', 'sell_media_item_meta_fields');
-
+add_action('admin_init', 'sell_media_admin_items_init');
 
 add_action( 'edit_form_advanced', 'sell_media_editor' );
 function sell_media_editor() {
@@ -204,7 +204,12 @@ function sell_media_show_custom_meta_box( $fields=null ) {
 
                 // File
                 case 'file':
-                    $attachment_id = get_post_thumbnail_id( $post->ID );
+                    $sell_media_attachment_id = get_post_meta( $post->ID, '_sell_media_attachment_id', true );
+                    if ( $sell_media_attachment_id ){
+                        $attachment_id = $sell_media_attachment_id;
+                    } else {
+                        $attachment_id = get_post_thumbnail_id( $post->ID );
+                    }
                     $wp_upload_dir = wp_upload_dir();
                     $item_url = wp_filter_nohtml_kses( get_post_meta($post->ID,'_sell_media_attached_file', true) );
                     if ( $item_url ){
@@ -212,15 +217,12 @@ function sell_media_show_custom_meta_box( $fields=null ) {
                     } else {
                         $link = null;
                     }
+
                     print '<input type="hidden" name="sell_media_selected_file_id" id="sell_media_selected_file_id" />';
                     print '<input type="text" name="_sell_media_attached_file" id="_sell_media_attached_file" class="sell-media-item-path field-has-button" value="' . $link . '" size="30" />';
                     print '<a class="sell-media-upload-trigger button"id="_sell_media_button" value="Upload">'.__('Upload or Select Image', 'sell_media').'</a><br class="clear"/>';
                     print '<div class="sell-media-upload-trigger">';
-                    if ( empty( $attachment_id ) ){
-                        print '<div class="sell-media-temp-target"></div>';
-                    } else {
-                        sell_media_item_icon( $attachment_id );
-                    }
+                    print '<div class="sell-media-temp-target">'.sell_media_item_icon( $attachment_id, 'medium', false ).'</div>';
                     print '</div>';
 
 
@@ -284,11 +286,24 @@ function sell_media_save_custom_meta( $post_id ) {
         }
     }
 
+    $_thumbnail_id = get_post_thumbnail_id( $post_id );
+    $_sell_media_attachment_id = get_post_meta( $post_id, '_sell_media_attachment_id', true );
+
     // If the selected file id was updated then we have
     // a new attachment.
     $wp_upload_dir = wp_upload_dir();
     if ( empty( $_POST['sell_media_selected_file_id'] ) ){
-        $attachment_id = get_post_meta( $post_id, '_thumbnail_id', true );
+
+        /**
+         * Retro active: If we have no $_sell_media_attachment_id we use the
+         * old reference, $_thumbnail_id as the $attachment_id. Thus updating
+         * the _sell_media_attachment_id to be the value of the _thumbnail_id.
+         */
+        if ( empty( $_sell_media_attachment_id ) ){
+            $attachment_id = $_thumbnail_id;
+        } else {
+            $attachment_id = $_sell_media_attachment_id;
+        }
         $attached_file = $_POST['_sell_media_attached_file'];
     } else {
 
@@ -317,9 +332,8 @@ function sell_media_save_custom_meta( $post_id ) {
     }
 
     // Now, update the post meta to associate the new image with the post
-    update_post_meta( $post_id, '_wp_attached_file', $attachment_id );
-    update_post_meta( $post_id, '_thumbnail_id', $attachment_id );
     update_post_meta( $post_id, '_sell_media_attached_file', $attached_file );
+    update_post_meta( $post_id, '_sell_media_attachment_id', $attachment_id );
 
     update_post_meta( $attachment_id, '_sell_media_for_sale_product_id', $post_id );
     update_post_meta( $attachment_id, '_sell_media_for_sale', 1 );
@@ -352,11 +366,21 @@ function sell_media_save_custom_meta( $post_id ) {
         $new_content = $_POST['sell_media_editor'];
         $old_content = get_post_field( 'post_content', $post_id );
 
-        if ( $old_content != $new_content ){
-            global $wpdb;
-            $new_content = $_POST['sell_media_editor'];
-            $query = "UPDATE {$wpdb->prefix}posts SET post_content = %s WHERE ID LIKE %d;";
-            $wpdb->query( $wpdb->prepare( $query, $new_content, $post_id ) );
+        if ( ! wp_is_post_revision( $post_id ) && $old_content != $new_content ){
+
+            $args = array(
+                    'ID' => $post_id,
+                    'post_content' => $new_content
+                    );
+
+            // unhook this function so it doesn't loop infinitely
+            remove_action('save_post', 'sell_media_save_custom_meta');
+            // update the post, which calls save_post again
+            wp_update_post( $args );
+
+            // re-hook this function
+            add_action('save_post', 'sell_media_save_custom_meta');
+
         }
     }
 }
@@ -408,9 +432,14 @@ add_filter( 'manage_edit-sell_media_item_columns', 'sell_media_item_header' );
 function sell_media_item_content( $column, $post_id ){
     switch( $column ) {
         case "icon":
-            // $html ='<a href="'.site_url().'/wp-admin/media.php?attachment_id='.get_post_thumbnail_id( $post_id ).'&action=edit">';
+            $sell_media_attachment_id = get_post_meta( $post_id, '_sell_media_attachment_id', true );
+            if ( $sell_media_attachment_id ){
+                $attachment_id = $sell_media_attachment_id;
+            } else {
+                $attachment_id = get_post_thumbnail_id( $post_id );
+            }
             $html ='<a href="' . site_url() . '/wp-admin/post.php?post=' . $post_id . '&action=edit">';
-            $html .= sell_media_item_icon( get_post_thumbnail_id( $post_id ), 'thumbnail' );
+            $html .= sell_media_item_icon( $attachment_id, 'thumbnail' );
             $html .= '</a>';
             print $html;
             break;
