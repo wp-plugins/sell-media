@@ -28,10 +28,14 @@ function sell_media_template_redirect(){
         if ( file_exists( $default_templates['single'] ) ) return;
         load_template( $custom_templates['single'] );
         exit;
-    } elseif ( is_post_type_archive( $post_type ) && $post_type == 'sell_media_item' ) {
-        /**
-         * Archive
-         */
+    }
+
+    /**
+     * Archive -- Check if this is an archive page AND post type is sell media
+     * OR is this a search request and is our post type sell media. If so we
+     * load the the archive template.
+     */
+    elseif ( is_post_type_archive( $post_type ) && $post_type == 'sell_media_item' || isset( $_GET['s'] ) && ! empty( $_GET['post_type'] ) && $_GET['post_type'] == 'sell_media_item' ) {
         if ( file_exists( $default_templates['archive'] ) ) return;
         load_template( $custom_templates['archive'] );
         exit;
@@ -125,7 +129,7 @@ function sell_media_build_options( $taxonomy=null ) {
                 title="<?php echo $term->description; ?>"
                 name="<?php echo $taxonomy; ?>"
                 >
-            <?php echo $term->name; ?> <?php if ( $price ) : ?>+<?php echo $price; ?>%<?php endif; ?>
+            <?php echo $term->name; ?>
         </option>
         <?php endforeach; ?>
         </optgroup>

@@ -69,8 +69,7 @@ function sell_media_get_image_size( $post_id=null ) {
  */
 function sell_media_image_filename( $post_id=null, $echo=true ) {
 
-    $thumb_id = get_post_thumbnail_id( $post_id );
-    $filename = basename( get_attached_file( $thumb_id ) );
+    $filename = basename( get_post_meta( $post_id, '_sell_media_attached_file', true ) );
 
     if ( $echo )
         print $filename;
@@ -329,3 +328,16 @@ function sell_media_item_icon( $attachment_id=null, $size='medium', $echo=true )
     if ( ! empty( $_POST['action'] ) && $_POST['action'] == 'sell_media_item_icon' ) die();
 }
 add_action( 'wp_ajax_sell_media_item_icon', 'sell_media_item_icon' );
+
+
+/**
+ * Adjust wp_query for when searh is submitted error no longer shows in "general-template.php"
+ * detail here: http://wordpress.stackexchange.com/questions/71157/undefined-property-stdclasslabels-in-general-template-php-post-type-archive
+ * @author Zane Matthew
+ * @since 1.2.3
+ */
+function sell_media_search_warning_surpression( $wp_query ){
+    if ( $wp_query->is_post_type_archive && $wp_query->is_tax )
+        $wp_query->is_post_type_archive = false;
+}
+add_action( 'parse_query', 'sell_media_search_warning_surpression' );
