@@ -24,6 +24,9 @@ class SellMediaSettings {
      * Fired during plugins_loaded (very very early),
      * so don't miss-use this, only actions and filters,
      * current ones speak for themselves.
+     *
+     * @todo remove $option_tabs array and use a dynamic
+     * array (once we dismantel this settings god glass)
      */
     function __construct() {
         add_action( 'init', array( &$this, 'load_settings' ) );
@@ -35,7 +38,16 @@ class SellMediaSettings {
 
         add_action( 'admin_menu', array( &$this, 'add_admin_menus' ) );
 
-        if ( ! empty( $_POST['option_page'] ) && $_POST['option_page'] == 'sell_media_misc_settings' ){
+
+        $option_tabs = array(
+            'sell_media_misc_settings',
+            'sell_media_size_settings',
+            'sell_media_general_settings',
+            'sell_media_payment_settings',
+            'sell_media_email_settings'
+        );
+
+        if ( ! empty( $_POST['option_page'] ) && in_array( $_POST['option_page'], $option_tabs ) ){
             do_action( 'sell_media_settings_init_hook' );
         }
     }
@@ -152,14 +164,16 @@ class SellMediaSettings {
         $this->plugin_settings_tabs[$this->size_settings_key] = 'Size & Price';
 
         register_setting( $this->size_settings_key, $this->size_settings_key, array( &$this, 'register_settings_validate') );
-        add_settings_section( 'section_size', 'Image Size Settings', array( &$this, 'section_size_desc' ), $this->size_settings_key );
 
+        add_settings_section( 'section_default_download_price', 'Default Download Price', array( &$this, 'section_size_desc' ), $this->size_settings_key );
+        add_settings_field( 'default_price', 'Default Price', array( &$this, 'field_payment_default_price' ), $this->size_settings_key, 'section_default_download_price' );
+
+        add_settings_section( 'section_size', 'Image Size Settings', array( &$this, 'section_size_desc' ), $this->size_settings_key );
         add_settings_field( 'small_size', 'Small', array( &$this, 'field_size_small' ), $this->size_settings_key, 'section_size' );
         add_settings_field( 'medium_size', 'Medium', array( &$this, 'field_size_medium' ), $this->size_settings_key, 'section_size' );
         add_settings_field( 'large_size', 'Large', array( &$this, 'field_size_large' ), $this->size_settings_key, 'section_size' );
-        add_settings_field( 'default_price', 'Default Price', array( &$this, 'field_payment_default_price' ), $this->size_settings_key, 'section_size' );
 
-        do_action( 'sell_media_email_settings_hook' );
+        add_settings_section( 'section_size_hook', '', array( &$this, 'section_size_hook' ), $this->size_settings_key );
 
     }
 
@@ -202,6 +216,9 @@ class SellMediaSettings {
                     case 'large_size_height' :
                     case 'large_size_price' :
                         $value = (int)$value;
+                        if ( $value == get_option('medium_size_w') || $value == get_option('large_size_w') ){
+                            wp_die('You cannot set the image you want to sell to the same size in your WordPress Media Settings.');
+                        }
                         break;
 
                     /**
@@ -235,6 +252,10 @@ class SellMediaSettings {
     function section_payment_desc() { echo ''; }
     function section_email_desc() { echo ''; }
     function section_size_desc() { echo ''; }
+
+    function section_size_hook() {
+        do_action( 'sell_media_size_settings_hook' );
+    }
 
     function section_misc_desc() {
         printf( __( 'Settings for Extensions are shown below. <a href="%s" class="button secondary" target="_blank">Download Extensions for Sell Media</a>', 'sell_media' ), sell_media_plugin_data( $field='AuthorURI' ) . '/downloads/category/extensions/' );

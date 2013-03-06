@@ -218,7 +218,7 @@ jQuery( document ).ready(function( $ ){
 
     $( document ).on('click', '.remove-item-handle', function(){
 
-        $(this).closest('tr').hide();
+        $(this).closest('tr').remove();
 
         count = $(".sell_media-product-list li").size();
 
@@ -240,7 +240,7 @@ jQuery( document ).ready(function( $ ){
                     $('#sell-media-checkout').html( msg );
                 }
 
-                total_items()
+                total_items();
             }
         });
     });
@@ -265,32 +265,6 @@ jQuery( document ).ready(function( $ ){
 
     $('.sell-media-advanced-search').click(function(){
         $('.sell-media-advanced-search-fields').slideToggle();
-    });
-
-    $('#sell_media_checkout_form').on('submit', function( event ){
-        if ($('#sell_media_first_name_field').val().length==0){
-            $('#firstname-error').show();
-            event.preventDefault();
-        }
-
-        if ($('#sell_media_last_name_field').val().length==0){
-            $('#lastname-error').show();
-            event.preventDefault();
-        }
-
-        var email = $('#sell_media_email_field').val();
-
-        if ( /(.+)@(.+){2,}\.(.+){2,}/.test(email) ){
-          // valid email
-        } else {
-          $('#email-error').show();
-          event.preventDefault();
-        }
-
-        $('.sell-media-buy-button-checkout').val( 'Loading...' );
-        //event.preventDefault();
-
-        // Validation
     });
 
     $("#sell-media-checkout table tr:nth-child(odd)").addClass("odd-row");
