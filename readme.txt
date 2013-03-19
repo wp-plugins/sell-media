@@ -5,7 +5,7 @@ Donate link: http://graphpaperpress.com/plugins/sell-media/
 Tags: commerce, digital downloads, download, downloads, e-commerce, paypal, photography, sell digital, sell download, selling, sell photos, sell videos, sell media, stock photos
 Requires at least: 3.4
 Tested up to: 3.5-beta
-Stable tag: 1.2.4
+Stable tag: 1.2.5
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -96,11 +96,9 @@ Sell Media includes a new "Collections" taxonomy, which you can see on the right
 
 The Password Protection option is located in the Publish box when editing a Sell Media item. Click the Visibility - Public - Edit link, select Password Protected, type in a password and click Save.
 
-= How do I password protect a collection? =
+= How do I hide a collection? =
 
-*This feature will only be available in version 1.0*
-
-Click Sell Media -> Collections -> Add New and fill in the password protect field.
+Click Sell Media -> Collections -> Click "Edit" next to the Collection you want to hide, check the checkbox "Hide" click save.
 
 = How do I hide a collection from being listed on archive pages? =
 
@@ -184,6 +182,13 @@ Action hooks available:
 * Double check your Sell Media Settings after upgrading
 
 == Changelog ==
+
+= 1.2.5 =
+* Performance improvements
+* Added MS Docs support
+* Updated readme.txt
+* Bug: Price can now be saved in decimal
+* Better styling support
 
 = 1.2.4 =
 * Settings: Default price moved to its own section
