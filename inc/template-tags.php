@@ -419,7 +419,7 @@ function sell_media_item_form(){
         <?php if ( count( $licenses ) > 1 ) : ?>
             <fieldset>
                 <legend><?php _e( 'License', 'sell_media' ); ?></legend>
-                <select name="License" value="License" id="sell_media_license_select">
+                <select name="License" value="License" id="sell_media_license_select" disabled>
                     <option value="" data-price="0">-- <?php _e( 'Select a license' ); ?> --</option>
                     <?php sell_media_build_options( array( 'post_id' => $_POST['product_id'], 'taxonomy' => 'licenses', 'type'=>'select' ) ); ?>
                 </select>
@@ -451,7 +451,7 @@ function sell_media_item_form(){
                 <a href="<?php print get_permalink( $general_settings['checkout_page'] ); ?>" class="cart-handle" style="display: none;"><?php _e( 'Cart', 'sell_media' ); ?></a>
             </div>
             <div class="right">
-                <input type="submit" value="<?php _e( 'Add to Cart' ); ?>" class="sell-media-buy-button" />
+                <input type="submit" value="<?php _e( 'Add to Cart' ); ?>" class="sell-media-buy-button" disabled />
             </div>
         </div>
     </form>
@@ -560,18 +560,19 @@ function sell_media_cart_price( $item=array() ){
                 break;
         }
     } else {
-        $price = $filtered_price * $qty;
+        $total = $filtered_price * $qty;
+        $price = $filtered_price;
     }
 
     $license_obj = empty( $item['license_id'] ) ? null : get_term_by( 'id', $item['license_id'], 'licenses' );
     $price = array(
         'size' => empty( $size ) ? null : sprintf( "%s: %s", __("Size", "sell_media"), $size ),
         'amount' => sprintf("%0.2f",$price),
+        'total' => empty( $total ) ? sprintf("%0.2f",$price) : sprintf("%0.2f",$total),
         'markup' => empty( $license_obj ) ? null : str_replace( '%', '', get_term_meta( $license_obj->term_id, 'markup', true ) ),
         'license' => empty( $license_obj ) ? null : sprintf( "%s: %s", __("License", "sell_media"), $license_obj->name ),
         'qty' => $qty
         );
 
     return $price;
-
 }
