@@ -5,7 +5,7 @@ Donate link: http://graphpaperpress.com/plugins/sell-media/
 Tags: commerce, digital downloads, download, downloads, e-commerce, paypal, photography, sell digital, sell download, selling, sell photos, sell videos, sell media, stock photos
 Requires at least: 3.4
 Tested up to: 3.5-beta
-Stable tag: 1.2.7
+Stable tag: 1.2.8
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -26,14 +26,14 @@ The Sell Media plugin allows you to:
 *   Accept payments via Paypal.
 *   Earn passive income by selling and licensing your media.
 
-Sell Media extensions will soon include:
+Take Sell Media to the next level with these powerful extensions:
 
-* Sell photo reprints via Adorama Pix or self-fulfillment
-* Newsletter integration with SendGrid, Mailchimp, AWeber, Campaign Monitor
-* Process credit card transactions using Stripe integration
-* Coupon Code system
-* Watermark images
-* Backup media uploads to Amazon S3
+* [Sell photo reprints](http://graphpaperpress.com/?download=reprints-self-fulfillment)
+* [Watermark your images](http://graphpaperpress.com/?download=watermark)
+* [Newsletter integration with Mailchimp](http://graphpaperpress.com/?download=mailchimp)
+* [Advanced Search](http://graphpaperpress.com/?download=advanced-search)
+* [Sales Commissions](http://graphpaperpress.com/?download=commissions)
+* [And many more](http://graphpaperpress.com/downloads/category/extensions/)
 
 == Installation ==
 
@@ -182,6 +182,9 @@ Action hooks available:
 * Double check your Sell Media Settings after upgrading
 
 == Changelog ==
+
+= 1.2.8 =
+* Fixing bug where users received multiple or no download email
 
 = 1.2.7 =
 * Fixing bug where items with 0 price can be added to the cart

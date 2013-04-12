@@ -125,7 +125,7 @@ function sell_media_process_paypal_ipn() {
      */
     if ( sell_media_test_mode() ){
         $log_file = plugin_dir_path( __FILE__ ) . 'log.txt';
-        $file_handle = fopen( $log_file, 'a') or die();
+        $file_handle = fopen( $log_file, 'a');
     }
 
     if ( isset( $_SERVER['REQUEST_METHOD'] ) && $_SERVER['REQUEST_METHOD'] != 'POST' || is_admin() ) {
@@ -273,7 +273,7 @@ function sell_media_process_paypal_ipn() {
     }
 
     if ( isset( $encoded_data_array['txn_type'] ) && $encoded_data_array['txn_type'] == 'web_accept' ) {
-        if ( strtolower( $payment_status ) == 'completed' || sell_media_test_mode() ) {
+        if ( strtolower( $payment_status ) == 'completed' ) {
 
             // foreach( $products_meta_array as $products ){
             //     sell_media_update_sales_stats( $products['ProductID'], $products['License'], $products['CalculatedPrice'] );

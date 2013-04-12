@@ -133,6 +133,7 @@ function sell_media_email_purchase_receipt( $purchase_key=null, $email=null, $pa
     $payments = new WP_Query( $args );
     foreach( $payments->posts as $payment ) {
         $payment_meta = get_post_meta( $payment->ID, '_sell_media_payment_meta', true );
+        $payment_id = $payment->ID;
         $downloads = maybe_unserialize( $payment_meta['products'] );
     }
 
@@ -146,20 +147,23 @@ function sell_media_email_purchase_receipt( $purchase_key=null, $email=null, $pa
     $count = count( $downloads );
     $i = 0;
 
+    $download_links = sell_media_build_download_link( $payment_id, $email );
+
     foreach( $downloads as $download ){
-        $i++;
-        $link = site_url() . '/?download=' . $purchase_key . '&email=' . $email . '&id=' . $download['AttachmentID'];
-        $links .= '<a href="' . $link . '">' . get_the_title( $download['ProductID'] ) .'</a>';
-        if ( $i != $count ){
+
+        $link = $download_links[ $i ]['url'];
+        $links .= '<a href="' . $link . '">' . get_the_title( $download['item_id'] ) .'</a>';
+        if ( $i != $count -1){
             $links .= ', ';
         }
+        $i++;
     }
 
     $tags = array(
         '{first_name}'  => get_post_meta( $payment->ID, '_sell_media_payment_first_name', true ),
         '{last_name}'   => get_post_meta( $payment->ID, '_sell_media_payment_last_name', true ),
         '{payer_email}' => get_post_meta( $payment->ID, '_sell_media_payment_user_email',  true ),
-        '{download_links}' => $links
+        '{download_links}' => empty( $links ) ? null : $links
     );
 
     $body = str_replace( array_keys( $tags ), $tags, nl2br( $body ) );
