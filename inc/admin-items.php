@@ -246,7 +246,8 @@ function sell_media_show_custom_meta_box( $fields=null ) {
 
                 // text
                 case 'html':
-                    echo '<p><code>[sell_media_item id="' . $post->ID . '" text="Purchase" style="button" size="medium"]</code></p>
+                    $text = apply_filters( 'sell_media_purchase_text', __('Purchase') );
+                    echo '<p><code>[sell_media_item id="' . $post->ID . '" text="' . $text . '" style="button" size="medium"]</code></p>
                     <p id="' . $field['id'] . '"><span class="description">' . __( $field['desc'], 'sell_media' ) . '</span></p>';
                 break;
             } //end switch
@@ -594,7 +595,7 @@ function sell_media_uploader_multiple(){
     $html = '<ul class="attachments sell-media-bulk-list">';
     foreach( $_POST['attachments'] as $attachment ){
         $product_id = get_post_meta( $attachment['id'], '_sell_media_for_sale_product_id', true );
-        $html .= '<li class="attachment sell-media-bulk-list-item">';
+        $html .= '<li class="attachment sell-media-bulk-list-item" data-post_id="' . $product_id . '">';
         $html .= '<a href="' . admin_url('post.php?post=' . $product_id . '&action=edit') . '" class="sell-media-bulk-list-item-img">';
         $html .= wp_get_attachment_image( $attachment['id'], 'thumbnail' );
         $html .= '</a>';
