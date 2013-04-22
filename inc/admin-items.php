@@ -64,42 +64,20 @@ function sell_media_admin_items_init(){
         )
     );
 
-    $aid = get_post_meta( $post_id, '_sell_media_attachment_id', true );
-    $sid = get_post_meta( $aid, 'sell_media_small_file', true );
-    $mid = get_post_meta( $aid, 'sell_media_medium_file', true );
-    $lid = get_post_meta( $aid, 'sell_media_large_file', true );
-
-    if ( $sid ){
-        $sell_media_item_meta_fields[] = array(
-            'label' => 'Small <span class="description">' . $size_settings['small_size_width'] . ' x ' . $size_settings['small_size_height'] . '</span>',
-            'desc'  => '', // this needs validation
-            'id'    => $prefix . '_price_small',
-            'type'  => 'price',
-            'std'   => $size_settings['small_size_price'],
-            'value' => get_post_meta( $post_id, $prefix . '_price_small', true )
-        );
-    }
-
-    if ( $mid ){
-        $sell_media_item_meta_fields[] = array(
-            'label'=> 'Medium <span class="description">'.$size_settings['medium_size_width'].' x '.$size_settings['medium_size_height'].'</span>',
-            'desc'  => '', // this needs validation
-            'id'    => $prefix . '_price_medium',
-            'type'  => 'price',
-            'std'   => $size_settings['medium_size_price'],
-            'value' => get_post_meta( $post_id, $prefix . '_price_medium', true )
-        );
-    }
-
-    if ( $lid ){
-        $sell_media_item_meta_fields[] = array(
-            'label'=> 'Large <span class="description">'.$size_settings['large_size_width'].' x '.$size_settings['large_size_height'].'</span>',
-            'desc'  => '', // this needs validation
-            'id'    => $prefix . '_price_large',
-            'type'  => 'price',
-            'std'   => $size_settings['large_size_price'],
-            'value' => get_post_meta( $post_id, $prefix . '_price_large', true )
-        );
+    /**
+     * @todo Quick fix to prevent this from firing on AJAX request
+     */
+    if ( ! is_null( $post_id ) ){
+        foreach( sell_media_image_sizes( $post_id, false ) as $k => $v ){
+            $sell_media_item_meta_fields[] = array(
+                'label' => __( ucfirst( $k ), 'sell_media' ) . ' <span class="description">' . $size_settings[ $k . '_size_width'] . ' x ' . $size_settings[ $k . '_size_height'] . '</span>',
+                'desc'  => '',
+                'id'    => $prefix . '_price_' . $k,
+                'type'  => 'price',
+                'std'   => $size_settings[ $k . '_size_price'],
+                'value' => get_post_meta( $post_id, $prefix . '_price_' . $k, true )
+            );
+        }
     }
 
     $sell_media_item_meta_fields = apply_filters( 'sell_media_additional_item_meta', $sell_media_item_meta_fields, $post_id );
@@ -223,24 +201,20 @@ function sell_media_show_custom_meta_box( $fields=null ) {
 
                 // File
                 case 'file':
+
                     $sell_media_attachment_id = get_post_meta( $post->ID, '_sell_media_attachment_id', true );
-                    if ( $sell_media_attachment_id )
-                        $attachment_id = $sell_media_attachment_id;
-                    else
-                        $attachment_id = get_post_thumbnail_id( $post->ID );
+                    $attachment_id = ( $sell_media_attachment_id ) ? $sell_media_attachment_id : get_post_thumbnail_id( $post->ID );
                     $src_attribute = wp_get_attachment_url( $attachment_id );
-                    if ( $src_attribute )
-                        $url = $src_attribute;
-                    else
-                        $url = null;
+                    $url = ( $src_attribute ) ? $src_attribute : null;
+                    $attached_file = get_post_meta( $post->ID, '_sell_media_attached_file', true );
 
                     print '<input type="hidden" name="sell_media_selected_file_id" id="sell_media_selected_file_id" />';
-                    print '<input type="text" name="_sell_media_attached_file" id="_sell_media_attached_file" class="sell-media-item-path field-has-button" value="' . $url . '" size="30" />';
+                    print '<input type="text" name="_sell_media_attached_file_url" id="_sell_media_attached_file_url" class="sell-media-item-url field-has-button" value="' . $url . '" size="30" />';
+                    print '<input type="hidden" name="_sell_media_attached_file" id="_sell_media_attached_file" class="sell-media-item-url field-has-button" value="' . $attached_file . '" size="30" />';
                     print '<a class="sell-media-upload-trigger button"id="_sell_media_button" value="Upload">' . __('Upload', 'sell_media') . '</a><br class="clear"/>';
                     print '<div class="sell-media-upload-trigger">';
                     print '<div class="sell-media-temp-target">' . sell_media_item_icon( $attachment_id, 'thumbnail', false ) . '</div>';
                     print '</div>';
-
 
                     break;
 
@@ -353,7 +327,6 @@ function sell_media_save_custom_meta( $post_id ) {
     update_post_meta( $post_id, '_sell_media_attachment_id', $attachment_id );
 
     update_post_meta( $attachment_id, '_sell_media_for_sale_product_id', $post_id );
-    update_post_meta( $attachment_id, '_sell_media_for_sale', 1 );
     update_post_meta( $attachment_id, '_sell_media_attached_file', $attached_file );
 
     // loop through fields and save the data
@@ -517,9 +490,9 @@ function sell_media_sales_stats(){
  *
  * @since 1.0.4
  */
-function sell_media_before_delete_post( $postid ){
+function sell_media_before_delete_post( $postid, $attachment_id=null ){
 
-    global $post_type;
+    $post_type = get_post_type( $postid );
 
     if ( $post_type != 'sell_media_item' ) return;
 
@@ -528,6 +501,14 @@ function sell_media_before_delete_post( $postid ){
      * lower quality "original" with the file in the proctedted area.
      */
     $attached_file = get_post_meta( $postid, '_sell_media_attached_file', true );
+    if ( empty( $attachment_id ) ){
+        $attachment_id = get_post_meta( $postid, '_sell_media_attachment_id', true );
+    } else {
+        delete_post_meta( $attachment_id, '_sell_media_for_sale_product_id' );
+    }
+
+
+    delete_post_meta( $attachment_id, '_sell_media_for_sale_product_id' );
 
     $wp_upload_dir = wp_upload_dir();
     $attached_file_path = $wp_upload_dir['basedir'] . SellMedia::upload_dir . '/' . $attached_file;
@@ -550,23 +531,8 @@ function sell_media_before_delete_post( $postid ){
         @copy( $attached_file_path, $wp_upload_dir['basedir'] . '/' . $attached_file );
         @unlink( $attached_file_path );
 
-        // delete our generated sizes
-        $small_file = get_post_meta( $postid, 'sell_media_small_file', true );
-
-        if ( $small_file ){
-            @unlink( $wp_upload_dir['basedir'] . SellMedia::upload_dir . '/' . $small_file );
-        }
-
-        $medium_file = get_post_meta( $postid, 'sell_media_medium_file', true );
-        if ( $medium_file ){
-            @unlink( $wp_upload_dir['basedir'] . SellMedia::upload_dir . '/' . $medium_file );
-        }
-
-        $large_file = get_post_meta( $postid, 'sell_media_large_file', true );
-        if ( $large_file ){
-            @unlink( $wp_upload_dir['basedir'] . SellMedia::upload_dir . '/' . $large_file );
-        }
     }
+    return;
 }
 add_action( 'before_delete_post', 'sell_media_before_delete_post' );
 
@@ -577,12 +543,10 @@ add_action( 'before_delete_post', 'sell_media_before_delete_post' );
 function sell_media_uploader_multiple(){
 
     $post = array();
+
     foreach( $_POST['attachments'] as $attachment ){
 
         $product_id = get_post_meta( $attachment['id'], '_sell_media_for_sale_product_id', true );
-
-        if ( $product_id )
-            continue;
 
         $post['ID'] = $attachment['id'];
         $post['post_title'] = $attachment['title'];
