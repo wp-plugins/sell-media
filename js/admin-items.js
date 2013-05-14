@@ -127,19 +127,12 @@ jQuery( document ).ready(function( $ ){
             _post_ids.push( $(this).attr('data-post_id') );
         });
 
-        if ( _post_ids.length == 0 || $('#sell_media_collection_select option:selected').val() == "" ) return;
+        if ( _post_ids.length == 0 ) return;
 
         $('#sell_media_bulk_upload_save_button').attr('disabled', true).val('Saving...');
 
-        var _data = {
-            action: "sell_media_bulk_update_collection",
-            term_id: $('#sell_media_collection_select option:selected').val(),
-            post_ids: _post_ids,
-            security: $('#sell_media_bulk_upload_form #security').val()
-        };
-
         $.ajax({
-            data: _data,
+            data: 'action=sell_media_bulk_update_collection&post_ids=' + _post_ids + '&' + $('#sell_media_bulk_upload_form').serialize(),
             type: "POST",
             url: ajaxurl,
             success: function( msg ){

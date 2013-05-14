@@ -109,6 +109,16 @@ function sell_media_cart_shortcode($atts, $content = null) {
 
     if ( $_POST ) {
 
+        // Check if the qty thats in the cart has changed
+        foreach( $_POST['sell_media_item_qty'] as $k => $v ){
+            if ( is_array( $_SESSION['cart']['items'][ $k ]['price_id'] ) ){
+                if ( $_SESSION['cart']['items'][ $k ]['price_id']['quantity'] != $v ){
+                    print "new qty: {$k} {$v}\n";
+                    $_SESSION['cart']['items'][ $k ]['price_id']['quantity'] = $v;
+                }
+            }
+        }
+
         // Create User
         $user = array();
         $user['first_name'] = $_POST['first_name'];
@@ -299,7 +309,7 @@ function sell_media_cart_shortcode($atts, $content = null) {
                                         <p class="desc"><?php _e('You are logged in as an Admin and cannot purchase this item from yourself.', 'sell_media' ); ?></p>
                                 <?php else : ?>
                                     <div class="button-container">
-                                        <input type="submit" class="sell-media-buy-button sell-media-buy-button-success sell-media-buy-button-checkout" value="<?php _e('Complete Purchase', 'sell_media'); ?>" />
+                                        <input type="submit" class="sell-media-buy-button-success sell-media-buy-button-checkout" value="<?php _e('Complete Purchase', 'sell_media'); ?>" />
                                         <p class="desc"><?php _e('You will be redirected to Paypal to complete your purchase.', 'sell_media' ); ?></p>
                                     </div>
                                 <?php endif; ?>
@@ -328,7 +338,7 @@ function sell_media_cart_shortcode($atts, $content = null) {
                                 <?php endif; ?>
                             </td>
                             <td class="product-quantity">
-                                <input name="sell_media_item_qty" type="number" step="1" min="0" id="quantity-<?php print $item_id; ?>" value="<?php echo $price['qty']; ?>" class="small-text sell-media-quantity" data-id="<?php print $item_id; ?>" data-price="<?php print $price['amount']; ?>" data-markup="<?php print $price['markup']; ?>" />
+                                <input name="sell_media_item_qty[<?php echo $item_id; ?>]" type="number" step="1" min="0" id="quantity-<?php print $item_id; ?>" value="<?php echo $price['qty']; ?>" class="small-text sell-media-quantity" data-id="<?php print $item_id; ?>" data-price="<?php print $price['amount']; ?>" data-markup="<?php print $price['markup']; ?>" />
                             </td>
                             <td class="product-price">
                                 <span class="currency-symbol"><?php print sell_media_get_currency_symbol(); ?></span><span class="item-price-target" id="sub-total-target-<?php print $item_id; ?>"><?php print $price['total']; ?></span>
@@ -364,10 +374,8 @@ function sell_media_item_shortcode( $atts ) {
         ), $atts )
     );
 
-    $thumb_id = null;
     $caption = null;
-
-    $thumb_id = get_post_thumbnail_id( $id );
+    $thumb_id = get_post_meta( $id, '_sell_media_attachment_id', true );
     $image = wp_get_attachment_image_src( $thumb_id, $size );
 
     if ( $image ) {
@@ -435,6 +443,7 @@ add_shortcode('sell_media_all_items', 'sell_media_all_items_shortcode');
 
 
 /**
+ * Shows a list of everything user has downloaded.
  * Adds the 'sell_media_download_list' short code to the editor. [sell_media_download_list]
  *
  * @since 1.0.4
@@ -444,17 +453,25 @@ function sell_media_download_shortcode( $atts ) {
 		global $current_user, $wpdb;
 		get_currentuserinfo();
 		$payment_lists = $wpdb->get_results( "SELECT * FROM $wpdb->postmeta WHERE meta_key = '_sell_media_payment_meta'", ARRAY_A );
+
 		$html = null;
         foreach( $payment_lists as $key=>$value ) {
-			$details = unserialize($value[ 'meta_value' ]);
+			$details = unserialize( $value[ 'meta_value' ] );
+
 			if( ! empty( $details['email'] ) && $current_user->user_email == $details[ 'email' ] ){
 				$product_details = unserialize( $details[ 'products' ] );
+
 				foreach( $product_details as $product_detail ) {
-					$html .= '<div class="download_lists">';
-					$html .= wp_get_attachment_image( $product_detail[ 'AttachmentID' ] );
+
+                    $thumbnail_id = get_post_meta( $product_detail['item_id'], '_thumbnail_id', true );
+                    $attachment_id = empty( $thumbnail_id ) ? get_post_meta( $product_detail['item_id'], '_sell_media_attachment_id', true ) : $thumbnail_id;
+                    $price = sell_media_item_price( $product_detail['item_id'], $currency=true, $product_detail['price_id'], $echo=false );
+
+                    $html .= '<div class="download_lists">';
+					$html .= wp_get_attachment_image( $attachment_id );
 					$html .= '<span class="download_details">';
-					$html .= 'Product = <a href="' . get_permalink( $product_detail['ProductID'] ) . '">' . get_the_title( $product_detail[ 'ProductID' ] ) . '</a><br />';
-					$html .= "Price = $".$product_detail[ 'CalculatedPrice' ]."<br />";
+					$html .= __( 'Product', 'sell_media' ) .' = <a href="' . get_permalink( $product_detail['item_id'] ) . '">' . get_the_title( $product_detail[ 'item_id' ] ) . '</a><br />';
+					$html .= __( 'Price', 'sell_media' ) .' = ' . $price . '<br />';
 					$html .= '</span>';
 					$html .= '</div>';
 				}
@@ -473,30 +490,41 @@ add_shortcode('sell_media_download_list', 'sell_media_download_shortcode');
  * @return string
  * @since 1.2.5
  */
-function sell_media_list_download_history_shortcode( $purchase_key=null, $email=null ) {
+function sell_media_list_download_history_shortcode( $email=null ) {
 
     if ( is_user_logged_in() ) {
         global $current_user;
 
         $payment_ids = sell_media_get_payment_id_by('_sell_media_payment_user_email', $current_user->user_email );
+        $html = null;
+        $message = __('You have no purchases', 'sell_media');
+
         if ( $payment_ids ) {
-            ob_start();
-            foreach( $payment_ids as $payment_id ) : ?>
-                <?php
+            foreach( $payment_ids as $payment_id ) {
+
                 $payment_meta_array = get_post_meta( $payment_id->post_id, '_sell_media_payment_meta', true );
                 $products_meta_array = unserialize( $payment_meta_array['products'] );
-                ?>
-                <div class="item">
-                    <?php print get_the_date(); ?><br />
-                    <?php $i = 0; ?>
-                    <?php foreach( sell_media_build_download_link( $payment_id->post_id ) as $link ) : ?>
-                        <a href="<?php print $link['url']; ?>"><?php print get_the_title( $products_meta_array[ $i ]['ProductID'] ); ?></a><br />
-                    <?php $i++; endforeach; ?>
-                </div>
-            <?php endforeach; ?>
-            <?php $html = ob_get_clean();
+                $links = sell_media_build_download_link( $payment_id->post_id );
+                $status = get_post_status( $payment_id->post_id ) == 'publish' ? __('Paid', 'sell_media') : __('Pending', 'sell_media');
+
+                $html .= '<div class="item">';
+                $html .= get_the_time( 'M d, Y', $payment_id->post_id );
+                $html .= '<span class="sell-media-payment-status"> ('.$status.') </span>';
+                $html .= '<br />';
+
+                if ( empty( $links ) ){
+                    $html = $message;
+                } else {
+                    $i = 0;
+                     foreach( $links as $link ) {
+                        $html .= '<a href="' . $link['url'] . '">' . get_the_title( $products_meta_array[ $i ]['item_id'] ) . '</a><br />';
+                        $i++;
+                    }
+                }
+                $html .= '</div>';
+            }
         } else {
-            $html = __('You have no purchases', 'sell_media');
+            $html = $message;
         }
     } else {
         $html = sprintf( __('Please %s to view your Download History', 'sell_media'), '<a href="'.wp_login_url( get_permalink() ) .'">Login</a>' );

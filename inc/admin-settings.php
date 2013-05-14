@@ -247,6 +247,13 @@ class SellMediaSettings {
                         if ( ! is_email( $value ) )
                             $value = null;
                         break;
+
+                    case 'post_type_slug' :
+                        $general = get_option('sell_media_general_settings');
+                        if ( isset( $fields['post_type_slug'] ) && $fields['post_type_slug'] != $general['post_type_slug'] ){
+                            flush_rewrite_rules();
+                        }
+                        break;
                 }
                 $valid_inputs[ $field ] = wp_filter_nohtml_kses( $value );
             }
@@ -414,7 +421,7 @@ class SellMediaSettings {
     function field_payment_default_price() {
         ?>
         <span class="description"><?php echo sell_media_get_currency_symbol(); ?></span>
-        <input type="number" step=".1" class="small-text" min="0" name="<?php echo $this->size_settings_key; ?>[default_price]" value="<?php echo wp_filter_nohtml_kses( sprintf("%0.2f", $this->size_settings['default_price']) ); ?>" />
+        <input type="number" step="0.01" class="small-text" min="0" name="<?php echo $this->size_settings_key; ?>[default_price]" value="<?php echo wp_filter_nohtml_kses( sprintf("%0.2f", $this->size_settings['default_price']) ); ?>" />
         <span class="desc"><?php _e( 'The default price of new items and bulk uploads. You can set unique prices by editing each individual item.', 'sell_media' ); ?></span>
         <?php
     }
@@ -474,7 +481,7 @@ class SellMediaSettings {
         </div>
         <div class="sell-media-settings-size-item">
             <span class="description"><?php echo sell_media_get_currency_symbol(); ?></span>
-            <input type="number" step=".1" min="0" class="small-text" name="<?php echo $this->size_settings_key; ?>[small_size_price]" value="<?php echo wp_filter_nohtml_kses( $this->size_settings['small_size_price'] ); ?>" />
+            <input type="number" step="0.01" min="0" class="small-text" name="<?php echo $this->size_settings_key; ?>[small_size_price]" value="<?php echo wp_filter_nohtml_kses( sprintf('%0.2f', $this->size_settings['small_size_price'] ) ); ?>" />
             <span class="desc"><?php _e( 'Price', 'sell_media' ); ?></span>
         </div>
         <span class="desc"><?php _e( 'Low resolution in pixels for print or web use', 'sell_media' ); ?></span>
@@ -497,7 +504,7 @@ class SellMediaSettings {
         </div>
         <div class="sell-media-settings-size-item">
             <span class="description"><?php echo sell_media_get_currency_symbol(); ?></span>
-            <input type="number" step=".1" min="0" class="small-text" name="<?php echo $this->size_settings_key; ?>[medium_size_price]" value="<?php echo wp_filter_nohtml_kses( $this->size_settings['medium_size_price'] ); ?>" />
+            <input type="number" step="0.01" min="0" class="small-text" name="<?php echo $this->size_settings_key; ?>[medium_size_price]" value="<?php echo wp_filter_nohtml_kses( sprintf('%0.2f', $this->size_settings['medium_size_price'] ) ); ?>" />
             <span class="desc"><?php _e( 'Price', 'sell_media' ); ?></span>
         </div>
         <span class="desc"><?php _e( 'Medium resolution in pixels for print or web use', 'sell_media' ); ?></span>
@@ -520,7 +527,7 @@ class SellMediaSettings {
         </div>
         <div class="sell-media-settings-size-item">
             <span class="description"><?php echo sell_media_get_currency_symbol(); ?></span>
-            <input type="number" step=".1" min="0" class="small-text" name="<?php echo $this->size_settings_key; ?>[large_size_price]" value="<?php echo wp_filter_nohtml_kses( $this->size_settings['large_size_price'] ); ?>" />
+            <input type="number" step="0.01" min="0" class="small-text" name="<?php echo $this->size_settings_key; ?>[large_size_price]" value="<?php echo wp_filter_nohtml_kses( sprintf('%0.2f', $this->size_settings['large_size_price'] ) ); ?>" />
             <span class="desc"><?php _e( 'Price', 'sell_media' ); ?></span>
         </div>
         <span class="desc"><?php _e( 'High resolution in pixels for print or web use', 'sell_media' ); ?></span>

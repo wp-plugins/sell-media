@@ -59,7 +59,7 @@ function sell_media_admin_items_init(){
             'desc'  => '', // this needs validation
             'id'    => $prefix . '_price',
             'type'  => 'price',
-            'std'   => $default_price,
+            'std'   => sprintf("%0.2f",$default_price),
             'value' => get_post_meta( $post_id, $prefix . '_price', true )
         )
     );
@@ -76,7 +76,7 @@ function sell_media_admin_items_init(){
                     'desc'  => '',
                     'id'    => $prefix . '_price_' . $k,
                     'type'  => 'price',
-                    'std'   => $size_settings[ $k . '_size_price'],
+                    'std'   => sprintf("%0.2f",$size_settings[ $k . '_size_price']),
                     'value' => get_post_meta( $post_id, $prefix . '_price_' . $k, true )
                 );
             }
@@ -165,7 +165,7 @@ function sell_media_show_custom_meta_box( $fields=null ) {
                     if ( $field['std'] )
                         $default = $field['std'];
 
-                    echo '<span class="description">' . sell_media_get_currency_symbol() . '</span> <input type="number" step=".1" min="0" class="small-text" name="' . $field['id'].'" id="' . $field['id'] . '" placeholder="'. __( $default, 'sell_media' ) .'" value="' . wp_filter_nohtml_kses( $field['value'] ) . '" /><br /><span class="description">' . __( $field['desc'], 'sell_media' ) . '</span>';
+                    echo '<span class="description">' . sell_media_get_currency_symbol() . '</span> <input type="number" step="0.01" min="0" class="small-text" name="' . $field['id'].'" id="' . $field['id'] . '" placeholder="'. __( $default, 'sell_media' ) .'" value="' . wp_filter_nohtml_kses( $field['value'] ) . '" /><br /><span class="description">' . __( $field['desc'], 'sell_media' ) . '</span>';
 
                 break;
 
@@ -231,6 +231,7 @@ function sell_media_show_custom_meta_box( $fields=null ) {
             echo '</td></tr>';
     } // end foreach
     echo '</table>'; // end table
+    do_action('sell_media_additional_item_meta_section');
 }
 
 
@@ -409,9 +410,6 @@ function sell_media_item_header( $columns ){
     if ( ! isset( $columns_local['sell_media_price'] ) )
         $columns_local['sell_media_price'] = "Price";
 
-    if ( ! isset( $columns_local['sell_media_license'] ) )
-        $columns_local['sell_media_license'] = "License";
-
     return array_merge( $columns_local, $columns );
 }
 add_filter( 'manage_edit-sell_media_item_columns', 'sell_media_item_header' );
@@ -438,16 +436,6 @@ function sell_media_item_content( $column, $post_id ){
             break;
         case "sell_media_price":
             sell_media_item_price( $post_id );
-            break;
-        case "sell_media_license":
-            $terms = wp_get_post_terms( $post_id, 'licenses' );
-            $count = count( $terms );
-            $i = 0;
-            foreach( $terms as $term ){
-                print '<a href="' . site_url() . '/wp-admin/edit.php?licenses=' . $term->slug . '&post_type=sell_media_item">' . $term->name . '</a>';
-                if ( $count - 1 > $i ) print ', ';
-                $i++;
-            }
             break;
         default:
             break;
@@ -553,7 +541,7 @@ function sell_media_uploader_multiple(){
 
         $post['ID'] = $attachment['id'];
         $post['post_title'] = $attachment['title'];
-        $post['post_content'] = null;
+        $post['post_content'] = $attachment['description'];
         $post['attachment_url'] = $attachment['url'];
 
         sell_media_attachment_field_sell_save( $post, $attachment['sell']="1" );

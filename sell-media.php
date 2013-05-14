@@ -4,14 +4,14 @@
 Plugin Name: Sell Media
 Plugin URI: http://graphpaperpress.com/plugins/sell-media
 Description: A plugin for selling digital downloads and reprints.
-Version: 1.4.2
+Version: 1.4.3
 Author: Graph Paper Press
 Author URI: http://graphpaperpress.com
 Author Email: support@graphpaperpress.com
 License: GPL
 */
 
-define( 'SELL_MEDIA_VERSION', '1.4.2' );
+define( 'SELL_MEDIA_VERSION', '1.4.3' );
 define( 'SELL_MEDIA_PLUGIN_FILE', plugin_dir_path(__FILE__) . 'sell-media.php' );
 
 include( dirname(__FILE__) . '/inc/cart.php' );
@@ -238,6 +238,7 @@ class SellMedia {
             'labels' => $labels,
             'public' => true,
             'show_in_nav_menus' => true,
+            'show_admin_column' => true,
             'show_ui' => true,
             'show_tagcloud' => true,
             'hierarchical' => true,
@@ -374,16 +375,16 @@ class SellMedia {
     public function registerCreator() {
         $labels = array(
             'name' => _x( 'Creator', 'sell_media' ),
-            'singular_name' => _x( 'Keyword', 'sell_media' ),
+            'singular_name' => _x( 'Creator', 'sell_media' ),
             'search_items' => _x( 'Search Creator', 'sell_media' ),
             'popular_items' => _x( 'Popular Creator', 'sell_media' ),
             'all_items' => _x( 'All Creator', 'sell_media' ),
-            'parent_item' => _x( 'Parent Keyword', 'sell_media' ),
-            'parent_item_colon' => _x( 'Parent Keyword:', 'sell_media' ),
-            'edit_item' => _x( 'Edit Keyword', 'sell_media' ),
-            'update_item' => _x( 'Update Keyword', 'sell_media' ),
-            'add_new_item' => _x( 'Add New Keyword', 'sell_media' ),
-            'new_item_name' => _x( 'New Keyword', 'sell_media' ),
+            'parent_item' => _x( 'Parent Creator', 'sell_media' ),
+            'parent_item_colon' => _x( 'Parent Creator:', 'sell_media' ),
+            'edit_item' => _x( 'Edit Creator', 'sell_media' ),
+            'update_item' => _x( 'Update Creator', 'sell_media' ),
+            'add_new_item' => _x( 'Add New Creator', 'sell_media' ),
+            'new_item_name' => _x( 'New Creator', 'sell_media' ),
             'separate_items_with_commas' => _x( 'Separate creator with commas', 'sell_media' ),
             'add_or_remove_items' => _x( 'Add or remove Creator', 'sell_media' ),
             'choose_from_most_used' => _x( 'Choose from most used Creator', 'sell_media' ),
@@ -394,7 +395,6 @@ class SellMedia {
             'labels' => $labels,
             'public' => true,
             'show_in_nav_menus' => true,
-            'show_ui' => false,
             'show_tagcloud' => true,
             'hierarchical' => false,
             'rewrite' => true,
@@ -571,6 +571,7 @@ class SellMedia {
         } if ( !is_admin() ) {
             wp_enqueue_script( 'sell_media', plugin_dir_url( __FILE__ ) . 'js/sell_media.js', array( 'jquery' ) );
             wp_enqueue_style( 'sell_media', plugin_dir_url( __FILE__ ) . 'css/sell_media.css' );
+            wp_enqueue_style( 'sell_media-widgets-style', plugin_dir_url( __FILE__ ) . 'css/sell_media_widgets.css' );
         }
         if ( sell_media_is_reports_page() )
             wp_enqueue_script( 'google_charts', 'https://www.google.com/jsapi', array( 'jquery' ) );
@@ -578,5 +579,6 @@ class SellMedia {
 
 } // end class
 
+load_plugin_textdomain( 'sell-media', false, dirname( plugin_basename( __FILE__ ) ) . '/languages/' );
 
 $a = new SellMedia();
