@@ -53,7 +53,7 @@
 -------------------------------------------------------------- */
 .sell-media-markup-container .ui-slider-horizontal { width: 95%; }
 .sell-media-markup-container .markup-target { width: 20%; }
-.sell-media-markup-container .price-target { color: green; }
+.sell-media-markup-container .menu-cart-total { color: green; }
 .sell-media-slider-container .ui-slider { margin-left: 10px; width: 95%; }
 .sell_media-price-container { margin: 12px 0 10px; width: 55px; }
 #product_meta_box img { max-width: 100%; height: auto; }
@@ -172,4 +172,44 @@
 
 .sell-media-collection-form-field input[type="text"]{
     width: 50%;
+    }
+
+
+/* Price Group
+-------------------------------------------------------------- */
+.sell-media-price-groups-container #post-body-content {
+    position: relative;
+    float: none;
+    }
+
+
+.sell-media-price-groups-container #nav-menu-header,
+.sell-media-price-groups-container #nav-menu-footer {
+    padding: 10px;
+    }
+
+.sell-media-price-groups-container #nav-menu-header input[type="text"]{
+    width: 16em;
+}
+
+.sell-media-price-groups-container #nav-menu-footer {
+    border-top: 1px solid #dfdfdf;
+    }
+
+.sell-media-price-groups-container .sell-media-xit {
+    float: left;
+    margin: -20px 0 0 -10px;
+    }
+
+.sell-media-price-groups-container .submitdelete {
+    color: #F00;
+    border-bottom: 1px solid #F00;
+    float: right;
+    text-decoration: none;
+    padding: 1px 2px;
+    }
+
+.sell-media-price-groups-container .submitdelete:hover {
+    background: #f00;
+    color: #fff;
     }

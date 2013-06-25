@@ -4,14 +4,14 @@
 Plugin Name: Sell Media
 Plugin URI: http://graphpaperpress.com/plugins/sell-media
 Description: A plugin for selling digital downloads and reprints.
-Version: 1.5
+Version: 1.5.1
 Author: Graph Paper Press
 Author URI: http://graphpaperpress.com
 Author Email: support@graphpaperpress.com
 License: GPL
 */
 
-define( 'SELL_MEDIA_VERSION', '1.5' );
+define( 'SELL_MEDIA_VERSION', '1.5.1' );
 define( 'SELL_MEDIA_PLUGIN_FILE', plugin_dir_path(__FILE__) . 'sell-media.php' );
 
 include( dirname(__FILE__) . '/inc/cart.php' );
@@ -31,7 +31,9 @@ if ( is_admin() ) {
     include( dirname(__FILE__) . '/inc/admin-mime-types.php' );
     include( dirname(__FILE__) . '/inc/admin-payments.php' );
     include( dirname(__FILE__) . '/inc/admin-settings.php' );
+    include( dirname(__FILE__) . '/inc/admin-price-groups.php' );
 }
+
 
 
 /**
@@ -72,6 +74,7 @@ class SellMedia {
         add_action( 'admin_init', array( &$this, 'initAdmin' ) );
         add_action( 'admin_menu', array( &$this, 'adminMenus' ) );
         add_action( 'pre_get_posts', array( &$this, 'collection_password_check' ) );
+        add_filter( 'posts_orderby', array( &$this, 'order_by') );
     }
 
 
@@ -118,7 +121,9 @@ class SellMedia {
         $personal = term_exists( 'Personal', $taxonomy );
         $personal_terms = array( 'Book', 'Magazine', 'Newspaper', 'Website' );
         foreach ( $personal_terms as $term ) {
-            wp_insert_term( $term, $taxonomy, array( 'slug' => strtolower(str_replace( ' ', '-', $term ) ), 'parent' => $personal['term_id'] ) );
+            if ( ! term_exists( $term, $taxonomy ) ){
+                wp_insert_term( $term, $taxonomy, array( 'slug' => strtolower(str_replace( ' ', '-', $term ) ), 'parent' => $personal['term_id'] ) );
+            }
         }
 
         /**
@@ -129,7 +134,9 @@ class SellMedia {
         $commercial = term_exists( 'Commercial', $taxonomy );
         $commercial_terms = array( 'Annual Reports', 'Billboards', 'Brochures', 'Print Advertising', 'Product Advertising', 'Product Packaging', 'Public Relations', 'Web Advertising', 'Website' );
         foreach ( $commercial_terms as $term ) {
-            wp_insert_term( $term, $taxonomy, array( 'slug' => strtolower(str_replace( ' ', '-', $term ) ), 'parent' => $commercial['term_id'] ) );
+            if ( ! term_exists( $term, $taxonomy ) ){
+                wp_insert_term( $term, $taxonomy, array( 'slug' => strtolower(str_replace( ' ', '-', $term ) ), 'parent' => $commercial['term_id'] ) );
+            }
         }
 
         wp_update_term( $commercial['term_id'], $taxonomy, array( 'description' => '' ) );
@@ -152,7 +159,7 @@ class SellMedia {
 
 
         // Update script to new settings
-        if ( $version <= '1.0.4' ){
+        if ( $version <= '1.5.1' ){
             include( dirname(__FILE__) . '/inc/admin-upgrade.php' );
         }
 
@@ -172,6 +179,7 @@ class SellMedia {
         $this->registerCollection();
         $this->registerItem();
         $this->registerPayment();
+        $this->registerPriceGroup();
         $this->enqueueScripts();
 
     }
@@ -534,6 +542,40 @@ class SellMedia {
     }
 
 
+    public function registerPriceGroup() {
+        $labels = array(
+            'name' => _x( 'Price Group', 'sell_media' ),
+            'singular_name' => _x( 'Price Group', 'sell_media' ),
+            'search_items' => _x( 'Search Price Group', 'sell_media' ),
+            'popular_items' => _x( 'Popular Price Group', 'sell_media' ),
+            'all_items' => _x( 'All Price Group', 'sell_media' ),
+            'parent_item' => _x( 'Parent Price Group', 'sell_media' ),
+            'parent_item_colon' => _x( 'Parent Price Group:', 'sell_media' ),
+            'edit_item' => _x( 'Edit Price Group', 'sell_media' ),
+            'update_item' => _x( 'Update Price Group', 'sell_media' ),
+            'add_new_item' => _x( 'Add New Price Group', 'sell_media' ),
+            'new_item_name' => _x( 'New Price Group', 'sell_media' ),
+            'separate_items_with_commas' => _x( 'Separate Price Group with commas', 'sell_media' ),
+            'add_or_remove_items' => _x( 'Add or remove Price Group', 'sell_media' ),
+            'choose_from_most_used' => _x( 'Choose from most used Price Group', 'sell_media' ),
+            'menu_name' => _x( 'Price Group', 'sell_media' ),
+        );
+
+        $args = array(
+            'labels' => $labels,
+            'public' => true,
+            'show_in_nav_menus' => true,
+            'show_ui' => false,
+            'show_tagcloud' => true,
+            'hierarchical' => true,
+            'rewrite' => true,
+            'query_var' => true
+        );
+
+        register_taxonomy( 'price-group', array('sell_media_item'), $args );
+    }
+
+
     /**
      * Registers and enqueues stylesheets for the administration panel
      * and the public facing site.
@@ -546,6 +588,7 @@ class SellMedia {
          * For easier enqueueing
          */
         wp_register_script( 'sell_media-admin-uploader', plugin_dir_url( __FILE__ ) . 'js/sell_media-admin-uploader.js', array( 'jquery', 'media-upload' ) );
+        wp_register_script( 'sell_media-admin-price-groups', plugin_dir_url( __FILE__ ) . 'js/admin-price-groups.js', array( 'nav-menu' ) );
 
         /**
          * For Sell All Uploads checkbox on media uploader
@@ -712,6 +755,32 @@ class SellMedia {
         }
     }
 
+
+    public function order_by( $orderby_statement ) {
+
+        $general_settings = get_option( 'sell_media_general_settings' );
+
+        if ( ! empty( $general_settings['order_by'] ) && is_archive() ||
+             ! empty( $general_settings['order_by'] ) && is_tax() ){
+            switch( $general_settings['order_by'] ){
+                case 'title-asc' :
+                    $order_by = "post_title ASC";
+                    break;
+                case 'title-desc' :
+                    $order_by = "post_title DESC";
+                    break;
+                case 'date-asc' :
+                    $order_by = "post_date ASC";
+                    break;
+                case 'date-desc' :
+                    $order_by = "post_date DESC";
+                    break;
+            }
+        } else {
+            $order_by = $orderby_statement;
+        }
+        return $order_by;
+    }
 } // end class
 
 load_plugin_textdomain( 'sell-media', false, dirname( plugin_basename( __FILE__ ) ) . '/languages/' );

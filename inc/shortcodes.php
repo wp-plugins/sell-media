@@ -68,7 +68,7 @@ function sell_media_search_shortcode( $atts, $content = null ) {
                 <input type="text" class="sell-media-search-input" name="s" />
             </span>
             <span class="sell-media-search-field">
-                <a href="javascript://" class="sell-media-advanced-search"><?php _e('+ Advanced Search', 'sell_media'); ?></a>
+                <a href="javascript://" class="sell-media-advanced-search">+<?php _e('Advanced Search', 'sell_media'); ?></a>
             </span>
             <div class="sell-media-advanced-search-fields">
                 <span class="sell-media-search-field">
@@ -239,6 +239,7 @@ function sell_media_cart_shortcode($atts, $content = null) {
     }
 
     ob_start(); ?>
+
     <div id="sell-media-checkout" class="sell-media">
         <?php if ( empty( $items ) ) : ?>
              <p><?php _e('You have no items in your cart. ', 'sell_media'); ?><a href="<?php print get_post_type_archive_link('sell_media_item'); ?>"><?php _e('Continue shopping', 'sell_media'); ?></a>.</p>
@@ -260,7 +261,9 @@ function sell_media_cart_shortcode($atts, $content = null) {
                                 <table id="sell-media-subtotal-table">
                                     <tr>
                                         <th scope="row"><?php _e('Subtotal','sell_media'); ?></th>
-                                        <td><span class="currency"><?php print sell_media_get_currency_symbol(); ?></span><span class="subtotal-target"></span></td>
+                                        <td>
+                                            <span class="currency"><?php print sell_media_get_currency_symbol(); ?></span><span class="subtotal-target"></span>
+                                        </td>
                                     </tr>
                                     <tr>
                                         <th scope="row">
@@ -332,7 +335,7 @@ function sell_media_cart_shortcode($atts, $content = null) {
                                 <?php if ( !empty( $item['License'] ) ) : ?>
                                     <?php $tmp_term = get_term_by( 'id', $item['License'], $item['taxonomy'] ); ?>
                                     <?php if ( $tmp_term ) : ?>
-                                        <div class="sell-media-table-meta"><?php _e( 'License:', 'sell_media' ); ?> <?php print $tmp_term->name; ?></div>
+                                        <div class="sell-media-table-meta"><?php _e( 'License', 'sell_media' ); ?>: <?php print $tmp_term->name; ?></div>
                                         <p><?php print $tmp_term->description; ?></p>
                                     <?php endif; ?>
                                 <?php endif; ?>
@@ -507,3 +510,49 @@ function sell_media_download_shortcode( $atts ) {
     return $html;
 }
 add_shortcode('sell_media_download_list', 'sell_media_download_shortcode');
+
+
+/**
+ * Displays all the price groups in a table
+ *
+ * @since 1.5.1
+ */
+function sell_media_price_group_shortcode(){
+    ob_start(); ?>
+    <table class="">
+        <tbody>
+        <?php foreach( get_terms('price-group', array( 'hide_empty' => false, 'parent' => 0 ) ) as $parent ) : ?>
+            <tr>
+                <th colspan="4"><?php echo $parent->name; ?></th>
+            </tr>
+            <tr class="sell-media-price-group-parent sell-media-price-group-parent-<?php echo $parent->name; ?>" id="sell-media-price-group-parent-<?php echo $parent->term_id; ?>">
+                <th><?php _e('Description','sell_media'); ?></th>
+                <th><?php _e('width (px)','sell_media'); ?></th>
+                <th><?php _e('height (px)','sell_media'); ?></th>
+                <th><?php _e('price','sell_media'); ?>(<span class="currency-symbol"><?php echo sell_media_get_currency_symbol(); ?></span>)</th>
+            </tr>
+            <?php $i=0; foreach( get_terms( 'price-group', array( 'hide_empty' => false, 'child_of' => $parent->term_id ) ) as $term ): ?>
+                <tr class="sell-media-price-group-row-<?php echo ($i++%2==1) ? 'odd' : 'even'; ?> sell-media-price-group-child-<?php echo $term->name; ?>" id="sell-media-price-group-child-<?php echo $term->term_id; ?>">
+                    <td>
+                        <span class="sell-media-price-group-name"><?php echo $term->name; ?></span>
+                    </td>
+                    <td>
+                        <span class="sell-media-price-group-width"><?php echo sell_media_get_term_meta( $term->term_id, 'width', true ); ?></span>
+                    </td>
+                    <td>
+                        <span class="sell-media-price-group-height"><?php echo sell_media_get_term_meta( $term->term_id, 'height', true ); ?></span>
+                    </td>
+                    <td>
+                        <span class="sell-media-price-group-height">
+                            <span class="currency-symbol"><?php echo sell_media_get_currency_symbol(); ?></span>
+                            <?php echo sprintf( '%0.2f', sell_media_get_term_meta( $term->term_id, 'price', true ) ); ?>
+                        </span>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+        <?php endforeach; ?>
+        </tbody>
+    </table>
+    <?php return ob_get_clean();
+}
+add_shortcode('sell_media_price_group', 'sell_media_price_group_shortcode');

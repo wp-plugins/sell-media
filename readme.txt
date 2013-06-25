@@ -5,7 +5,7 @@ Donate link: http://graphpaperpress.com/plugins/sell-media/
 Tags: commerce, digital downloads, download, downloads, e-commerce, paypal, photography, sell digital, sell download, selling, sell photos, sell videos, sell media, stock photos
 Requires at least: 3.4
 Tested up to: 3.5-beta
-Stable tag: 1.5
+Stable tag: 1.5.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -66,8 +66,11 @@ Shortcodes are small snippets of code that when added to a Post, Page or Widget 
 
 * **Checkout Shortcode** - (REQUIRED) Create a page called "Checkout" and add this shortcode to it: `[sell_media_checkout]`
 * **Thanks Shortcode** - (REQUIRED) Create a page called "Thanks" and add this shortcode to it: `[sell_media_thanks]`
-* **Buy Button Shortcode** - (OPTIONAL) Used for displaying specific items for sale: `[sell_media_buy_button]`
+* **Buy Button Shortcode** - (OPTIONAL) Used for displaying specific items for sale: `[sell_media_item]`
 * **Search Form Shortcode** - (OPTIONAL) Used to display a search form exclusively for searching items for sale within Sell Media: `[sell_media_searchform]`
+* **All items shortcode** - (OPTIONAL) Displays all (or a certain collection) items in a grid view: `[sell_media_all_items collection="type-your-collection-name-here"]`
+* **Download list shortcode** - (OPTIONAL) List logged in users downloads: `[sell_media_download_list]`
+
 
 = How do I show my checkout cart? =
 
@@ -141,6 +144,10 @@ The Sell Media plugin helps you to create and assign different licenses and pric
 
 It only works on the primary blog. While it will work on other blogs, file uploads will not be protected. Why? Because WordPress stores uploads in a "virtual" directory of blogs.dir, server side file protection using .htaccess doesn't work on virtual directories.
 
+= My customer is receiving their confirmation email X many times? =
+
+Please disable your plugins and see if you still have the issue. Some plugins (ones that alter access via IP) do not allow the IPN to function properly.
+
 == Screenshots ==
 
 1. The Shopping Cart
@@ -182,6 +189,22 @@ Action hooks available:
 * Double check your Sell Media Settings after upgrading
 
 == Changelog ==
+
+= 1.5.1 =
+* New: Price groups, users are no longer limited to "small, medium, large", they can create infinite price groups and assign them to items.
+* New: Added Paypal log.txt file to admin settings
+* New: Added field for admins to add CC accounts for paypal purchases
+* New: Added Option to change sort order on archive pages
+* New: Added POT file
+* New: Useful info is now stored in global js object "sell_media"
+
+* Tweak: US State list is no longer required, this was causing issues for users outside of the US
+* Tweak: Changed order of "bulk upload" buttons
+* Tweak: "Default Price" is now changed to "Original Price"
+* Tweak: Updated menu cart class names
+
+* Fix: Duplicate licenses are no longer installed on re-activation
+* Fix: Typo
 
 = 1.5 =
 * Fixing issue where a generic function needed to be prefixed

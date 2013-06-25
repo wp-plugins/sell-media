@@ -36,9 +36,9 @@ jQuery( document ).ready(function( $ ){
             $('.subtotal-target').val( finalPrice );
         }
 
-        if ( $('.price-target').length ){
-            $('.price-target').html( finalPrice );
-            $('.price-target').val( finalPrice );
+        if ( $('.sell-media-item-price').length ){
+            $('.sell-media-item-price').html( finalPrice );
+            $('.sell-media-item-price').val( finalPrice );
         }
 
         return finalPrice;
@@ -54,6 +54,7 @@ jQuery( document ).ready(function( $ ){
             success: function( msg ){
                 _user.count = msg;
                 $('.count-target').html( msg );
+                $('.menu-cart-items').html( msg );
             }
         });
     }
@@ -106,11 +107,16 @@ jQuery( document ).ready(function( $ ){
      */
     function sell_media_update_total(){
         var total = 0;
-        $('.item-price-target').each(function(){
-            total = +( $(this).text() ) + +total;
-        });
+        if ( $('.item-price-target').length ){
+            $('.item-price-target').each(function(){
+                total = +( $(this).text() ) + +total;
+            });
+        } else {
+            total = +sell_media.cart.total;
+        }
+
         $('.subtotal-target').html( total.toFixed(2) );
-        $('.price-target').html( total.toFixed(2) );
+        $('.menu-cart-total').html( total.toFixed(2) );
     }
 
 
@@ -139,6 +145,26 @@ jQuery( document ).ready(function( $ ){
     }
 
     /**
+     * Updates a div with the class name called 'menu-cart-items' to have
+     * the total number of items.
+     */
+    function sell_media_quantity_total(){
+        var total = 0;
+        if ( $('.sell-media-quantity').length ){
+            $('.sell-media-quantity').each(function(){
+                item_id = $(this).attr('data-id');
+                qty = +$('#quantity-' + item_id ).val();
+                total = total + qty;
+            });
+        } else {
+            total = sell_media.cart.quantity;
+        }
+
+        if ( $('.menu-cart-items').length )
+            $('.menu-cart-items').html( total );
+    }
+
+    /**
      * Add subtotal and shipping together
      */
     function sell_media_update_final_total(){
@@ -152,6 +178,7 @@ jQuery( document ).ready(function( $ ){
      */
     sell_media_update_total();
     sell_media_update_final_total();
+    sell_media_quantity_total();
 
     /**
      * When the user clicks on our trigger we set-up the overlay,
@@ -266,6 +293,11 @@ jQuery( document ).ready(function( $ ){
             data: _data,
             success: function( msg ) {
                 cart_count();
+                // sell_media_update_total();
+
+                total = ( +( $('.menu-cart-total').html() ) + +( $('.sell-media-item-price').html() ) );
+                $('.menu-cart-total').html( total.toFixed(2) );
+
                 $button = $('.sell-media-form').find('.sell-media-buy-button');
                 $button.addClass('sell-media-purchased').val('Checkout');
                 $( document ).on( 'click', '.sell-media-purchased', function(){
@@ -303,6 +335,8 @@ jQuery( document ).ready(function( $ ){
 
                 total_items();
                 sell_media_update_final_total();
+                sell_media_quantity_total();
+                sell_media_update_total();
             }
         });
     });
@@ -342,6 +376,7 @@ jQuery( document ).ready(function( $ ){
         sell_media_update_sub_total();
         sell_media_update_total();
         sell_media_update_final_total();
+        sell_media_quantity_total();
         if ( $(this).val() > 0 ){
             $('.sell-media-buy-button').removeAttr('disabled');
         } else {
@@ -350,9 +385,9 @@ jQuery( document ).ready(function( $ ){
     });
 
 
-    if ( $('#sell_media_checkout_form').length ){
-        sell_media_update_sub_total();
-        sell_media_update_total();
-        sell_media_update_final_total();
-    }
+    // if ( $('#sell_media_checkout_form').length ){
+    //     sell_media_update_sub_total();
+    //     sell_media_update_total();
+    //     sell_media_update_final_total();
+    // }
 });
