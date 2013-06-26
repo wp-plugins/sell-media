@@ -5,7 +5,7 @@ Donate link: http://graphpaperpress.com/plugins/sell-media/
 Tags: commerce, digital downloads, download, downloads, e-commerce, paypal, photography, sell digital, sell download, selling, sell photos, sell videos, sell media, stock photos
 Requires at least: 3.4
 Tested up to: 3.5-beta
-Stable tag: 1.5.1
+Stable tag: 1.5.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -68,7 +68,7 @@ Shortcodes are small snippets of code that when added to a Post, Page or Widget 
 * **Thanks Shortcode** - (REQUIRED) Create a page called "Thanks" and add this shortcode to it: `[sell_media_thanks]`
 * **Buy Button Shortcode** - (OPTIONAL) Used for displaying specific items for sale: `[sell_media_item]`
 * **Search Form Shortcode** - (OPTIONAL) Used to display a search form exclusively for searching items for sale within Sell Media: `[sell_media_searchform]`
-* **All items shortcode** - (OPTIONAL) Displays all (or a certain collection) items in a grid view: `[sell_media_all_items collection="type-your-collection-name-here"]`
+* **All items shortcode** - (OPTIONAL) Displays all (or a certain collection) items in a grid view: `[sell_media_all_items collection="type-your-collection-slug-here"]`
 * **Download list shortcode** - (OPTIONAL) List logged in users downloads: `[sell_media_download_list]`
 
 
@@ -190,6 +190,15 @@ Action hooks available:
 
 == Changelog ==
 
+= 1.5.2 =
+* New: Added price groups to admin item columns
+* New: Added collection to admin item columns
+
+* Tweak: Corrected instructions for `sell_media_all_items` shortcode
+
+* Bug: Fixed notice on checkout page when no licese id was present for markups
+* Bug: Price groups that did not have any images assigned were not showing in the price group drop down.
+
 = 1.5.1 =
 * New: Price groups, users are no longer limited to "small, medium, large", they can create infinite price groups and assign them to items.
 * New: Added Paypal log.txt file to admin settings
@@ -203,8 +212,8 @@ Action hooks available:
 * Tweak: "Default Price" is now changed to "Original Price"
 * Tweak: Updated menu cart class names
 
-* Fix: Duplicate licenses are no longer installed on re-activation
-* Fix: Typo
+* Bug: Duplicate licenses are no longer installed on re-activation
+* Bug: Typo
 
 = 1.5 =
 * Fixing issue where a generic function needed to be prefixed

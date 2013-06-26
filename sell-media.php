@@ -4,14 +4,14 @@
 Plugin Name: Sell Media
 Plugin URI: http://graphpaperpress.com/plugins/sell-media
 Description: A plugin for selling digital downloads and reprints.
-Version: 1.5.1
+Version: 1.5.2
 Author: Graph Paper Press
 Author URI: http://graphpaperpress.com
 Author Email: support@graphpaperpress.com
 License: GPL
 */
 
-define( 'SELL_MEDIA_VERSION', '1.5.1' );
+define( 'SELL_MEDIA_VERSION', '1.5.2' );
 define( 'SELL_MEDIA_PLUGIN_FILE', plugin_dir_path(__FILE__) . 'sell-media.php' );
 
 include( dirname(__FILE__) . '/inc/cart.php' );
@@ -441,6 +441,7 @@ class SellMedia {
             'labels' => $labels,
             'public' => true,
             'show_in_nav_menus' => true,
+            'show_admin_column' => true,
             'show_ui' => true,
             'show_tagcloud' => true,
             'hierarchical' => true,
@@ -566,6 +567,7 @@ class SellMedia {
             'public' => true,
             'show_in_nav_menus' => true,
             'show_ui' => false,
+            'show_admin_column' => true,
             'show_tagcloud' => true,
             'hierarchical' => true,
             'rewrite' => true,
@@ -682,7 +684,7 @@ class SellMedia {
          * We need to check additional post_type since this will pass as true for nav_menu_item
          */
         else if ( is_post_type_archive('sell_media_item')
-            && $query->query['post_type'] == 'sell_media_item'
+            && ! empty( $query->query['post_type'] ) && $query->query['post_type'] == 'sell_media_item'
             || is_home()
             || is_tax()
             || is_page()
@@ -762,18 +764,19 @@ class SellMedia {
 
         if ( ! empty( $general_settings['order_by'] ) && is_archive() ||
              ! empty( $general_settings['order_by'] ) && is_tax() ){
+            global $wpdb;
             switch( $general_settings['order_by'] ){
                 case 'title-asc' :
-                    $order_by = "post_title ASC";
+                    $order_by = "{$wpdb->prefix}posts.post_title ASC";
                     break;
                 case 'title-desc' :
-                    $order_by = "post_title DESC";
+                    $order_by = "{$wpdb->prefix}posts.post_title DESC";
                     break;
                 case 'date-asc' :
-                    $order_by = "post_date ASC";
+                    $order_by = "{$wpdb->prefix}posts.post_date ASC";
                     break;
                 case 'date-desc' :
-                    $order_by = "post_date DESC";
+                    $order_by = "{$wpdb->prefix}posts.post_date DESC";
                     break;
             }
         } else {
