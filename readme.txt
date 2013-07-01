@@ -5,7 +5,7 @@ Donate link: http://graphpaperpress.com/plugins/sell-media/
 Tags: commerce, digital downloads, download, downloads, e-commerce, paypal, photography, sell digital, sell download, selling, sell photos, sell videos, sell media, stock photos
 Requires at least: 3.4
 Tested up to: 3.5-beta
-Stable tag: 1.5.2
+Stable tag: 1.5.3
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -189,6 +189,13 @@ Action hooks available:
 * Double check your Sell Media Settings after upgrading
 
 == Changelog ==
+
+= 1.5.3 =
+* Bug: "Original File Price" was truncating trailing zero's from prices.
+* Bug: Fixed issue when removing items from the cart incorrect totals were displayed
+* Bug: Fixed issue in widgets
+* Bug: Price groups was not respecting newly created sizes when downloading images
+* Tweak: Added version number to enqueue script and styles
 
 = 1.5.2 =
 * New: Added price groups to admin item columns

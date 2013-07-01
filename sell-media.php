@@ -4,14 +4,14 @@
 Plugin Name: Sell Media
 Plugin URI: http://graphpaperpress.com/plugins/sell-media
 Description: A plugin for selling digital downloads and reprints.
-Version: 1.5.2
+Version: 1.5.3
 Author: Graph Paper Press
 Author URI: http://graphpaperpress.com
 Author Email: support@graphpaperpress.com
 License: GPL
 */
 
-define( 'SELL_MEDIA_VERSION', '1.5.2' );
+define( 'SELL_MEDIA_VERSION', '1.5.3' );
 define( 'SELL_MEDIA_PLUGIN_FILE', plugin_dir_path(__FILE__) . 'sell-media.php' );
 
 include( dirname(__FILE__) . '/inc/cart.php' );
@@ -605,21 +605,48 @@ class SellMedia {
             wp_enqueue_script( 'sell_media-admin-uploader' );
         }
         if ( is_admin() && ( sell_media_is_sell_media_post_type_page() || $pagenow == 'post.php' || $pagenow == 'post-new.php' ) ) {
-            wp_enqueue_style( 'sell_media-admin', plugin_dir_url( __FILE__ ) . 'css/sell_media-admin.css', array( 'thickbox' ) );
+            wp_enqueue_style( 'sell_media-admin', plugin_dir_url( __FILE__ ) . 'css/sell_media-admin.css', array( 'thickbox' ), SELL_MEDIA_VERSION );
 
-            wp_enqueue_script( 'sell_media-admin-items', plugin_dir_url( __FILE__ ) . 'js/admin-items.js', array( 'jquery' ) );
+            wp_enqueue_script( 'sell_media-admin-items', plugin_dir_url( __FILE__ ) . 'js/admin-items.js', array( 'jquery' ), SELL_MEDIA_VERSION );
 
             if ( sell_media_is_license_page() || sell_media_is_license_term_page() ) {
-                wp_enqueue_script( 'sell_media-admin', plugin_dir_url( __FILE__ ) . 'js/sell_media-admin.js', array( 'jquery', 'jquery-ui-sortable' ) );
+                wp_enqueue_script( 'sell_media-admin', plugin_dir_url( __FILE__ ) . 'js/sell_media-admin.js', array( 'jquery', 'jquery-ui-sortable' ), SELL_MEDIA_VERSION );
                 wp_enqueue_script( 'jquery-ui-slider' );
             }
         } if ( !is_admin() ) {
-            wp_enqueue_script( 'sell_media', plugin_dir_url( __FILE__ ) . 'js/sell_media.js', array( 'jquery' ) );
-            wp_enqueue_style( 'sell_media', plugin_dir_url( __FILE__ ) . 'css/sell_media.css' );
-            wp_enqueue_style( 'sell_media-widgets-style', plugin_dir_url( __FILE__ ) . 'css/sell_media_widgets.css' );
+            wp_enqueue_script( 'sell_media', plugin_dir_url( __FILE__ ) . 'js/sell_media.js', array( 'jquery' ), SELL_MEDIA_VERSION );
+
+            $amount = $quantity = 0;
+            if ( ! empty( $_SESSION['cart']['items'] ) ){
+                foreach ( $_SESSION['cart']['items'] as $item ){
+                    $price = sell_media_cart_price( $item );
+                    $qty = is_array( $item['price_id'] ) ? $item['price_id']['quantity'] : 1;
+                    $amount = $amount + $price['amount'] * $qty;
+                    $quantity = $quantity + $qty;
+                }
+            }
+            $options = get_option('sell_media_general_settings');
+            $page_id = $options['checkout_page'];
+
+            wp_localize_script('sell_media', 'sell_media',
+                array(
+                'ajaxurl' => admin_url("admin-ajax.php"),
+                'pluginurl' => plugin_dir_url( dirname( __FILE__ ) ),
+                'checkouturl' => get_permalink( $page_id ),
+                'cart' => array(
+                    'total' => $amount,
+                    'quantity' => $quantity,
+                    'currency_symbol' => sell_media_get_currency_symbol()
+                    )
+                )
+            );
+
+
+            wp_enqueue_style( 'sell_media', plugin_dir_url( __FILE__ ) . 'css/sell_media.css', null, SELL_MEDIA_VERSION );
+            wp_enqueue_style( 'sell_media-widgets-style', plugin_dir_url( __FILE__ ) . 'css/sell_media_widgets.css', null, SELL_MEDIA_VERSION );
         }
         if ( sell_media_is_reports_page() )
-            wp_enqueue_script( 'google_charts', 'https://www.google.com/jsapi', array( 'jquery' ) );
+            wp_enqueue_script( 'google_charts', 'https://www.google.com/jsapi', array( 'jquery' ), SELL_MEDIA_VERSION );
     }
 
 
