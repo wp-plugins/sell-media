@@ -5,7 +5,7 @@ Donate link: http://graphpaperpress.com/plugins/sell-media/
 Tags: commerce, digital downloads, download, downloads, e-commerce, paypal, photography, sell digital, sell download, selling, sell photos, sell videos, sell media, stock photos
 Requires at least: 3.4
 Tested up to: 3.5-beta
-Stable tag: 1.5.3
+Stable tag: 1.5.4
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -136,6 +136,8 @@ Again, it is important that we emphasize that if you are on a shared hosting pac
 
 Please visit the Add Media -> Settings -> Payments page and double check all of your settings. Also, if you are using Paypal, you need to make sure you have [added your IPN Listener URL to Paypal](https://cms.paypal.com/us/cgi-bin/?cmd=_render-content&content_ID=developer/e_howto_admin_IPNSetup).
 
+Also, PayPal computers use IP ranges 66.211.*.* and 173.0.*.* and visit the IPN URL with NO User-Agent. Some web hosting companies have their servers set up to block incoming pings when the User-Agent is not explicityly set (as is the case with Paypal's IPN). In this case, you'll want to modify your .htaccess file to override user-agent blocking with these address ranges.
+
 = What are license types? =
 
 The Sell Media plugin helps you to create and assign different licenses and prices for each image, video or audio file based on the anticipated usage of the media. For example: If a large company wants to purchase one of your images for a billboard, you should charge one price for commercial usage, charge another for editorial, and so on.
@@ -189,6 +191,25 @@ Action hooks available:
 * Double check your Sell Media Settings after upgrading
 
 == Changelog ==
+
+= 1.5.4 =
+* Feature: Added shortcode to display all collections 'sell_media_list_all_collections' ( available shortcode attributes: thumbs, details )
+* Feature: Added price groups to the native WordPress bulk edit
+* Feature: File downloads have the size and license appended to them, i.e., my-image-1024x768-commericial.jpg
+* Feature: License descriptions now show on hover, next to the license on the dialog
+* Feature: Added tooltips to license descriptions
+* Feature: Download size is now displayed on the admin payments item page
+* Tweak: Added new attributes to 'sell_media_all_items' ( attributes: collection, show )
+* Tweak: Added a "Continue shopping" link on the checkout page
+* Tweak: Adjusting currency format in settings
+* Tweak: Payments should not be publicly queryable
+* Bug: Cart totals were inconsistent
+* Bug: Featured image used on archive pages if present
+* Bug: Non-image items can now have multiple licenses
+* Bug: Quantity totals are immediately calculated
+* Bug: Intermittent bug where items were added to the cart twice
+* Bug: Downloads are now based on the constraints of the original image and the price group
+
 
 = 1.5.3 =
 * Bug: "Original File Price" was truncating trailing zero's from prices.

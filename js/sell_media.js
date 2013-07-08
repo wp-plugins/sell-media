@@ -119,6 +119,7 @@ jQuery( document ).ready(function( $ ){
 
         $('.subtotal-target').html( total.toFixed(2) );
         $('.menu-cart-total').html( total.toFixed(2) );
+        $('.sell-media-item-price').html( total.toFixed(2) );
     }
 
 
@@ -182,6 +183,7 @@ jQuery( document ).ready(function( $ ){
     sell_media_update_final_total();
     sell_media_quantity_total();
 
+
     /**
      * When the user clicks on our trigger we set-up the overlay,
      * launch our dialog, and send an Ajax request to load our cart form.
@@ -244,6 +246,12 @@ jQuery( document ).ready(function( $ ){
     $( document ).on('change', '#sell_media_license_select', function(){
         var price;
         var size = $('#sell_media_size_select :selected').attr('data-price');
+
+        if ( typeof( size ) === "undefined" )
+            size = $('input[name="CalculatedPrice"]').val();
+
+        var license_desc = $('#sell_media_license_select :selected').attr('title');
+
         $("option:selected", this).each(function(){
             price = $(this).attr('data-price');
             calculate_total( price, size );
@@ -253,6 +261,13 @@ jQuery( document ).ready(function( $ ){
         } else {
             $('.sell-media-buy-button').removeAttr('disabled');
         }
+        $(this).parent().find(".license_desc").attr('data-tooltip', license_desc);
+        if ( license_desc == '' ){
+            $(this).parent().find(".license_desc").hide();
+        } else {
+            $(this).parent().find(".license_desc").show();
+        }
+
     });
 
     /**
@@ -283,30 +298,36 @@ jQuery( document ).ready(function( $ ){
 
     $( document ).on('submit', '.sell-media-dialog-form', function(){
 
-        var _data = "action=sell_media_add_items&taxonomy=licenses&" + $( this ).serialize();
+        $('.sell-media-buy-button').attr('disabled',true);
 
-        if ( _user.count < 1 ) {
-            text = '(<span class="count-container"><span class="count-target"></span></span>)';
-            $('.empty').html( text );
-            $('.cart-handle').show();
-        }
+        if ( $('.sell-media-buy-button').hasClass('sell-media-purchased') ){
+            $('.sell-media-buy-button').removeAttr('disabled');
+            location.href = sell_media.checkouturl;
+        } else {
 
-        $.ajax({
-            data: _data,
-            success: function( msg ) {
-                cart_count();
-                // sell_media_update_total();
+            var _data = "action=sell_media_add_items&taxonomy=licenses&" + $( this ).serialize();
 
-                total = ( +( $('.menu-cart-total').html() ) + +( $('.sell-media-item-price').html() ) );
-                $('.menu-cart-total').html( total.toFixed(2) );
-
-                $button = $('.sell-media-form').find('.sell-media-buy-button');
-                $button.addClass('sell-media-purchased').val('Checkout');
-                $( document ).on( 'click', '.sell-media-purchased', function(){
-                    location.href = checkouturl;
-                });
+            if ( _user.count < 1 ) {
+                text = '(<span class="count-container"><span class="count-target"></span></span>)';
+                $('.empty').html( text );
+                $('.cart-handle').show();
             }
-        });
+
+            $.ajax({
+                data: _data,
+                success: function( msg ) {
+                    cart_count();
+                    // sell_media_update_total();
+
+                    total = ( +( $('.menu-cart-total').html() ) + +( $('.sell-media-item-price').html() ) );
+                    $('.menu-cart-total').html( total.toFixed(2) );
+
+                    $button = $('.sell-media-form').find('.sell-media-buy-button');
+                    $button.addClass('sell-media-purchased').val('Checkout');
+                    $('.sell-media-buy-button').removeAttr('disabled');
+                }
+            });
+        }
         return false;
     });
 
@@ -374,7 +395,7 @@ jQuery( document ).ready(function( $ ){
      * If the user clicks inside of our input box and manually updates the quantiy
      * we run the sub-total and total functions.
      */
-    $(document).on('change', '.sell-media-quantity', function(){
+    $(document).on('keyup', '.sell-media-quantity', function(){
         sell_media_update_sub_total();
         sell_media_update_total();
         sell_media_update_final_total();
@@ -384,6 +405,44 @@ jQuery( document ).ready(function( $ ){
         } else {
             $('.sell-media-buy-button').attr('disabled', true);
         }
+    });
+
+     /**
+     * When the user clicks on our trigger we set-up the overlay,
+     * launch our dialog, and send an Ajax request to load our cart form.
+     */
+    $( document ).on( 'click', '#agree_terms_and_conditions', function( event ){
+        event.preventDefault();
+
+        // Overlay set-up
+        coordinates = sell_media_get_page_scroll();
+        y = coordinates[1] + +100;
+        x = ( $(window).width() / 2 ) - ( $( '#terms-and-conditions-dialog' ).outerWidth() );
+        $('#terms-and-conditions-dialog').css({
+            'top': y + 'px',
+            'left': x + 'px'
+        });
+
+        // Show our dialog with a loading message
+        $('#terms-and-conditions-dialog').toggle();
+
+        // Add our overlay to the html if #overlay is present.
+        if($('#overlay').length > 0){
+            $('#overlay').remove();
+        } else {
+            $('body').append('<div id="overlay"></div>');
+            var doc_height = $(document).height();
+            $('#overlay').height(doc_height);
+            $('#overlay').click(function(){
+                $('#terms-and-conditions-dialog').toggle();
+                $(this).remove();
+            });
+        }
+    });
+
+    $( document ).on( 'click', '.close', function(){
+        $('#terms-and-conditions-dialog').hide();
+        $('#overlay').remove();
     });
 
 });

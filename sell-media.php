@@ -4,14 +4,14 @@
 Plugin Name: Sell Media
 Plugin URI: http://graphpaperpress.com/plugins/sell-media
 Description: A plugin for selling digital downloads and reprints.
-Version: 1.5.3
+Version: 1.5.4
 Author: Graph Paper Press
 Author URI: http://graphpaperpress.com
 Author Email: support@graphpaperpress.com
 License: GPL
 */
 
-define( 'SELL_MEDIA_VERSION', '1.5.3' );
+define( 'SELL_MEDIA_VERSION', '1.5.4' );
 define( 'SELL_MEDIA_PLUGIN_FILE', plugin_dir_path(__FILE__) . 'sell-media.php' );
 
 include( dirname(__FILE__) . '/inc/cart.php' );
@@ -20,6 +20,7 @@ include( dirname(__FILE__) . '/inc/helpers.php');
 include( dirname(__FILE__) . '/inc/gateways/paypal.php' );
 include( dirname(__FILE__) . '/inc/shortcodes.php' );
 include( dirname(__FILE__) . '/inc/template-tags.php' );
+include( dirname(__FILE__) . '/inc/class-cart.php' );
 include( dirname(__FILE__) . '/inc/term-meta.php' );
 include( dirname(__FILE__) . '/inc/widgets.php' );
 
@@ -532,7 +533,7 @@ class SellMedia {
             'public' => false,
             'show_ui' => true,
             'show_in_menu' => false,
-            'publicly_queryable' => true,
+            'publicly_queryable' => false,
             'has_archive' => false,
             'query_var' => true,
             'rewrite' => false,
@@ -565,10 +566,12 @@ class SellMedia {
         $args = array(
             'labels' => $labels,
             'public' => true,
+
+            'show_ui' => true,
             'show_in_nav_menus' => true,
-            'show_ui' => false,
-            'show_admin_column' => true,
             'show_tagcloud' => true,
+            'show_admin_column' => true,
+
             'hierarchical' => true,
             'rewrite' => true,
             'query_var' => true
@@ -618,10 +621,11 @@ class SellMedia {
 
             $amount = $quantity = 0;
             if ( ! empty( $_SESSION['cart']['items'] ) ){
+                $cart = New Sell_Media_Cart;
                 foreach ( $_SESSION['cart']['items'] as $item ){
-                    $price = sell_media_cart_price( $item );
+                    $price = $cart->item_price( $item['item_id'], $item['price_id'] );
                     $qty = is_array( $item['price_id'] ) ? $item['price_id']['quantity'] : 1;
-                    $amount = $amount + $price['amount'] * $qty;
+                    $amount = $cart->item_markup_total( $item['item_id'], $item['price_id'] );
                     $quantity = $quantity + $qty;
                 }
             }

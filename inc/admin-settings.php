@@ -74,7 +74,8 @@ class SellMediaSettings {
             'style' => '',
             'plugin_credit' => '',
             'post_type_slug' => 'items',
-            'order_by' => ''
+            'order_by' => '',
+            'terms_and_conditions' => ''
         ), $this->general_settings );
 
         $this->payment_settings = array_merge( array(
@@ -132,6 +133,7 @@ class SellMediaSettings {
         add_settings_field( 'plugin_credit', 'Plugin Credit', array( &$this, 'field_general_plugin_credit' ), $this->general_settings_key, 'section_general' );
         add_settings_field( 'post_type_slug', 'Post Type Slug', array( &$this, 'field_post_type_slug' ), $this->general_settings_key, 'section_general' );
         add_settings_field( 'order_by', 'Order By', array( &$this, 'field_order_by' ), $this->general_settings_key, 'section_general' );
+        add_settings_field( 'terms_and_conditions', 'Terms and Conditions', array( &$this, 'field_terms_and_conditions' ), $this->general_settings_key, 'section_general' );
 
         do_action( 'sell_media_general_settings_hook' );
 
@@ -256,17 +258,17 @@ class SellMediaSettings {
                                                 <p class="description"><?php _e('Name<','sell_media'); ?>/p>
                                             </td>
                                             <td>
-                                                <input type="number" step="1" min="0" class="small-text" name="terms_children[ <?php echo $term->term_id; ?> ][width]" value="<?php echo sell_media_get_term_meta( $term->term_id, 'width', true ); ?>">
+                                                <input type="text" class="small-text" name="terms_children[ <?php echo $term->term_id; ?> ][width]" value="<?php echo sell_media_get_term_meta( $term->term_id, 'width', true ); ?>">
                                                 <p class="description"><?php _e('Width (px)','sell_media'); ?></p>
                                             </td>
                                             <td>
-                                                <input type="number" step="1" min="0" class="small-text" name="terms_children[ <?php echo $term->term_id; ?> ][height]" value="<?php echo sell_media_get_term_meta( $term->term_id, 'height', true ); ?>">
+                                                <input type="text" class="small-text" name="terms_children[ <?php echo $term->term_id; ?> ][height]" value="<?php echo sell_media_get_term_meta( $term->term_id, 'height', true ); ?>">
                                                 <p class="description"><?php _e('Height (px)','sell_media'); ?></p>
                                             </td>
                                             <td>
                                                 <span class="description"><?php echo sell_media_get_currency_symbol(); ?></span>
-                                                <input type="number" step="1" min="0" class="small-text" name="terms_children[ <?php echo $term->term_id; ?> ][price]" value="<?php echo sprintf( '%0.2f', sell_media_get_term_meta( $term->term_id, 'price', true ) ); ?>">
-                                                <p class="description"><?php _e('Price (px)','sell_media'); ?></p>
+                                                <input type="text" class="small-text" name="terms_children[ <?php echo $term->term_id; ?> ][price]" value="<?php echo sprintf( '%0.2f', sell_media_get_term_meta( $term->term_id, 'price', true ) ); ?>">
+                                                <p class="description"><?php _e('Price','sell_media'); ?></p>
                                             </td>
                                             <td>
                                                 <a href="#" class="sell-media-xit sell-media-delete-term" data-term_id="<?php echo $term->term_id; ?>" data-type="price" data-message="<?php printf( '%s: %s?', __('Are you sure you want to delete the price', 'sell_media'), $term->name ); ?>">×</a>
@@ -282,17 +284,17 @@ class SellMediaSettings {
                                             </td>
                                             <td>
                                                 <input type="hidden" class="sell-media-price-group-parent-id" name="new_child[ <?php echo $i; ?> ][parent]" value="<?php echo $current_term_id; ?>" />
-                                                <input type="number" step="1" min="0" class="small-text" name="new_child[ <?php echo $i; ?> ][width]" value="">
+                                                <input type="text" class="small-text" name="new_child[ <?php echo $i; ?> ][width]" value="">
                                                 <p class="description"><?php _e('Width (px)','sell_media'); ?></p>
                                             </td>
                                             <td>
-                                                <input type="number" step="1" min="0" class="small-text" name="new_child[ <?php echo $i; ?> ][height]" value="">
+                                                <input type="text" class="small-text" name="new_child[ <?php echo $i; ?> ][height]" value="">
                                                 <p class="description"><?php _e('Height (px)','sell_media'); ?></p>
                                             </td>
                                             <td>
                                                 <span class="description">$</span>
-                                                <input type="number" step="1" min="0" class="small-text" name="new_child[ <?php echo $i; ?> ][price]" value="">
-                                                <p class="description"><?php _e('Price (px)','sell_media'); ?></p>
+                                                <input type="text" class="small-text" name="new_child[ <?php echo $i; ?> ][price]" value="">
+                                                <p class="description"><?php _e('Price','sell_media'); ?></p>
                                             </td>
                                             <td>
                                                 <!-- <a href="#" class="sell-media-xit sell-media-delete-term" data-term_id="" data-type="price">×</a> -->
@@ -375,7 +377,7 @@ class SellMediaSettings {
                     case 'medium_size_price' :
                     case 'large_size_price' :
                     case 'default_price' :
-                        $value = floatval( $value );
+                        $value = sprintf( "%0.2f", floatval( $value ) );
                         break;
 
                     /**
@@ -445,7 +447,7 @@ class SellMediaSettings {
         <select name="<?php echo $this->general_settings_key; ?>[checkout_page]" id="<?php echo $this->general_settings_key; ?>[checkout_page]">
             <?php $this->build_field_pages_select( 'checkout_page' ); ?>
         </select>
-        <span class="desc"><?php esc_html_e( 'What page contains the <code>[sell_media_checkout]</code> shortcode? This shortcode generates the checkout cart.', 'sell_media' ); ?></span>
+        <span class="desc"><?php _e( 'What page contains the <code>[sell_media_checkout]</code> shortcode? This shortcode generates the checkout cart.', 'sell_media' ); ?></span>
         <?php
     }
 
@@ -531,6 +533,16 @@ class SellMediaSettings {
             <option value="title-asc" <?php selected( $this->general_settings['order_by'], 'title-asc' ); ?>><?php _e( 'Item Title (ASC)', 'sell_media' ); ?></option>
         </select>
         <span class="desc"><?php _e( 'Choose the order of items for the archive pages.', 'sell_media' ); ?></span>
+        <?php
+    }
+
+    /*
+     * Post Type terms and conditions field callback
+     */
+    function field_terms_and_conditions(){
+        ?>
+         <textarea name="<?php echo $this->general_settings_key; ?>[terms_and_conditions]" id="<?php echo $this->general_settings_key; ?>[terms_and_conditions]" style="width:50%;height:150px;" placeholder="<?php _e( 'Terms and Conditions', 'sell_media' ); ?>"><?php echo wp_filter_nohtml_kses( $this->general_settings['terms_and_conditions'] ); ?></textarea>
+        <p class="desc"><?php _e( 'These "Terms and Conditions" will show up on the checkout page. Users must agree to these terms before completing their purchase.', 'sell_media' ); ?></p>
         <?php
     }
 

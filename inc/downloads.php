@@ -14,12 +14,12 @@ Class Sell_Media_Download {
     /**
      * Create our Download image and save it to the tmp/ folder in sell media
      *
-     * @param $image (array) containing the height and width of the image
+     * @param $size (array) containing the height and width of the image
      * @param $location (string) The full server path to the image
      *
      * @return Full path to the download file in the tmp/ folder
      */
-    public function generate_download_size( $size, $location=null ){
+    public function create_download_size( $size, $location=null ){
 
         $image_p = imagecreatetruecolor( $size['width'], $size['height'] );
         $image = imagecreatefromjpeg( $location );
@@ -46,7 +46,6 @@ Class Sell_Media_Download {
      * @param $size (array) 'width' and 'height' of requested size
      * @param $location (string) full file path on the server of the image
      *
-     * @todo in this logic sell_media_image_sizes();
      *
      * @return bool True if the download image size can be generated, false if it can't
      */
@@ -61,10 +60,11 @@ Class Sell_Media_Download {
      *
      * @param $location (string) The file path on the server
      * @param $delete (bool) Either delete the tmp file or not
+     * @param $filename (string) Override the downloaded file name, default is derived from $location
      *
      * @return void
      */
-    public function force_download( $location=null, $delete_tmp=false ){
+    public function force_download( $location=null, $delete_tmp=false, $filename=null ){
         $pathinfo = pathinfo( $location );
         switch( $pathinfo['extension'] ) {
             case "gif":  $ctype = "image/gif"; break;
@@ -89,12 +89,15 @@ Class Sell_Media_Download {
         }
 
         $size = filesize( $location );
+        if ( empty( $filename ) )
+            $filename = $pathinfo['basename'];
+
         header("Pragma: no-cache");
         header("Expires: 0");
         header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
         header("Robots: none");
         header("Content-Type: {$ctype}");
-        header("Content-Disposition: attachment; filename={$pathinfo['basename']};");
+        header("Content-Disposition: attachment; filename={$filename};");
         header("Content-Length: {$size}");
 
         $tmp_file = file_get_contents( $location );
@@ -141,6 +144,7 @@ function sell_media_process_download() {
 
         $download = urldecode($_GET['download']);
         $term_id = $_GET['price_id'];
+        $item_id = $_GET['id'];
 
         $d = New Sell_Media_Download;
         $verified = $d->verify_download_link( $download );
@@ -153,14 +157,26 @@ function sell_media_process_download() {
              * Get the full pat to the file that will be downloaded in the sell media dir
              */
             $wp_upload_dir = wp_upload_dir();
-            $attachment_id = get_post_meta( $_GET['id'], '_sell_media_attachment_id', true );
-            $location = $wp_upload_dir['basedir'] . '/sell_media/' . get_post_meta( $attachment_id, '_sell_media_attached_file', true );
+            $attachment_id = get_post_meta( $item_id, '_sell_media_attachment_id', true );
 
+            /**
+             * This is legacy code for older attached files
+             */
+            if ( $tmp = get_post_meta( $attachment_id, '_sell_media_attached_file', true ) ){
+                $_attached_file = $tmp;
+            } else {
+                $_attached_file = get_post_meta( $attachment_id, '_wp_attached_file', true );
+            }
+
+            $location = $wp_upload_dir['basedir'] . '/sell_media/' . $_attached_file;
 
             /**
              * Check if this download is an image, if it is we generate the download size
              */
             $mime_type = wp_check_filetype( $location );
+            $size = null;
+            $license = null;
+
             if ( in_array( $mime_type['type'], array( 'image/jpeg', 'image/png', 'image/gif', 'image/bmp', 'image/tiff' ) ) ){
 
                 /**
@@ -172,28 +188,68 @@ function sell_media_process_download() {
                 }
 
 
+                /**
+                 * Get license ID by $item_id and $download
+                 */
+                global $wpdb;
+                $query = $wpdb->prepare("SELECT ID FROM {$wpdb->prefix}posts WHERE `post_status` LIKE 'publish' AND ID =
+                (SELECT post_id FROM {$wpdb->prefix}postmeta
+                WHERE meta_key LIKE '_sell_media_payment_purchase_key'
+                AND meta_value LIKE '%s');", $download );
+
+                $r = $wpdb->get_results( $query );
+                $payment_id = $r[0]->ID;
+
+                $products_s = get_post_meta( $payment_id, '_sell_media_payment_meta', true );
+                $products = unserialize( $products_s['products'] );
+                $license_id = null;
+
+                foreach( $products as $product ){
+                    if ( $item_id == $product['item_id'] ){
+                        $license_id = $product['license_id'];
+                    }
+                }
+                $license_obj = get_term( $license_id, 'licenses' );
+                if ( is_wp_error( $license_obj ) ){
+                    $license = null;
+                } else {
+                    $license = '-' . $license_obj->slug;
+                }
+                // End get license
+
+
                 if ( $term_id == 'sell_media_original_file' ){
+
                     $file_download = $location;
                     $delete_tmp = false;
+
+                    list( $new_image['width'], $new_image['height'] ) = getimagesize( $file_download );
+
                 } else {
+
+                    $confirmed_size = sell_media_get_downloadable_size( $item_id, $term_id );
                     $new_image = array(
-                        'height' => sell_media_get_term_meta( $term_id, 'height', true ),
-                        'width' => sell_media_get_term_meta( $term_id, 'width', true )
+                        'height' => $confirmed_size['height'],
+                        'width'  => $confirmed_size['width']
                     );
 
-                    // $valid = $d->validate_download_size( $new_image, $location );
-                    // var_dump($valid);
-
-                    $file_download = $d->generate_download_size( $new_image, $location, true );
+                    $file_download = $d->create_download_size( $new_image, $location, true );
                     $delete_tmp = true;
+
                 }
+
+                $size = '-' . $new_image['width'] . 'x' . $new_image['height'];
             } else {
+
                 $file_download = $location;
                 $delete_tmp = false;
             }
 
-            $d->force_download( $file_download, $delete_tmp );
+            // Create unique name based on the file width, height and license
+            $file_name_info = pathinfo( basename( $file_download ) );
+            $filename = $file_name_info['filename'] . $size . $license . '.' . $file_name_info['extension'];
 
+            $d->force_download( $file_download, $delete_tmp, $filename );
             exit;
 
         } else {

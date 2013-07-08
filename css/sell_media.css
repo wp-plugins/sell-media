@@ -166,13 +166,15 @@
 }
 .sell-media-cart-dialog fieldset {
   margin: 0px 0 10px;
+  padding: 10px;
 }
 .sell-media-cart-dialog legend {
   margin: 0 5px;
   padding: 0 5px;
 }
 .sell-media-cart-dialog select {
-  margin: 10px;
+  /*margin: 10px;*/
+  float: left;
 }
 .sell-media-cart-dialog .total-container {
   margin: 1em 0 2em;
@@ -514,5 +516,62 @@ input[type="submit"].sell-media-buy-button-success:active {
 /*= Form styling
 ------------------------------------------------------------------- */
 .sell-media-form input[type="number"].small-text {
-  width: 30px;
+  width: 40px;
+}
+.license_desc,
+.license_text {
+  padding: 3px 0 0 5px;
+}
+.license_desc {
+  cursor: help;
+  float: left;
+  font-size: 11px;
+}
+.sell-media-tooltip {
+  display: inline;
+  position: relative;
+}
+.sell-media-tooltip:hover:after {
+  background: #333;
+  background: rgba(0,0,0,.8);
+  border-radius: 2px;
+  bottom: 26px;
+  color: #fff;
+  content: attr(data-tooltip);
+  left: 0;
+  padding: 8px 12px;
+  position: absolute;
+  z-index: 98;
+  width: 180px;
+}
+.sell-media-tooltip:hover:before {
+  border: solid;
+  border-color: #333 transparent;
+  border-width: 6px 6px 0 6px;
+  bottom: 20px;
+  content: "";
+  left: 50%;
+  position: absolute;
+  z-index: 99;
+}
+
+/*= Terms and Conditions
+-----------------------------------------------------------------------*/
+#terms-and-conditions-dialog {
+  z-index: 10000;
+  position: absolute;
+  width: 400px;
+  background: #fff;
+  box-shadow: 0 0 40px #000;
+  padding: 25px;
+}
+
+#terms-and-conditions-dialog .close {
+    cursor: pointer;
+    font-size: 20px;
+    position: absolute;
+    right: 5px;
+    text-align: center;
+    top: 5px;
+    width: 20px;
 }
