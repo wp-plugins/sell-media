@@ -407,6 +407,13 @@ jQuery( document ).ready(function( $ ){
         }
     });
 
+    $( document ).on( 'submit', '#sell_media_checkout_form', function() {
+        var faults = $( 'input' ).filter( function() {
+            return $( this ).data( 'required' ) && $( this ).val() === '';
+        }).css( 'background-color', 'red');
+        if ( faults.length ) return false;
+    });
+
      /**
      * When the user clicks on our trigger we set-up the overlay,
      * launch our dialog, and send an Ajax request to load our cart form.
@@ -417,7 +424,7 @@ jQuery( document ).ready(function( $ ){
         // Overlay set-up
         coordinates = sell_media_get_page_scroll();
         y = coordinates[1] + +100;
-        x = ( $(window).width() / 2 ) - ( $( '#terms-and-conditions-dialog' ).outerWidth() );
+        x = ( $(window).width() / 2 ) - ( $( '#terms-and-conditions-dialog' ).outerWidth() / 2 );
         $('#terms-and-conditions-dialog').css({
             'top': y + 'px',
             'left': x + 'px'

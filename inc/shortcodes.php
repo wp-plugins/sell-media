@@ -100,8 +100,9 @@ add_shortcode('sell_media_searchform', 'sell_media_search_shortcode');
  *
  * @since 0.1
  */
-function sell_media_cart_shortcode($atts, $content = null) {
+function sell_media_checkout_shortcode($atts, $content = null) {
 
+    $general_settings = get_option( 'sell_media_general_settings' );
     $i = 0;
 
     if ( isset( $_SESSION['cart']['items'] ) )
@@ -168,9 +169,9 @@ function sell_media_cart_shortcode($atts, $content = null) {
             $quantity = 0;
             $cart = New Sell_Media_Cart;
             foreach ( $items as $item ){
-                $price = $cart->item_price( $item['item_id'], $item['price_id'] );
+                $price = $cart->item_markup_total( $item['item_id'], $item['price_id'], $item['license_id'] );
                 $qty = is_array( $item['price_id'] ) ? $item['price_id']['quantity'] : 1;
-                $amount = $amount + $price['amount'] * $qty;
+                $amount = $amount + $price * $qty;
                 $quantity = $quantity + $qty;
             }
 
@@ -208,7 +209,6 @@ function sell_media_cart_shortcode($atts, $content = null) {
             }
             update_post_meta( $payment_id, '_sell_media_user_id', $user_id );
 
-            $general_settings = get_option( 'sell_media_general_settings' );
             if ( empty( $general_settings['customer_notification'] ) ){
                 $notice = false;
             } else {
@@ -287,18 +287,18 @@ function sell_media_cart_shortcode($atts, $content = null) {
                                 <?php do_action('sell_media_above_registration_form'); ?>
                                 <?php if ( ! is_user_logged_in() ) : ?>
                                     <h3 class="checkout-title"><?php _e( 'Create Account', 'sell_media' ); ?></h3>
-                                    <p><?php _e( 'Create an account to complete your purchase. Already have an account', 'sell_media' ); ?>? <a href="<?php echo wp_login_url( get_permalink() ); ?>" title="Login"><?php _e( 'Login', 'sell_media' ); ?></a></p>
+                                    <p><?php _e( 'Create an account to complete your purchase. Already have an account', 'sell_media' ); ?>? <a href="<?php echo get_permalink( $general_settings['login_page'] ); ?>" title="Login"><?php _e( 'Login', 'sell_media' ); ?></a></p>
                                     <p>
                                     <label><?php _e( 'First Name', 'sell_media' ); ?></label>
-                                    <input type="text" class="" id="sell_media_first_name_field" name="first_name" required />
+                                    <input type="text" class="" id="sell_media_first_name_field" name="first_name" data-required="true" required />
                                     </p>
                                     <p>
                                     <label><?php _e( 'Last Name', 'sell_media' ); ?></label>
-                                    <input type="text" class="" id="sell_media_last_name_field" name="last_name" required />
+                                    <input type="text" class="" id="sell_media_last_name_field" name="last_name" data-required="true" required />
                                     </p>
                                     <p>
                                     <label><?php _e( 'Email', 'sell_media' ); ?></label>
-                                    <input type="email" class="" id="sell_media_email_field" name="email" required />
+                                    <input type="email" class="" id="sell_media_email_field" name="email" data-required="true" required />
                                     </p>
                                     <?php do_action('sell_media_below_registration_form'); ?>
                                 <?php else : ?>
@@ -312,25 +312,21 @@ function sell_media_cart_shortcode($atts, $content = null) {
                                         <p class="desc"><?php _e('You are logged in as an Admin and cannot purchase this item from yourself.', 'sell_media' ); ?></p>
                                 <?php else : ?>
                                     <?php
-                                        $general_settings = get_option( 'sell_media_general_settings' );
                                         if ( ! empty ( $general_settings['terms_and_conditions'] ) ) :
                                     ?>
                                         <div id="termsdiv">
-                                            <input type="checkbox" name="termsandconditions" required/>
+                                            <input type="checkbox" name="termsandconditions" data-required="true" required/>
                                             <span class="termnotice">
                                                 <a href="#" id="agree_terms_and_conditions">
                                                 <?php echo apply_filters( 'sell_media_filter_terms_conditions', 'I agree to the terms and conditions' ); ?>
                                                 </a>
                                             </span>
-                                            <div id="terms-and-conditions-dialog" style="display: none;">
-                                                <span class="close">&times;</span>
-                                                <?php echo nl2br( $general_settings['terms_and_conditions'] ); ?>
-                                            </div>
                                         </div>
                                     <?php endif; ?>
                                     <div class="button-container">
                                         <input type="submit" class="sell-media-buy-button-success sell-media-buy-button-checkout" value="<?php _e('Complete Purchase', 'sell_media'); ?>" />
-                                        <p class="desc"><?php _e('You will be redirected to Paypal to complete your purchase.', 'sell_media' ); ?><a href="<?php echo get_post_type_archive_link('sell_media_item'); ?>"><?php _e('Continue Shopping','sell_media'); ?>.</p>
+                                        <span class="inline"><em><?php _e( 'or', 'sell_media' ); ?></em> <a href="<?php echo get_post_type_archive_link('sell_media_item'); ?>"><?php _e('Continue Shopping','sell_media'); ?></a></span>
+                                        <p class="desc"><?php _e('You will be redirected to Paypal to complete your purchase.', 'sell_media' ); ?></p>
                                     </div>
                                 <?php endif; ?>
                                 <p class="sell-media-credit"><?php sell_media_plugin_credit(); ?></p>
@@ -408,7 +404,7 @@ function sell_media_cart_shortcode($atts, $content = null) {
     </div>
     <?php return ob_get_clean();
 }
-add_shortcode('sell_media_checkout', 'sell_media_cart_shortcode');
+add_shortcode('sell_media_checkout', 'sell_media_checkout_shortcode');
 
 /**
  * Adds the 'sell_media' short code to the editor. [sell_media_item]
@@ -556,10 +552,11 @@ function sell_media_download_shortcode( $atts ) {
             }
         }
 
+        return $html;
+
 	} else {
-        $html = sprintf( __('Please %s to view your downloads', 'sell_media'), '<a href="'.wp_login_url( get_permalink() ) .'">Login</a>' );
+        do_shortcode( '[sell_media_login_form]' );
 	}
-    return $html;
 }
 add_shortcode('sell_media_download_list', 'sell_media_download_shortcode');
 
@@ -759,3 +756,48 @@ function sell_media_list_all_collections_shortcode( $atts ) {
 
 }
 add_shortcode('sell_media_list_all_collections', 'sell_media_list_all_collections_shortcode');
+
+
+/**
+ * Custom login form
+ *
+ * @since 1.5.5
+ */
+function sell_media_login_form_shortcode(){
+
+    $general_settings = get_option( 'sell_media_general_settings' );
+
+    if ( is_user_logged_in() ) {
+
+        return sprintf( __( 'You are logged in. %1$s or %2$s.', 'sell_media'), '<a href="' . get_permalink( $general_settings['checkout_page'] ) . '">Checkout now</a>', '<a href="' . get_post_type_archive_link( 'sell_media_item' ) . '">continue shopping</a>' );
+
+    } else {
+
+        $args = array(
+            'redirect' => site_url( $_SERVER['REQUEST_URI'] )
+        );
+
+        wp_login_form( $args );
+
+    }
+
+}
+add_shortcode( 'sell_media_login_form', 'sell_media_login_form_shortcode' );
+
+
+/**
+ * Add to wp_footer
+ * terms markup
+ *
+ * @return string
+ * @since 1.6
+ */
+function sell_media_terms_footer(){
+    $general_settings = get_option( 'sell_media_general_settings' );
+    if ( ! empty ( $general_settings['terms_and_conditions'] ) ) { ?>
+    <div id="terms-and-conditions-dialog" style="display: none;">
+        <span class="close">&times;</span>
+        <?php echo stripslashes_deep( nl2br( $general_settings['terms_and_conditions'] ) ); ?>
+    </div>
+<?php } }
+add_action( 'wp_footer', 'sell_media_terms_footer' );
