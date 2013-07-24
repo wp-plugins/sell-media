@@ -151,8 +151,7 @@ class SellMediaSettings {
         register_setting( $this->payment_settings_key, $this->payment_settings_key, array( &$this, 'register_settings_validate') );
         add_settings_section( 'section_payment', 'Payment Settings', array( &$this, 'section_payment_desc' ), $this->payment_settings_key );
         add_settings_field( 'paypal_email', 'Paypal Email Address', array( &$this, 'field_payment_paypal_email' ), $this->payment_settings_key, 'section_payment' );
-        add_settings_field( 'currency', 'Currency', array( &$this, 'field_payment_currency' ), $this->payment_settings_key, 'section_payment' );
-        add_settings_field( 'paypal_log_file', 'Paypal Log File', array( &$this, 'field_payment_log_file' ), $this->payment_settings_key, 'section_payment' );
+        add_settings_field( 'currency', 'Currency', array( &$this, 'field_payment_currency' ), $this->payment_settings_key, 'section_payment' );        
         add_settings_field( 'paypal_additional_test_email', 'Paypal Addtional Test Emails', array( &$this, 'field_payment_additional_email' ), $this->payment_settings_key, 'section_payment' );
 
         do_action( 'sell_media_payment_settings_hook' );
@@ -488,7 +487,7 @@ class SellMediaSettings {
         <select name="<?php echo $this->general_settings_key; ?>[login_page]" id="<?php echo $this->general_settings_key; ?>[login_page]">
             <?php $this->build_field_pages_select( 'login_page' ); ?>
         </select>
-        <span class="desc"><?php _e( 'Where is your customer login page? This page will contain the <code>[sell_media_login]</code> shortcode.', 'sell_media' ); ?></span>
+        <span class="desc"><?php _e( 'Where is your customer login page? This page will contain the <code>[sell_media_login_form]</code> shortcode.', 'sell_media' ); ?></span>
         <?php
     }
 
@@ -610,20 +609,6 @@ class SellMediaSettings {
         <?php
     }
 
-    /*
-     * Display the contents of the paypal log file in a textarea.
-     */
-    function field_payment_log_file(){
-        if ( file_exists( plugin_dir_path( __FILE__ ) . 'gateways/log.txt' ) ){
-            $log_file = file_get_contents( plugin_dir_path( __FILE__ ) . 'gateways/log.txt' );
-        } else {
-            $log_file = null;
-        }
-        ?>
-        <textarea rows="10" cols="75"><?php echo $log_file; ?></textarea>
-        <div class="desc"><?php _e( 'This is useful when debugging Paypal. Please copy/paste this when posting Paypal issues in the forum.', 'sell_media' ); ?></div>
-        <?php
-    }
 
     /*
      * Paypal additional test emails

@@ -4,14 +4,14 @@
 Plugin Name: Sell Media
 Plugin URI: http://graphpaperpress.com/plugins/sell-media
 Description: A plugin for selling digital downloads and reprints.
-Version: 1.5.5
+Version: 1.5.6
 Author: Graph Paper Press
 Author URI: http://graphpaperpress.com
 Author Email: support@graphpaperpress.com
 License: GPL
 */
 
-define( 'SELL_MEDIA_VERSION', '1.5.5' );
+define( 'SELL_MEDIA_VERSION', '1.5.6' );
 define( 'SELL_MEDIA_PLUGIN_FILE', plugin_dir_path(__FILE__) . 'sell-media.php' );
 
 include( dirname(__FILE__) . '/inc/cart.php' );
@@ -658,15 +658,15 @@ class SellMedia {
 
         if ( is_admin() ) return $query;
 
-        if ( ! empty( $_GET['s'] ) ) return;
-
         /**
          * Check if "collections" is present in query vars
          */
         if ( ! empty( $query->query_vars['collection'] ) ){
             $term_obj = get_term_by( 'slug', $query->query_vars['collection'], 'collection' );
-            $term_id = $term_obj->term_id;
-            $message = __( 'This collection is password protected','sell_media');
+            if ( $term_obj ){
+                $term_id = $term_obj->term_id;
+                $message = __( 'This collection is password protected','sell_media');
+            }
         }
 
 

@@ -59,39 +59,7 @@ add_shortcode( 'sell_media_thanks', 'sell_media_list_downloads_shortcode' );
  * @since 0.1
  */
 function sell_media_search_shortcode( $atts, $content = null ) {
-    ob_start(); ?>
-    <div id="sell-media-search" class="sell-media">
-        <form name="sell-media-search" action="<?php echo home_url(); ?>/" method="get">
-            <input name="post_type" type="hidden" value="sell_media_item" />
-            <span class="sell-media-search-field">
-                <label for="Search"><?php _e('Search', 'sell_media'); ?></label>
-                <input type="text" class="sell-media-search-input" name="s" />
-            </span>
-            <span class="sell-media-search-field">
-                <a href="javascript://" class="sell-media-advanced-search">+<?php _e('Advanced Search', 'sell_media'); ?></a>
-            </span>
-            <div class="sell-media-advanced-search-fields">
-                <span class="sell-media-search-field">
-                    <label for="keywords"><?php _e('Keywords', 'sell_media'); ?></label>
-                    <input type="text" class="sell-media-search-input" name="keywords" />
-                </span>
-                <span class="sell-media-search-field">
-                    <label for="city"><?php _e('City', 'sell_media'); ?></label>
-                    <input type="text" class="sell-media-search-input" name="city" />
-                </span>
-                <span class="sell-media-search-field">
-                    <label for="state"><?php _e('State', 'sell_media'); ?></label>
-                    <input type="text" class="sell-media-search-input" name="state" />
-                </span>
-                <span class="sell-media-search-field">
-                    <label for="collection"><?php _e('Collection', 'sell_media'); ?></label>
-                    <input type="text" class="sell-media-search-input" name="collection" />
-                </span>
-            </div>
-            <input type="submit" class="sell-media-buy-button" value="<?php _e('Search', 'sell_media'); ?>" />
-        </form>
-    </div>
-    <?php return ob_get_clean();
+    return get_search_form();
 }
 add_shortcode('sell_media_searchform', 'sell_media_search_shortcode');
 
@@ -169,7 +137,7 @@ function sell_media_checkout_shortcode($atts, $content = null) {
             $quantity = 0;
             $cart = New Sell_Media_Cart;
             foreach ( $items as $item ){
-                $price = $cart->item_markup_total( $item['item_id'], $item['price_id'], $item['license_id'] );
+                $price = $cart->item_price( $item['item_id'], $item['price_id'] );
                 $qty = is_array( $item['price_id'] ) ? $item['price_id']['quantity'] : 1;
                 $amount = $amount + $price * $qty;
                 $quantity = $quantity + $qty;
@@ -234,7 +202,7 @@ function sell_media_checkout_shortcode($atts, $content = null) {
             // Upate the _sell_media_payment_meta with the User ID
             update_post_meta( $payment_id, '_sell_media_payment_meta', $payment_meta );
 
-            sell_media_process_paypal_purchase( $purchase, $_POST );
+            sell_media_process_paypal_purchase( $purchase, $payment_id );
         }
     }
 
@@ -658,7 +626,7 @@ function sell_media_list_all_collections_shortcode( $atts ) {
 	} else {
 
 		$html = null;
-		$html .= '<div class="sell-media-collections-shortcode">';
+		$html .= '<div class="sell-media-collections-shortcode sell-media">';
 
 		$sell_media_size_settings = get_option( 'sell_media_size_settings');
 
@@ -701,7 +669,7 @@ function sell_media_list_all_collections_shortcode( $atts ) {
 
 			if ( $post_count != 0 ) : ?>
 				<?php
-				$html .= '<div class="sell-media-grid third">';
+				$html .= '<div class="sell-media-grid sell-media-grid-collection third">';
 					$args = array(
 							'posts_per_page' => 1,
 							'taxonomy' => 'collection',
@@ -772,6 +740,9 @@ function sell_media_login_form_shortcode(){
         return sprintf( __( 'You are logged in. %1$s or %2$s.', 'sell_media'), '<a href="' . get_permalink( $general_settings['checkout_page'] ) . '">Checkout now</a>', '<a href="' . get_post_type_archive_link( 'sell_media_item' ) . '">continue shopping</a>' );
 
     } else {
+        if( isset( $_GET['login'] ) && "failed" == $_GET['login'] ) {
+            echo "<span class='error'>".__("Login Failed", "sell_media")."</span>";
+        }
 
         $args = array(
             'redirect' => site_url( $_SERVER['REQUEST_URI'] )
@@ -783,6 +754,24 @@ function sell_media_login_form_shortcode(){
 
 }
 add_shortcode( 'sell_media_login_form', 'sell_media_login_form_shortcode' );
+
+/**
+ * Redirect the failed login to the same page
+ *
+ * @since 1.6
+ */
+add_action( 'wp_login_failed', 'my_front_end_login_fail' );  // hook failed login
+
+function my_front_end_login_fail( $username ) {
+   $referrer = $_SERVER['HTTP_REFERER'];  // where did the post submission come from?
+   // if there's a valid referrer, and it's not the default log-in screen
+   if ( !empty($referrer) && !strstr($referrer,'wp-login') && !strstr($referrer,'wp-admin') ) {
+        $redirect = add_query_arg( array( 'login' => 'failed' ), $referrer );
+      wp_redirect( $redirect );
+      exit;
+   }
+}
+
 
 
 /**
