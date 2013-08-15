@@ -79,14 +79,14 @@ function sell_media_checkout_shortcode($atts, $content = null) {
     if ( $_POST ) {
 
         // Check if the qty thats in the cart has changed
-        foreach( $_POST['sell_media_item_qty'] as $k => $v ){
-            if ( is_array( $_SESSION['cart']['items'][ $k ]['price_id'] ) ){
-                if ( $_SESSION['cart']['items'][ $k ]['price_id']['quantity'] != $v ){
-                    print "new qty: {$k} {$v}\n";
-                    $_SESSION['cart']['items'][ $k ]['price_id']['quantity'] = $v;
-                }
-            }
-        }
+        // foreach( $_POST['sell_media_item_qty'] as $k => $v ){
+        //     if ( is_array( $_SESSION['cart']['items'][ $k ]['price_id'] ) ){
+        //         if ( $_SESSION['cart']['items'][ $k ]['price_id']['quantity'] != $v ){
+        //             print "new qty: {$k} {$v}\n";
+        //             $_SESSION['cart']['items'][ $k ]['price_id']['quantity'] = $v;
+        //         }
+        //     }
+        // }
 
         // Create User
         $user = array();
@@ -130,21 +130,30 @@ function sell_media_checkout_shortcode($atts, $content = null) {
                 'email' => $user['email'],
                 'date' => date( 'Y-m-d H:i:s' ),
                 'purchase_key' => $purchase_key,
-                'payment_id' => $payment_id
+                'payment_id' => $payment_id,
+                'CalculatedPrice' => $_SESSION['cart']['total']
                 );
 
-            $amount = 0;
-            $quantity = 0;
-            $cart = New Sell_Media_Cart;
-            foreach ( $items as $item ){
-                $price = $cart->item_price( $item['item_id'], $item['price_id'] );
-                $qty = is_array( $item['price_id'] ) ? $item['price_id']['quantity'] : 1;
-                $amount = $amount + $price * $qty;
-                $quantity = $quantity + $qty;
-            }
+            // $amount = 0;
+            // $quantity = 0;
+            // $cart = New Sell_Media_Cart;
+            // foreach ( $items as $item ){
+            //     $price = $cart->item_price( $item['item_id'], $item['price_id'] );
+            //     $qty = is_array( $item['price_id'] ) ? $item['price_id']['quantity'] : 1;
+            //     $amount = $amount + $price * $qty;
+            //     $quantity = $quantity + $qty;
+            // }
+            // echo '<pre>';
+            // print_r( $_SESSION );
+            // echo '</pre>';
 
-            $_SESSION['cart']['amount'] = $amount;
-            $_SESSION['cart']['quantity'] = $quantity;
+            // $_SESSION['cart']['amount'] = $amount;
+            // $_SESSION['cart']['qty'] = $quantity;
+
+            // echo '<pre>';
+            // print_r( $_SESSION );
+            // echo '</pre>';
+            // die();
 
             // record the payment details
             update_post_meta( $payment_id, '_sell_media_payment_meta', $purchase );
@@ -153,8 +162,8 @@ function sell_media_checkout_shortcode($atts, $content = null) {
             update_post_meta( $payment_id, '_sell_media_payment_last_name', $user['last_name'] );
             update_post_meta( $payment_id, '_sell_media_payment_user_ip', $ip );
             update_post_meta( $payment_id, '_sell_media_payment_purchase_key', $purchase['purchase_key'] );
-            update_post_meta( $payment_id, '_sell_media_payment_amount', $amount );
-            update_post_meta( $payment_id, '_sell_media_payment_quantity', $quantity );
+            update_post_meta( $payment_id, '_sell_media_payment_amount', $_SESSION['cart']['total'] );
+            update_post_meta( $payment_id, '_sell_media_payment_quantity', $_SESSION['cart']['qty'] );
 
             global $current_user;
             do_action( 'sell_media_before_checkout', $purchase );
