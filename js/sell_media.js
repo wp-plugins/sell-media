@@ -447,10 +447,6 @@ jQuery( document ).ready(function( $ ){
         $('#overlay').remove();
     });
 
-    $( document ).on('focus', '#s', function(){
-        // $(".sell-media-search-options").hide(); // Hide any open search boxes
-        // $("~ .sell-media-search-options", this).show(); // Show the child search box for where we click
-    });
 
     /**
      * Hide our current seach option when the user clicks off the input field
@@ -493,4 +489,35 @@ jQuery( document ).ready(function( $ ){
         }
      });
 
+
+    /**
+     * Check if the email exists, if it does we display an error message
+     * if not we submit the form
+     */
+    $('.sell-media-buy-button-checkout').on('click', function( e ){
+        e.preventDefault();
+        $.ajax({
+            url: sell_media.ajax_url,
+            data: {
+                email: $('#sell_media_email_field').val(),
+                action: 'sell_media_check_email',
+                security: $('#sell_media_cart_nonce').val()
+            },
+            success: function( msg ){
+                if ( msg.success ){
+                    $('#sell_media_checkout_form').submit();
+                } else {
+                    if(!$(".sell-media-error").length) {
+                        $('#sell_media_email_field').after( '<span class="sell-media-error">' + sell_media.error.email_exists + '</span>' );
+                    }
+                }
+            }
+        });
+    });
+
+
+    $('#sell_media_terms_cb').on('click', function(){
+        $this = $(this);
+        $this.val() == 'checked' ? $this.val('') : $this.val('checked');
+    });
 });

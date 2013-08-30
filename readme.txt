@@ -5,7 +5,7 @@ Donate link: http://graphpaperpress.com/plugins/sell-media/
 Tags: commerce, digital downloads, download, downloads, e-commerce, paypal, photography, sell digital, sell download, selling, sell photos, sell videos, sell media, stock photos
 Requires at least: 3.4
 Tested up to: 3.5-beta
-Stable tag: 1.5.8
+Stable tag: 1.5.9
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -43,7 +43,7 @@ Take Sell Media to the next level with these powerful extensions:
 4. Visit Sell Media -> Licenses and add or configure your default licenses for new uploads.
 5. Visit Sell Media -> Add New and upload an image, video, audio file or pdf for sale.
 
-= IMPORTANT: Final Step For PayPay Setup =
+= IMPORTANT: Final Step For Paypal Setup =
 
 You must setup your Paypal IPN URL for Sell Media to work.
 
@@ -99,9 +99,9 @@ Sell Media includes a new "Collections" taxonomy, which you can see on the right
 
 The Password Protection option is located in the Publish box when editing a Sell Media item. Click the Visibility - Public - Edit link, select Password Protected, type in a password and click Save.
 
-= How do I hide a collection? =
+= How do I password protect a collection? =
 
-Click Sell Media -> Collections -> Click "Edit" next to the Collection you want to hide, check the checkbox "Hide" click save.
+Click Sell Media -> Collections -> Click "Edit" next to the Collection you want to hide, fill in the "Password" click update.
 
 = How do I hide a collection from being listed on archive pages? =
 
@@ -191,6 +191,19 @@ Action hooks available:
 * Double check your Sell Media Settings after upgrading
 
 == Changelog ==
+
+= 1.5.9 =
+* Feature: Added option to hide original price
+* Feature: Added option to disable the built in Sell Media search and use native WordPress search
+* Tweak: Readme no longer references hiding a collection, replaced with password instructions
+* Tweak: Origiainl height and width is display, for images only, on the single item page
+* Tweak: Admin notice is only displayed on the child collection if the parent has a password
+* Bug: Various updates to the cart
+* Bug: Checkout page now checks if email already exists
+* Bug: Price group parents now correctly updates the parent name when saved
+* Bug: quotes can now be used in the license description
+* Bug: Similar items widget now displays correct items even when collections slug are changed
+* Bug: Widgets overflowing bug fix
 
 = 1.5.8 =
 * Bug: Updating admin payments and needed screens to support previous versions of pricing

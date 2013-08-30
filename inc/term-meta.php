@@ -78,7 +78,7 @@ function sell_media_get_default_terms(){
  * @since 0.1
  */
 function sell_media_license_description(){
-    echo __( 'When a buyers decides to purchase a item from your site, they must choose a license which most closely identifies their intended use of the item. We have included some default license types, grouped into two "parent" categories: Personal and Commercial. Each of these two categories have specific "child" licenses, such as "Print Advertising" (a child of Commercial) and "Website" (a child of Personal). You can create as many parent and child licenses as you want.', 'sell_media' );
+    echo __( 'When a buyer decides to purchase a item from your site, they must choose a license which most closely identifies their intended use of the item. We have included some default license types, grouped into two "parent" categories: Personal and Commercial. Each of these two categories have specific "child" licenses, such as "Print Advertising" (a child of Commercial) and "Website" (a child of Personal). You can create as many parent and child licenses as you want.', 'sell_media' );
 }
 add_action( 'licenses_pre_add_form', 'sell_media_license_description' );
 
@@ -352,25 +352,26 @@ function sell_media_edit_collection_password( $tag ){
     if ( is_object( $tag ) )
         $term_id = $tag->term_id;
     else
-        $term_id = null; ?>
+        $term_id = null;
+
+    $child_term = get_term( $term_id, 'collection' );
+
+    if ( $child_term->parent == 0 ){
+        $description = __( 'Password protect all items in this collection', 'sell_media' );
+        $html_extra = null;
+        $password = $password = sell_media_get_term_meta( $term_id, 'collection_password', true );
+        $password = sell_media_get_term_meta( $term_id, 'collection_password', true );
+    } else {
+        $parent = get_term( $child_term->parent, 'collection' );
+        $password = sell_media_get_term_meta( $parent->term_id, 'collection_password', true );
+        $description = __('This colleciton inherits the password set in its parent collection: ', 'sell_media') . ' <a href="' . admin_url('edit-tags.php?action=edit&taxonomy=collection&tag_ID='.$parent->term_id.'&post_type=sell_media_item') . '">' . $parent->name . '</a>. ';
+        $description .= __('To edit the password of this collection you must change the parent password.', 'sell_media');
+        $html_extra = 'class="disabled" disabled ';
+    }
+
+    ?>
     <tr class="form-field">
-        <?php
-        $child_term = get_term( $term_id, 'collection' );
-
-        if ( $child_term->parent == 0 ){
-            $description = __( 'Password protect all items in this collection', 'sell_media' );
-            $html_extra = null;
-            $password = $password = sell_media_get_term_meta( $term_id, 'collection_password', true );
-            $password = sell_media_get_term_meta( $term_id, 'collection_password', true );
-        } else {
-            $parent = get_term( $child_term->parent, 'collection' );
-            $password = sell_media_get_term_meta( $parent->term_id, 'collection_password', true );
-            $description = __('This colleciton inherits the password set in its parent collection: ', 'sell_media') . ' <a href="' . admin_url('edit-tags.php?action=edit&taxonomy=collection&tag_ID='.$parent->term_id.'&post_type=sell_media_item') . '">' . $parent->name . '</a>. ';
-            $description .= __('To edit the password of this collection you must change the parent password.', 'sell_media');
-            $html_extra = 'class="disabled" disabled ';
-        }
-
-        if ( ! empty( $parent ) ) : ?>
+        <?php if ( ! empty( $parent ) && ! empty( $password ) ) : ?>
         <div class="updated">
             <p>
                 <?php _e( 'This collection will inherit the password of the parent collection:', 'my-text-domain' ); ?>

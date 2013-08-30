@@ -76,7 +76,8 @@ function sell_media_checkout_shortcode($atts, $content = null) {
     if ( isset( $_SESSION['cart']['items'] ) )
         $items = $_SESSION['cart']['items'];
 
-    if ( $_POST ) {
+    if ( $_POST ){
+        // die();
 
         // Check if the qty thats in the cart has changed
         // foreach( $_POST['sell_media_item_qty'] as $k => $v ){
@@ -215,12 +216,14 @@ function sell_media_checkout_shortcode($atts, $content = null) {
         }
     }
     $cart = New Sell_Media_Cart;
-    ob_start(); ?>
+    ob_start();
+    ?>
     <div id="sell-media-checkout" class="sell-media">
         <?php if ( empty( $items ) ) : ?>
              <p><?php _e('You have no items in your cart. ', 'sell_media'); ?><a href="<?php print get_post_type_archive_link('sell_media_item'); ?>"><?php _e('Continue shopping', 'sell_media'); ?></a>.</p>
         <?php else : ?>
             <form action="" method="post" id="sell_media_checkout_form" class="sell-media-form">
+            <?php wp_nonce_field('check_email','sell_media_cart_nonce'); ?>
             <table id="sell-media-checkout-table">
                 <thead>
                     <tr class="sell-media-header">
@@ -291,7 +294,7 @@ function sell_media_checkout_shortcode($atts, $content = null) {
                                         if ( ! empty ( $general_settings['terms_and_conditions'] ) ) :
                                     ?>
                                         <div id="termsdiv">
-                                            <input type="checkbox" name="termsandconditions" data-required="true" required/>
+                                            <input type="checkbox" name="termsandconditions" id="sell_media_terms_cb" data-required="true" value="" required/>
                                             <span class="termnotice">
                                                 <a href="#" id="agree_terms_and_conditions">
                                                 <?php echo apply_filters( 'sell_media_filter_terms_conditions', 'I agree to the terms and conditions' ); ?>
@@ -319,19 +322,18 @@ function sell_media_checkout_shortcode($atts, $content = null) {
                         if ( empty( $item['license']['id'] ) ){
                             $license = __('None','sell_media');
                             $license_id = false;
+                            $price = $item['price']['amount'];
+                            $markup_amount = 0;
                         } else {
                             $license_obj = get_term_by('id', $item['license']['id'], 'licenses' );
                             $license = $license_obj->name;
                             $license_id = $item['license']['id'];
+                            $price = $cart->item_markup_total( $item['id'], $item['price']['id'], $license_id );
+                            $markup_amount = $cart->item_markup_amount( $item['id'], $item['price']['id'], $license_id );
                         }
 
-                        // $price = $cart->item_price( $item['item_id'], $item['price_id'] );
-                        $size_name     = $cart->item_size( $item['price']['id'] );
-                        $price         = $cart->item_markup_total( $item['id'], $item['price']['id'], $license_id );
-                        $markup_amount = $cart->item_markup_amount( $item['id'], $item['price']['id'], $license_id );
-                        $qty           = $item['qty'];
-                        $total         = $qty * $price;
-
+                        $size_name = $cart->item_size( $item['price']['id'] );
+                        $total     = $item['qty'] * $price;
                         ?>
 
                         <tr>
@@ -341,6 +343,7 @@ function sell_media_checkout_shortcode($atts, $content = null) {
                                     <a href="<?php print get_permalink( $item['id'] ); ?>"><?php print get_the_title( $item['id'] ); ?></a>
                                     <div class="sell-media-license"><?php _e('License','sell_media'); ?>: <?php print $license; ?></div>
                                     <div class="sell-media-size"><?php _e('Size','sell_media');?>: <?php print $size_name; ?></div>
+                                    <?php if ( $item['price']['description'] ) : ?><div class="sell-media-size"><?php _e('Description','sell_media');?>: <?php print $item['price']['description']; ?></div><?php endif; ?>
                                 </div>
                                 <?php do_action('sell_media_below_product_cart_title', $item, $item['id'], $item['price']['id']); ?>
                                 <?php if ( !empty( $item['License'] ) ) : ?>
@@ -354,11 +357,9 @@ function sell_media_checkout_shortcode($atts, $content = null) {
                             <td class="product-quantity">
                                 <input
                                 name="sell_media_item_qty[<?php echo $item_id; ?>]"
-                                type="number"
-                                step="1"
-                                min="0"
+                                type="text"
                                 id="quantity-<?php print $item_id; ?>"
-                                value="<?php echo $qty; ?>"
+                                value="<?php echo $item['qty']; ?>"
                                 class="small-text sell-media-quantity"
                                 data-id="<?php print $item_id; ?>"
                                 data-price="<?php print $price; ?>"
@@ -491,11 +492,24 @@ function sell_media_download_shortcode( $atts ) {
             $products = unserialize( $payment_meta['products'] );
 
             foreach( $products as $k => $v ){
-                $products[ $k ]['title'] =  ' <a href="' . get_permalink( $v['item_id'] ) . '">' . get_the_title( $v[ 'item_id' ] ) . '</a> ';
-                $products[ $k ]['price'] = sell_media_item_price( $v['item_id'], $currency=true, $v['price_id'], $echo=false );
-                $attachment_id = empty( $thumbnail_id ) ? get_post_meta( $v['item_id'], '_sell_media_attachment_id', true ) : null;
-                $products[ $k ]['thumbnail'] = '<a href="' . get_permalink( $v['item_id'] ) . '" title="' . get_the_title( $v[ 'item_id' ] ) . '">' . wp_get_attachment_image( $attachment_id ) . '</a>';
-                $products[ $k ]['download_url'] = ( get_post_status( $payment['post_id'] ) == 'publish' ) ? '<a href="'.site_url() . '?download=' . $payment_meta['purchase_key'] . '&email=' . $current_user->user_email . '&id=' . $v['item_id'] . '&price_id=' . $v['price_id'] . '">'.__('Download','sell_media').'</a>' : null;
+
+                // Use new array
+                if ( empty( $v['item_id'] ) ){
+                    $products[ $k ]['title'] =  ' <a href="' . get_permalink( $v['id'] ) . '">' . get_the_title( $v[ 'id' ] ) . '</a> ';
+                    $products[ $k ]['price'] = sell_media_item_price( $v['id'], $currency=true, $v['price']['id'], $echo=false );
+                    $attachment_id = empty( $thumbnail_id ) ? get_post_meta( $v['id'], '_sell_media_attachment_id', true ) : null;
+                    $products[ $k ]['thumbnail'] = '<a href="' . get_permalink( $v['id'] ) . '" title="' . get_the_title( $v[ 'id' ] ) . '">' . wp_get_attachment_image( $attachment_id ) . '</a>';
+                    $products[ $k ]['download_url'] = ( get_post_status( $payment['post_id'] ) == 'publish' ) ? '<a href="'.site_url() . '?download=' . $payment_meta['purchase_key'] . '&email=' . $current_user->user_email . '&id=' . $v['id'] . '&price_id=' . $v['price_id'] . '">'.__('Download','sell_media').'</a>' : null;
+                }
+
+                // Use old array
+                else {
+                    $products[ $k ]['title'] =  ' <a href="' . get_permalink( $v['item_id'] ) . '">' . get_the_title( $v[ 'item_id' ] ) . '</a> ';
+                    $products[ $k ]['price'] = sell_media_item_price( $v['item_id'], $currency=true, $v['price_id'], $echo=false );
+                    $attachment_id = empty( $thumbnail_id ) ? get_post_meta( $v['item_id'], '_sell_media_attachment_id', true ) : null;
+                    $products[ $k ]['thumbnail'] = '<a href="' . get_permalink( $v['item_id'] ) . '" title="' . get_the_title( $v[ 'item_id' ] ) . '">' . wp_get_attachment_image( $attachment_id ) . '</a>';
+                    $products[ $k ]['download_url'] = ( get_post_status( $payment['post_id'] ) == 'publish' ) ? '<a href="'.site_url() . '?download=' . $payment_meta['purchase_key'] . '&email=' . $current_user->user_email . '&id=' . $v['item_id'] . '&price_id=' . $v['price_id'] . '">'.__('Download','sell_media').'</a>' : null;
+                }
             }
 
             $tmp = array(

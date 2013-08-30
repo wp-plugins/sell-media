@@ -4,14 +4,14 @@
 Plugin Name: Sell Media
 Plugin URI: http://graphpaperpress.com/plugins/sell-media
 Description: A plugin for selling digital downloads and reprints.
-Version: 1.5.8
+Version: 1.5.9
 Author: Graph Paper Press
 Author URI: http://graphpaperpress.com
 Author Email: support@graphpaperpress.com
 License: GPL
 */
 
-define( 'SELL_MEDIA_VERSION', '1.5.8' );
+define( 'SELL_MEDIA_VERSION', '1.5.9' );
 define( 'SELL_MEDIA_PLUGIN_FILE', plugin_dir_path(__FILE__) . 'sell-media.php' );
 
 include( dirname(__FILE__) . '/inc/cart.php' );
@@ -634,6 +634,9 @@ class SellMedia {
                     'total' => empty( $_SESSION['cart']['total'] ) ? 0 : $_SESSION['cart']['total'],
                     'quantity' => empty( $_SESSION['cart']['qty'] ) ? 0 : $_SESSION['cart']['qty'],
                     'currency_symbol' => sell_media_get_currency_symbol()
+                    ),
+                'error' => array(
+                    'email_exists' => __('Sorry that email already exists or is invalid', 'sell_media')
                     )
                 )
             );

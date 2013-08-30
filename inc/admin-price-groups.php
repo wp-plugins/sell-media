@@ -48,7 +48,16 @@ Class SellMediaNavStyleUI {
         parse_str( $_POST['form'], $form_data );
 
         wp_verify_nonce( $_POST['security'], $_POST['action'] );
-        $taxonomy = apply_filters( 'sell_media_pg_taxonomy', $_POST['taxonomy'] );
+        $taxonomy = $_POST['taxonomy'];
+
+        // Update the price group name if it has changed
+        if ( ! empty( $form_data['price_group']['term_id'] ) ){
+            $parent_obj = get_term_by( 'id', $form_data['price_group']['term_id'], $taxonomy );
+            if ( ! empty( $parent_obj ) && $parent_obj->name != $form_data['price_group']['term_name'] ){
+                wp_update_term( $form_data['price_group']['term_id'], $taxonomy, array( 'name' => $form_data['price_group']['term_name'] ) );
+            }
+        }
+
 
         if ( ! empty( $form_data['terms_children'] ) ){
             foreach( $form_data['terms_children'] as $k => $v ){
@@ -59,6 +68,7 @@ Class SellMediaNavStyleUI {
             }
         }
 
+        // Dynamically add new prices for this price group
         if ( ! empty( $form_data['new_child'] ) ){
             foreach( $form_data['new_child'] as $child ){
                 if ( ! empty( $child['name'] ) ){
@@ -183,7 +193,8 @@ Class SellMediaNavStyleUI {
         }
 
         $final['header'] = array(
-            'html' => '<input name="sell_media_term_name" class="sell_media_term_name" type="text" class="regular-text" placeholder="'. __('Enter price group name here', 'sell_media') . '" value="' . $current_term . '" data-term_id="' . $data_term_id . '" data-taxonomy="' . $this->taxonomy . '" />
+            'html' => '<input name="price_group[term_name]" type="text" class="regular-text" placeholder="'. __('Enter price group name here', 'sell_media') . '" value="' . $current_term . '" data-term_id="' . $data_term_id . '" data-taxonomy="' . $this->taxonomy . '" />
+                <input type="hidden" value="'.$data_term_id.'" name="price_group[term_id]" />
                 <a href="#" class="' . $class . '" data-term_id="' . $data_term_id . '" data-message="' . $message . '" data-taxonomy="' . $this->taxonomy . '">' . $link_text . '</a>'
             );
 
@@ -224,13 +235,13 @@ Class SellMediaNavStyleUI {
 
 // $final['terms'] = apply_filters('sell_media_rp_meta', $this->taxonomy, $final['terms']);
 
-        // Default tems
+        // Default terms
         $max = count( $final['terms'] ) < 1 ? 3 : 1;
         $html = null;
         for( $i = 1; $i <= $max; $i++ ) {
             $html .=
                 '<tr class="sell-media-price-groups-row" data-index="' . $i . '">
-                    <td>
+                    <td class="name">
                         <input type="text" class="" name="new_child['.$i.'][name]" size="24" value="">
                         <p class="description">' . __('Name','sell_media') . '</p>
                     </td>
@@ -250,6 +261,9 @@ Class SellMediaNavStyleUI {
                     </td>
                 </tr>';
         }
+
+        $price_copy = apply_filters( 'sell_media_rp_price_copy', __('The sizes listed below determine the maximum dimensions in pixels.', 'sell_media'), $this->taxonomy );
+        $price_group_copy = apply_filters( 'sell_media_rp_price_group_copy', __('Create a price group to add prices to.', 'sell_media'), $this->taxonomy );
 
         ?>
         <div id="menu-management-liquid" class="sell-media-price-groups-container">
@@ -281,7 +295,13 @@ Class SellMediaNavStyleUI {
                         <tbody>
                             <tr>
                                 <td colspan="4">
-                                    <p><?php echo apply_filters('sell_media_rp_intro_copy', __('The sizes listed below determine the maximum dimensions in pixels.', 'sell_media') ); ?></p>
+                                    <p>
+                                        <?php if ( isset( $_GET['term_parent'] ) && $_GET['term_parent'] == 'new_term' ) : ?>
+                                            <?php echo $price_group_copy; ?>
+                                        <?php else : ?>
+                                            <?php echo $price_copy; ?>
+                                        <?php endif; ?>
+                                    </p>
                                 </td>
                             </tr>
                             <?php if ( empty( $current_term_id ) ) : ?>
@@ -310,7 +330,7 @@ Class SellMediaNavStyleUI {
                     </table>
                     <div class="nav-menu-footer">
                         <?php if ( ! empty( $current_term ) ) : ?>
-                            <a href="#" class="button-primary sell-media-save-term" ><?php _e('Save Price Group','sell_media'); ?></a>
+                            <a href="#" class="button-primary sell-media-save-term" data-taxonomy="<?php echo $this->taxonomy; ?>"><?php _e('Save Price Group','sell_media'); ?></a>
                         <?php endif; ?>
                     </div><!-- /.nav-menu-footer -->
                 </div>
