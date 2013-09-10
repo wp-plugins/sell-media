@@ -5,7 +5,7 @@ Donate link: http://graphpaperpress.com/plugins/sell-media/
 Tags: commerce, digital downloads, download, downloads, e-commerce, paypal, photography, sell digital, sell download, selling, sell photos, sell videos, sell media, stock photos
 Requires at least: 3.4
 Tested up to: 3.5-beta
-Stable tag: 1.5.9
+Stable tag: 1.6
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -192,6 +192,14 @@ Action hooks available:
 
 == Changelog ==
 
+= 1.6 =
+* Feature: Added option to set a given price group as the site default
+* Tweak: Password protected collections are filtered from the widgets page and no longer show on the front end
+* Tweak: Added filter `sell_media_purchase_text`
+* Bug: Customers are no longer redirected to the WordPress dashboard after login
+* Bug: Addressed issue when some users did not receive the download link
+* Bug: Addressed issue where cart was not emptied, due to session not being started and browser cache
+
 = 1.5.9 =
 * Feature: Added option to hide original price
 * Feature: Added option to disable the built in Sell Media search and use native WordPress search
@@ -203,7 +211,7 @@ Action hooks available:
 * Bug: Price group parents now correctly updates the parent name when saved
 * Bug: quotes can now be used in the license description
 * Bug: Similar items widget now displays correct items even when collections slug are changed
-* Bug: Widgets overflowing bug fix
+* Bug: Widgets overflowing bug fix.
 
 = 1.5.8 =
 * Bug: Updating admin payments and needed screens to support previous versions of pricing
@@ -373,7 +381,7 @@ Action hooks available:
 * Settings: Default price moved to its own section
 * Hook: Updated 'sell_media_after_successful_payment' now accepts an additional parameter
 * Hook: Updated 'sell_media_settings_init_hook' to work on all tabs
-* Hook: Moved 'sell_media_size_settings_hook' to the aprobiate location
+* Hook: Moved 'sell_media_size_settings_hook' to the appropriate location
 * Hook: Added new hook 'sell_media_below_registration_form'
 * Hook: Added 'sell_media_additional_cusotmer_meta'
 * Hook: Added sell_media_before_session_add

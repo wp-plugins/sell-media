@@ -4,14 +4,14 @@
 Plugin Name: Sell Media
 Plugin URI: http://graphpaperpress.com/plugins/sell-media
 Description: A plugin for selling digital downloads and reprints.
-Version: 1.5.9
+Version: 1.6
 Author: Graph Paper Press
 Author URI: http://graphpaperpress.com
 Author Email: support@graphpaperpress.com
 License: GPL
 */
 
-define( 'SELL_MEDIA_VERSION', '1.5.9' );
+define( 'SELL_MEDIA_VERSION', '1.6' );
 define( 'SELL_MEDIA_PLUGIN_FILE', plugin_dir_path(__FILE__) . 'sell-media.php' );
 
 include( dirname(__FILE__) . '/inc/cart.php' );
@@ -22,6 +22,7 @@ include( dirname(__FILE__) . '/inc/shortcodes.php' );
 include( dirname(__FILE__) . '/inc/template-tags.php' );
 include( dirname(__FILE__) . '/inc/class-cart.php' );
 include( dirname(__FILE__) . '/inc/class-search.php' );
+include( dirname(__FILE__) . '/inc/class-payments.php' );
 include( dirname(__FILE__) . '/inc/term-meta.php' );
 include( dirname(__FILE__) . '/inc/widgets.php' );
 
@@ -566,9 +567,8 @@ class SellMedia {
 
         $args = array(
             'labels' => $labels,
-            'public' => true,
+            'public' => false, // Hide it from the admin
 
-            'show_ui' => true,
             'show_in_nav_menus' => true,
             'show_tagcloud' => true,
             'show_admin_column' => true,
@@ -729,15 +729,15 @@ class SellMedia {
 
             if ( ! empty( $exclude_term_ids ) ){
                 // echo 'exclude these ids: ';
-                // $tax_query = array(
-                //         'relation' => 'AND',
-                //         array(
-                //             'taxonomy' => 'collection',
-                //             'field' => 'id',
-                //             'terms' => $exclude_term_ids,
-                //             'operator' => 'NOT IN'
-                //             )
-                //         );
+                $tax_query = array(
+                         'relation' => 'AND',
+                         array(
+                             'taxonomy' => 'collection',
+                             'field' => 'id',
+                             'terms' => $exclude_term_ids,
+                             'operator' => 'NOT IN'
+                             )
+                         );
             }
 
             $search = New Sell_Media_Search;
