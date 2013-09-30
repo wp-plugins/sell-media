@@ -254,17 +254,22 @@ Class Sell_Media_Cart {
      * Removes an item from the users cart, updates the quantity and total in session
      *
      * @since 0.1
-     * @param Derives the post_id from $_POST['item_id']
+     * @param Derives the post_id from $_POST['item_id'], or an array of IDs from $_POST['item_id']
      * @return null
      */
     public function remove_item() {
 
         $item_index = $_POST['item_id'];
 
-        $_SESSION['cart']['total'] = $this->get_total( $_SESSION['cart']['items'] ) - $_SESSION['cart']['items'][ $item_index ]['total'];
-        $_SESSION['cart']['qty'] = $this->get_quantity( $_SESSION['cart']['items'] ) - $_SESSION['cart']['items'][ $item_index ]['qty'];
-
-        unset( $_SESSION['cart']['items'][$item_index] );
+        if ( is_array( $item_index ) ){
+            foreach( $item_index as $id ){
+                unset( $_SESSION['cart']['items'][ $id ] );
+            }
+        } else {
+            $_SESSION['cart']['total'] = $this->get_total( $_SESSION['cart']['items'] ) - $_SESSION['cart']['items'][ $item_index ]['total'];
+            $_SESSION['cart']['qty'] = $this->get_quantity( $_SESSION['cart']['items'] ) - $_SESSION['cart']['items'][ $item_index ]['qty'];
+            unset( $_SESSION['cart']['items'][$item_index] );
+        }
 
         if ( empty( $_SESSION['cart']['items'] ) ) {
             print '<p>' . __('You have no items in your cart. ', 'sell_media') . '<a href="'. get_post_type_archive_link('sell_media_item') .'">' . __('Continue shopping', 'sell_media') .'</a>.</p>';
@@ -346,6 +351,29 @@ Class Sell_Media_Cart {
             wp_send_json_success();
         }
         die();
+    }
+
+
+    /**
+     * Updates a given key in the cart and updates total, sub-total as needed
+     *
+     * @param $cart_id (int) The index of the item in the cart
+     * @param $key (string) The key for the cart item
+     * @param $value (string) The new value
+     *
+     * @return
+     */
+    public function update_item( $cart_id=null, $key=null, $value=null ){
+
+        // Update the item in the cart
+        $_SESSION['cart']['items'][ $cart_id ][ $key ] = $value;
+
+        // Item the total
+        $_SESSION['cart']['total'] = $this->get_total( $_SESSION['cart']['items'] );
+
+        // Update the qty for the entire cart
+        $_SESSION['cart']['qty'] = $this->get_quantity( $_SESSION['cart']['items'] );
+
     }
 }
 // Later make this a singleton or better don't use one

@@ -4,14 +4,14 @@
 Plugin Name: Sell Media
 Plugin URI: http://graphpaperpress.com/plugins/sell-media
 Description: A plugin for selling digital downloads and reprints.
-Version: 1.6.1
+Version: 1.6.2
 Author: Graph Paper Press
 Author URI: http://graphpaperpress.com
 Author Email: support@graphpaperpress.com
 License: GPL
 */
 
-define( 'SELL_MEDIA_VERSION', '1.6.1' );
+define( 'SELL_MEDIA_VERSION', '1.6.2' );
 define( 'SELL_MEDIA_PLUGIN_FILE', plugin_dir_path(__FILE__) . 'sell-media.php' );
 
 include( dirname(__FILE__) . '/inc/cart.php' );
@@ -35,6 +35,7 @@ if ( is_admin() ) {
     include( dirname(__FILE__) . '/inc/admin-payments.php' );
     include( dirname(__FILE__) . '/inc/admin-settings.php' );
     include( dirname(__FILE__) . '/inc/admin-price-groups.php' );
+    include( dirname(__FILE__) . '/inc/admin-notices.php' );
 }
 
 
@@ -173,13 +174,13 @@ class SellMedia {
      * Runs when the plugin is initialized
      */
     public function init() {
-
-        $this->registerLicenses();
-        $this->registerKeywords();
-        $this->registerCity();
-        $this->registerState();
-        $this->registerCreator();
-        $this->registerCollection();
+        $general_settings = get_option( 'sell_media_general_settings' );
+        $this->registerCollection($general_settings);
+        $this->registerLicenses($general_settings);
+        $this->registerKeywords($general_settings);
+        $this->registerCreator($general_settings);
+        $this->registerCity($general_settings);
+        $this->registerState($general_settings);
         $this->registerItem();
         $this->registerPayment();
         $this->registerPriceGroup();
@@ -226,30 +227,35 @@ class SellMedia {
      *
      * @author Thad Allender
      */
-    public function registerLicenses() {
+    public function registerLicenses($general_settings) {
+        if( isset( $general_settings['show_license'] ) && $general_settings['show_license'] == 1 ) {
+            $showcol = true;
+        } else {
+            $showcol = false;
+        }
         $labels = array(
-            'name' => _x( 'Licenses', 'sell_media' ),
-            'singular_name' => _x( 'License', 'sell_media' ),
-            'search_items' => _x( 'Search Licenses', 'sell_media' ),
-            'popular_items' => _x( 'Popular Licenses', 'sell_media' ),
-            'all_items' => _x( 'All Licenses', 'sell_media' ),
-            'parent_item' => _x( 'Parent License', 'sell_media' ),
-            'parent_item_colon' => _x( 'Parent License:', 'sell_media' ),
-            'edit_item' => _x( 'Edit License', 'sell_media' ),
-            'update_item' => _x( 'Update License', 'sell_media' ),
-            'add_new_item' => _x( 'Add New License', 'sell_media' ),
-            'new_item_name' => _x( 'New License', 'sell_media' ),
-            'separate_items_with_commas' => _x( 'Separate licenses with commas', 'sell_media' ),
-            'add_or_remove_items' => _x( 'Add or remove Licenses', 'sell_media' ),
-            'choose_from_most_used' => _x( 'Choose from most used Licenses', 'sell_media' ),
-            'menu_name' => _x( 'Licenses', 'sell_media' ),
+            'name' => _x( 'Licenses', '', 'sell_media' ),
+            'singular_name' => _x( 'License', '', 'sell_media' ),
+            'search_items' => _x( 'Search Licenses', '', 'sell_media' ),
+            'popular_items' => _x( 'Popular Licenses', '', 'sell_media' ),
+            'all_items' => _x( 'All Licenses', '', 'sell_media' ),
+            'parent_item' => _x( 'Parent License', '', 'sell_media' ),
+            'parent_item_colon' => _x( 'Parent License:', '', 'sell_media' ),
+            'edit_item' => _x( 'Edit License', '', 'sell_media' ),
+            'update_item' => _x( 'Update License', '', 'sell_media' ),
+            'add_new_item' => _x( 'Add New License', '', 'sell_media' ),
+            'new_item_name' => _x( 'New License', '', 'sell_media' ),
+            'separate_items_with_commas' => _x( 'Separate licenses with commas', '', 'sell_media' ),
+            'add_or_remove_items' => _x( 'Add or remove Licenses', '', 'sell_media' ),
+            'choose_from_most_used' => _x( 'Choose from most used Licenses', '', 'sell_media' ),
+            'menu_name' => _x( 'Licenses', '', 'sell_media' ),
         );
 
         $args = array(
             'labels' => $labels,
             'public' => true,
             'show_in_nav_menus' => true,
-            'show_admin_column' => true,
+            'show_admin_column' => $showcol,
             'show_ui' => true,
             'show_tagcloud' => true,
             'hierarchical' => true,
@@ -266,29 +272,35 @@ class SellMedia {
      *
      * @author Thad Allender
      */
-    public function registerKeywords() {
+    public function registerKeywords($general_settings) {
+        if( isset( $general_settings['show_keywords']) && $general_settings['show_keywords'] == 1 ) {
+            $showcol = true;
+        } else {
+            $showcol = false;
+        }
         $labels = array(
-            'name' => _x( 'Keywords', 'sell_media' ),
-            'singular_name' => _x( 'Keyword', 'sell_media' ),
-            'search_items' => _x( 'Search Keywords', 'sell_media' ),
-            'popular_items' => _x( 'Popular Keywords', 'sell_media' ),
-            'all_items' => _x( 'All Keywords', 'sell_media' ),
-            'parent_item' => _x( 'Parent Keyword', 'sell_media' ),
-            'parent_item_colon' => _x( 'Parent Keyword:', 'sell_media' ),
-            'edit_item' => _x( 'Edit Keyword', 'sell_media' ),
-            'update_item' => _x( 'Update Keyword', 'sell_media' ),
-            'add_new_item' => _x( 'Add New Keyword', 'sell_media' ),
-            'new_item_name' => _x( 'New Keyword', 'sell_media' ),
-            'separate_items_with_commas' => _x( 'Separate keywords with commas', 'sell_media' ),
-            'add_or_remove_items' => _x( 'Add or remove Keywords', 'sell_media' ),
-            'choose_from_most_used' => _x( 'Choose from most used Keywords', 'sell_media' ),
-            'menu_name' => _x( 'Keywords', 'sell_media' ),
+            'name' => _x( 'Keywords', '', 'sell_media' ),
+            'singular_name' => _x( 'Keyword', '', 'sell_media' ),
+            'search_items' => _x( 'Search Keywords', '', 'sell_media' ),
+            'popular_items' => _x( 'Popular Keywords', '', 'sell_media' ),
+            'all_items' => _x( 'All Keywords', '', 'sell_media' ),
+            'parent_item' => _x( 'Parent Keyword', '', 'sell_media' ),
+            'parent_item_colon' => _x( 'Parent Keyword:', '', 'sell_media' ),
+            'edit_item' => _x( 'Edit Keyword', '', 'sell_media' ),
+            'update_item' => _x( 'Update Keyword', '', 'sell_media' ),
+            'add_new_item' => _x( 'Add New Keyword', '', 'sell_media' ),
+            'new_item_name' => _x( 'New Keyword', '', 'sell_media' ),
+            'separate_items_with_commas' => _x( 'Separate keywords with commas', '', 'sell_media' ),
+            'add_or_remove_items' => _x( 'Add or remove Keywords', '', 'sell_media' ),
+            'choose_from_most_used' => _x( 'Choose from most used Keywords', '', 'sell_media' ),
+            'menu_name' => _x( 'Keywords', '', 'sell_media' ),
         );
 
         $args = array(
             'labels' => $labels,
             'public' => true,
             'show_in_nav_menus' => true,
+            'show_admin_column' => $showcol,
             'show_ui' => true,
             'show_tagcloud' => true,
             'hierarchical' => false,
@@ -307,21 +319,21 @@ class SellMedia {
      */
     public function registerCity() {
         $labels = array(
-            'name' => _x( 'City', 'sell_media' ),
-            'singular_name' => _x( 'Keyword', 'sell_media' ),
-            'search_items' => _x( 'Search City', 'sell_media' ),
-            'popular_items' => _x( 'Popular City', 'sell_media' ),
-            'all_items' => _x( 'All City', 'sell_media' ),
-            'parent_item' => _x( 'Parent Keyword', 'sell_media' ),
-            'parent_item_colon' => _x( 'Parent Keyword:', 'sell_media' ),
-            'edit_item' => _x( 'Edit Keyword', 'sell_media' ),
-            'update_item' => _x( 'Update Keyword', 'sell_media' ),
-            'add_new_item' => _x( 'Add New Keyword', 'sell_media' ),
-            'new_item_name' => _x( 'New Keyword', 'sell_media' ),
-            'separate_items_with_commas' => _x( 'Separate city with commas', 'sell_media' ),
-            'add_or_remove_items' => _x( 'Add or remove City', 'sell_media' ),
-            'choose_from_most_used' => _x( 'Choose from most used City', 'sell_media' ),
-            'menu_name' => _x( 'City', 'sell_media' ),
+            'name' => _x( 'City', '', 'sell_media' ),
+            'singular_name' => _x( 'Keyword', '', 'sell_media' ),
+            'search_items' => _x( 'Search City', '', 'sell_media' ),
+            'popular_items' => _x( 'Popular City', '', 'sell_media' ),
+            'all_items' => _x( 'All City', '', 'sell_media' ),
+            'parent_item' => _x( 'Parent Keyword', '', 'sell_media' ),
+            'parent_item_colon' => _x( 'Parent Keyword:', '', 'sell_media' ),
+            'edit_item' => _x( 'Edit Keyword', '', 'sell_media' ),
+            'update_item' => _x( 'Update Keyword', '', 'sell_media' ),
+            'add_new_item' => _x( 'Add New Keyword', '', 'sell_media' ),
+            'new_item_name' => _x( 'New Keyword', '', 'sell_media' ),
+            'separate_items_with_commas' => _x( 'Separate city with commas', '', 'sell_media' ),
+            'add_or_remove_items' => _x( 'Add or remove City', '', 'sell_media' ),
+            'choose_from_most_used' => _x( 'Choose from most used City', '', 'sell_media' ),
+            'menu_name' => _x( 'City', '', 'sell_media' ),
         );
 
         $args = array(
@@ -346,21 +358,21 @@ class SellMedia {
      */
     public function registerState() {
         $labels = array(
-            'name' => _x( 'State', 'sell_media' ),
-            'singular_name' => _x( 'Keyword', 'sell_media' ),
-            'search_items' => _x( 'Search State', 'sell_media' ),
-            'popular_items' => _x( 'Popular State', 'sell_media' ),
-            'all_items' => _x( 'All State', 'sell_media' ),
-            'parent_item' => _x( 'Parent Keyword', 'sell_media' ),
-            'parent_item_colon' => _x( 'Parent Keyword:', 'sell_media' ),
-            'edit_item' => _x( 'Edit Keyword', 'sell_media' ),
-            'update_item' => _x( 'Update Keyword', 'sell_media' ),
-            'add_new_item' => _x( 'Add New Keyword', 'sell_media' ),
-            'new_item_name' => _x( 'New Keyword', 'sell_media' ),
-            'separate_items_with_commas' => _x( 'Separate state with commas', 'sell_media' ),
-            'add_or_remove_items' => _x( 'Add or remove State', 'sell_media' ),
-            'choose_from_most_used' => _x( 'Choose from most used State', 'sell_media' ),
-            'menu_name' => _x( 'State', 'sell_media' ),
+            'name' => _x( 'State', '', 'sell_media' ),
+            'singular_name' => _x( 'Keyword', '', 'sell_media' ),
+            'search_items' => _x( 'Search State', '', 'sell_media' ),
+            'popular_items' => _x( 'Popular State', '', 'sell_media' ),
+            'all_items' => _x( 'All State', '', 'sell_media' ),
+            'parent_item' => _x( 'Parent Keyword', '', 'sell_media' ),
+            'parent_item_colon' => _x( 'Parent Keyword:', '', 'sell_media' ),
+            'edit_item' => _x( 'Edit Keyword', '', 'sell_media' ),
+            'update_item' => _x( 'Update Keyword', '', 'sell_media' ),
+            'add_new_item' => _x( 'Add New Keyword', '', 'sell_media' ),
+            'new_item_name' => _x( 'New Keyword', '', 'sell_media' ),
+            'separate_items_with_commas' => _x( 'Separate state with commas', '', 'sell_media' ),
+            'add_or_remove_items' => _x( 'Add or remove State', '', 'sell_media' ),
+            'choose_from_most_used' => _x( 'Choose from most used State', '', 'sell_media' ),
+            'menu_name' => _x( 'State', '', 'sell_media' ),
         );
 
         $args = array(
@@ -383,29 +395,35 @@ class SellMedia {
      *
      * @author Thad Allender
      */
-    public function registerCreator() {
+    public function registerCreator($general_settings) {
+         if( isset( $general_settings['show_creators']) && $general_settings['show_creators'] == 1 ) {
+            $showcol = true;
+        } else {
+            $showcol = false;
+        }
         $labels = array(
-            'name' => _x( 'Creator', 'sell_media' ),
-            'singular_name' => _x( 'Creator', 'sell_media' ),
-            'search_items' => _x( 'Search Creator', 'sell_media' ),
-            'popular_items' => _x( 'Popular Creator', 'sell_media' ),
-            'all_items' => _x( 'All Creator', 'sell_media' ),
-            'parent_item' => _x( 'Parent Creator', 'sell_media' ),
-            'parent_item_colon' => _x( 'Parent Creator:', 'sell_media' ),
-            'edit_item' => _x( 'Edit Creator', 'sell_media' ),
-            'update_item' => _x( 'Update Creator', 'sell_media' ),
-            'add_new_item' => _x( 'Add New Creator', 'sell_media' ),
-            'new_item_name' => _x( 'New Creator', 'sell_media' ),
-            'separate_items_with_commas' => _x( 'Separate creator with commas', 'sell_media' ),
-            'add_or_remove_items' => _x( 'Add or remove Creator', 'sell_media' ),
-            'choose_from_most_used' => _x( 'Choose from most used Creator', 'sell_media' ),
-            'menu_name' => _x( 'Creator', 'sell_media' ),
+            'name' => _x( 'Creator', '', 'sell_media' ),
+            'singular_name' => _x( 'Creator', '', 'sell_media' ),
+            'search_items' => _x( 'Search Creator', '', 'sell_media' ),
+            'popular_items' => _x( 'Popular Creator', '', 'sell_media' ),
+            'all_items' => _x( 'All Creator', '', 'sell_media' ),
+            'parent_item' => _x( 'Parent Creator', '', 'sell_media' ),
+            'parent_item_colon' => _x( 'Parent Creator:', '', 'sell_media' ),
+            'edit_item' => _x( 'Edit Creator', '', 'sell_media' ),
+            'update_item' => _x( 'Update Creator', '', 'sell_media' ),
+            'add_new_item' => _x( 'Add New Creator', '', 'sell_media' ),
+            'new_item_name' => _x( 'New Creator', '', 'sell_media' ),
+            'separate_items_with_commas' => _x( 'Separate creator with commas', '', 'sell_media' ),
+            'add_or_remove_items' => _x( 'Add or remove Creator', '', 'sell_media' ),
+            'choose_from_most_used' => _x( 'Choose from most used Creator', '', 'sell_media' ),
+            'menu_name' => _x( 'Creator', '', 'sell_media' ),
         );
 
         $args = array(
             'labels' => $labels,
             'public' => true,
             'show_in_nav_menus' => true,
+            'show_admin_column' => $showcol,
             'show_tagcloud' => true,
             'hierarchical' => false,
             'rewrite' => true,
@@ -421,30 +439,35 @@ class SellMedia {
      *
      * @author Thad Allender
      */
-    public function registerCollection() {
+    public function registerCollection($general_settings) {
+         if( isset( $general_settings['show_collection']) && $general_settings['show_collection'] == 1 ) {
+            $showcol = true;
+        } else {
+            $showcol = false;
+        }
         $labels = array(
-            'name' => _x( 'Collections', 'sell_media' ),
-            'singular_name' => _x( 'Collection', 'sell_media' ),
-            'search_items' => _x( 'Search Collection', 'sell_media' ),
-            'popular_items' => _x( 'Popular Collection', 'sell_media' ),
-            'all_items' => _x( 'All Collections', 'sell_media' ),
-            'parent_item' => _x( 'Parent Collection', 'sell_media' ),
-            'parent_item_colon' => _x( 'Parent Collection:', 'sell_media' ),
-            'edit_item' => _x( 'Edit Collection', 'sell_media' ),
-            'update_item' => _x( 'Update Collection', 'sell_media' ),
-            'add_new_item' => _x( 'Add New Collection', 'sell_media' ),
-            'new_item_name' => _x( 'New Collection', 'sell_media' ),
-            'separate_items_with_commas' => _x( 'Separate collection with commas', 'sell_media' ),
-            'add_or_remove_items' => _x( 'Add or remove Collection', 'sell_media' ),
-            'choose_from_most_used' => _x( 'Choose from most used Collection', 'sell_media' ),
-            'menu_name' => _x( 'Collections', 'sell_media' ),
+            'name' => _x( 'Collections', '', 'sell_media' ),
+            'singular_name' => _x( 'Collection', '', 'sell_media' ),
+            'search_items' => _x( 'Search Collection', '', 'sell_media' ),
+            'popular_items' => _x( 'Popular Collection', '', 'sell_media' ),
+            'all_items' => _x( 'All Collections', '', 'sell_media' ),
+            'parent_item' => _x( 'Parent Collection', '', 'sell_media' ),
+            'parent_item_colon' => _x( 'Parent Collection:', '', 'sell_media' ),
+            'edit_item' => _x( 'Edit Collection', '', 'sell_media' ),
+            'update_item' => _x( 'Update Collection', '', 'sell_media' ),
+            'add_new_item' => _x( 'Add New Collection', '', 'sell_media' ),
+            'new_item_name' => _x( 'New Collection', '', 'sell_media' ),
+            'separate_items_with_commas' => _x( 'Separate collection with commas', '', 'sell_media' ),
+            'add_or_remove_items' => _x( 'Add or remove Collection', '', 'sell_media' ),
+            'choose_from_most_used' => _x( 'Choose from most used Collection', '', 'sell_media' ),
+            'menu_name' => _x( 'Collections', '', 'sell_media' ),
         );
 
         $args = array(
             'labels' => $labels,
             'public' => true,
             'show_in_nav_menus' => true,
-            'show_admin_column' => true,
+            'show_admin_column' => $showcol,
             'show_ui' => true,
             'show_tagcloud' => true,
             'hierarchical' => true,
@@ -464,19 +487,19 @@ class SellMedia {
     public function registerItem() {
 
         $labels = array(
-            'name' => _x( 'Sell Media Items', 'sell_media' ),
-            'singular_name' => _x( 'Sell Media Item', 'sell_media' ),
-            'all_items' => _x( 'All Items', 'sell_media' ),
-            'add_new' => _x( 'Add New', 'sell_media' ),
-            'add_new_item' => _x( 'Sell Media', 'sell_media' ),
-            'edit_item' => _x( 'Edit Item', 'sell_media' ),
-            'new_item' => _x( 'New Item', 'sell_media' ),
-            'view_item' => _x( 'View Item', 'sell_media' ),
-            'search_items' => _x( 'Search Sell Media Items', 'sell_media' ),
-            'not_found' => _x( 'No items found', 'sell_media' ),
-            'not_found_in_trash' => _x( 'No items found in Trash', 'sell_media' ),
-            'parent_item_colon' => _x( 'Parent Item:', 'sell_media' ),
-            'menu_name' => _x( 'Sell Media', 'sell_media' ),
+            'name' => _x( 'Sell Media Items', '', 'sell_media' ),
+            'singular_name' => _x( 'Sell Media Item', '', 'sell_media' ),
+            'all_items' => _x( 'All Items', '', 'sell_media' ),
+            'add_new' => _x( 'Add New', '', 'sell_media' ),
+            'add_new_item' => _x( 'Sell Media', '', 'sell_media' ),
+            'edit_item' => _x( 'Edit Item', '', 'sell_media' ),
+            'new_item' => _x( 'New Item', '', 'sell_media' ),
+            'view_item' => _x( 'View Item', '', 'sell_media' ),
+            'search_items' => _x( 'Search Sell Media Items', '', 'sell_media' ),
+            'not_found' => _x( 'No items found', '', 'sell_media' ),
+            'not_found_in_trash' => _x( 'No items found in Trash', '', 'sell_media' ),
+            'parent_item_colon' => _x( 'Parent Item:', '', 'sell_media' ),
+            'menu_name' => _x( 'Sell Media', '', 'sell_media' ),
         );
 
         $general_settings = get_option( 'sell_media_general_settings' );
@@ -514,18 +537,18 @@ class SellMedia {
     public function registerPayment() {
 
         $labels = array(
-            'name' => _x( 'Payments', 'sell_media' ),
-            'singular_name' => _x( 'Payment', 'sell_media' ),
-            'add_new' => _x( 'Add New', 'sell_media' ),
-            'add_new_item' => _x( 'Add New Payment', 'sell_media' ),
-            'edit_item' => _x( 'Edit Payment', 'sell_media' ),
-            'new_item' => _x( 'New Payment', 'sell_media' ),
-            'view_item' => _x( 'View Payment', 'sell_media' ),
-            'search_items' => _x( 'Search Payments', 'sell_media' ),
-            'not_found' => _x( 'No payments found', 'sell_media' ),
-            'not_found_in_trash' => _x( 'No payments found in Trash', 'sell_media' ),
-            'parent_item_colon' => _x( 'Parent Payment:', 'sell_media' ),
-            'menu_name' => _x( 'Payments', 'sell_media' ),
+            'name' => _x( 'Payments', '', 'sell_media' ),
+            'singular_name' => _x( 'Payment', '', 'sell_media' ),
+            'add_new' => _x( 'Add New', '', 'sell_media' ),
+            'add_new_item' => _x( 'Add New Payment', '', 'sell_media' ),
+            'edit_item' => _x( 'Edit Payment', '', 'sell_media' ),
+            'new_item' => _x( 'New Payment', '', 'sell_media' ),
+            'view_item' => _x( 'View Payment', '', 'sell_media' ),
+            'search_items' => _x( 'Search Payments', '', 'sell_media' ),
+            'not_found' => _x( 'No payments found', '', 'sell_media' ),
+            'not_found_in_trash' => _x( 'No payments found in Trash', '', 'sell_media' ),
+            'parent_item_colon' => _x( 'Parent Payment:', '', 'sell_media' ),
+            'menu_name' => _x( 'Payments', '', 'sell_media' ),
         );
 
         $args = array(
@@ -548,21 +571,21 @@ class SellMedia {
 
     public function registerPriceGroup() {
         $labels = array(
-            'name' => _x( 'Price Group', 'sell_media' ),
-            'singular_name' => _x( 'Price Group', 'sell_media' ),
-            'search_items' => _x( 'Search Price Group', 'sell_media' ),
-            'popular_items' => _x( 'Popular Price Group', 'sell_media' ),
-            'all_items' => _x( 'All Price Group', 'sell_media' ),
-            'parent_item' => _x( 'Parent Price Group', 'sell_media' ),
-            'parent_item_colon' => _x( 'Parent Price Group:', 'sell_media' ),
-            'edit_item' => _x( 'Edit Price Group', 'sell_media' ),
-            'update_item' => _x( 'Update Price Group', 'sell_media' ),
-            'add_new_item' => _x( 'Add New Price Group', 'sell_media' ),
-            'new_item_name' => _x( 'New Price Group', 'sell_media' ),
-            'separate_items_with_commas' => _x( 'Separate Price Group with commas', 'sell_media' ),
-            'add_or_remove_items' => _x( 'Add or remove Price Group', 'sell_media' ),
-            'choose_from_most_used' => _x( 'Choose from most used Price Group', 'sell_media' ),
-            'menu_name' => _x( 'Price Group', 'sell_media' ),
+            'name' => _x( 'Price Group', '', 'sell_media' ),
+            'singular_name' => _x( 'Price Group', '', 'sell_media' ),
+            'search_items' => _x( 'Search Price Group', '', 'sell_media' ),
+            'popular_items' => _x( 'Popular Price Group', '', 'sell_media' ),
+            'all_items' => _x( 'All Price Group', '', 'sell_media' ),
+            'parent_item' => _x( 'Parent Price Group', '', 'sell_media' ),
+            'parent_item_colon' => _x( 'Parent Price Group:', '', 'sell_media' ),
+            'edit_item' => _x( 'Edit Price Group', '', 'sell_media' ),
+            'update_item' => _x( 'Update Price Group', '', 'sell_media' ),
+            'add_new_item' => _x( 'Add New Price Group', '', 'sell_media' ),
+            'new_item_name' => _x( 'New Price Group', '', 'sell_media' ),
+            'separate_items_with_commas' => _x( 'Separate Price Group with commas', '', 'sell_media' ),
+            'add_or_remove_items' => _x( 'Add or remove Price Group', '', 'sell_media' ),
+            'choose_from_most_used' => _x( 'Choose from most used Price Group', '', 'sell_media' ),
+            'menu_name' => _x( 'Price Group', '', 'sell_media' ),
         );
 
         $args = array(
@@ -653,6 +676,8 @@ class SellMedia {
     public function collection_password_check( $query ){
 
         if ( is_admin() ) return $query;
+        if ( ! $query->is_main_query() ) return $query;
+
         if ( ! empty( $_GET['sell_media_advanced_search_flag'] ) ) return;
 
         /**
@@ -794,23 +819,23 @@ class SellMedia {
 
             if ( ! empty( $password ) ) {
                 if ( ! empty( $_POST['collection_password'] ) && $_POST['collection_password'] == $password
-                    || ! empty( $_SESSION['sell_media']['collection_password'] )
-                    || ! empty( $_SESSION['sell_media']['collection_password'] )
-                    && $_SESSION['sell_media']['collection_password'] == $password ) {
+                    || ! empty( $_SESSION['sell_media']['collection_password'][$term_id] )
+                    || ! empty( $_SESSION['sell_media']['collection_password'][$term_id] )
+                    && $_SESSION['sell_media']['collection_password'][$term_id] == $password ) {
 
-                    if ( empty( $_SESSION['sell_media']['collection_password'] ) )
-                        $_SESSION['sell_media']['collection_password'] = $_POST['collection_password'];
+                    if ( empty( $_SESSION['sell_media']['collection_password'][$term_id] ) )
+                        $_SESSION['sell_media']['collection_password'][$term_id] = $_POST['collection_password'];
 
                     return $query;
                 } else {
                     $custom = locate_template( 'collection-password.php' );
                     if ( empty( $custom ) ){
                         load_template( plugin_dir_path( __FILE__ ) . 'themes/collection-password.php');
+                        exit();
                     } else {
                         load_template( $custom );
                     }
-                } ?>
-                <?php wp_die();
+                }
             }
         } else {
             return $query;
@@ -846,6 +871,6 @@ class SellMedia {
     }
 } // end class
 
-load_plugin_textdomain( 'sell-media', false, dirname( plugin_basename( __FILE__ ) ) . '/languages/' );
+load_plugin_textdomain( 'sell_media', false, dirname( plugin_basename( __FILE__ ) ) . '/languages/' );
 
 $a = new SellMedia();

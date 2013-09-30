@@ -78,7 +78,9 @@ class SellMediaSettings {
             'order_by' => '',
             'terms_and_conditions' => '',
             'disable_search' => '',
-            'hide_original_price' => ''
+            'hide_original_price' => '',
+            'show_collections' => 1,
+            'show_licenses' => 1
         ), $this->general_settings );
 
         $this->payment_settings = array_merge( array(
@@ -206,6 +208,12 @@ class SellMediaSettings {
                 'id' => 'hide_original_price',
                 'label' => 'Hide Original Price',
                 'function' => array( &$this, 'field_hide_original_price' ),
+                'key' => $this->general_settings_key
+                ),
+            array(
+                'id' => 'columns_to_show',
+                'label' => 'Columns to Show',
+                'function' => array( &$this, 'field_columns_to_show' ),
                 'key' => $this->general_settings_key
                 )
             );
@@ -526,6 +534,36 @@ class SellMediaSettings {
         ?>
          <textarea name="<?php echo $this->general_settings_key; ?>[terms_and_conditions]" id="<?php echo $this->general_settings_key; ?>[terms_and_conditions]" style="width:50%;height:150px;" placeholder="<?php _e( 'Terms and Conditions', 'sell_media' ); ?>"><?php echo stripslashes_deep( wp_filter_nohtml_kses( $this->general_settings['terms_and_conditions'] ) ); ?></textarea>
         <p class="desc"><?php _e( 'These "Terms and Conditions" will show up on the checkout page. Users must agree to these terms before completing their purchase.', 'sell_media' ); ?></p>
+        <?php
+    }
+
+
+    /*
+     * Columns to show field callback
+     */
+    function field_columns_to_show(){
+        $fields = array(
+            'show_collection' => array(
+                'label' => 'Collections'
+                ),
+            'show_license' => array(
+                'label' => 'Licenses'
+                ),
+            'show_keywords' => array(
+                'label' => 'Keywords'
+                ),
+            'show_creators' => array(
+                'label' => 'Creators'
+                )
+            );
+        ?>
+        <?php foreach( $fields as $k => $v ) : ?>
+            <input type="checkbox" value="1" name="<?php echo $this->general_settings_key; ?>[<?php echo $k; ?>] ?>" id="<?php echo $this->general_settings_key; ?>[<?php echo $k; ?>] ?>"
+            <?php if( isset( $this->general_settings[ $k ] )  ) checked( $this->general_settings[ $k ], 1 ); ?>>
+            <label for="<?php echo $this->general_settings_key; ?>[<?php echo $k; ?>] ?>" class="desc"><?php echo $v['label']; ?></label>
+            <br />
+        <?php endforeach; ?>
+        <p class="desc"><?php _e( 'Select the columns to show', 'sell_media' ); ?></p>
         <?php
     }
 

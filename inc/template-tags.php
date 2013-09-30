@@ -429,6 +429,7 @@ sell_media_image_sizes( $_POST['product_id'], false );
         <?php
         $wp_upload_dir = wp_upload_dir();
         $mime_type = wp_check_filetype( $wp_upload_dir['basedir'] . SellMedia::upload_dir . '/' . get_post_meta( $_POST['product_id'], '_sell_media_attached_file', true ) );
+        $size_array = sell_media_image_sizes( $_POST['product_id'], false );
 
         if ( in_array( $mime_type['type'], array( 'image/jpeg', 'image/png', 'image/gif', 'image/bmp', 'image/tiff' ) ) ) : ?>
             <?php $size_settings = get_option('sell_media_size_settings'); $disabled = 'disabled'; $price = "0.00"; ?>
@@ -436,9 +437,9 @@ sell_media_image_sizes( $_POST['product_id'], false );
                 <legend><?php _e('Size', 'sell_media'); ?></legend>
                 <select id="sell_media_size_select" name="price_id">
                     <option value="" data-price="0">-- <?php _e( 'Select a size' ); ?> --</option>
-                    <?php foreach( sell_media_image_sizes( $_POST['product_id'], false ) as $k => $v ) : ?>
+                    <?php if ( ! empty( $sizes_array ) ) : foreach( $sizes_array as $k => $v ) : ?>
                         <option value="<?php echo $k; ?>" data-price="<?php echo $v['price']; ?>"><?php echo $v['name']; ?> (<?php echo $v['width'] . ' x ' . $v['height']; ?>): <?php echo sell_media_get_currency_symbol() . sprintf( '%0.2f', $v['price'] ); ?></option>
-                    <?php endforeach; ?>
+                    <?php endforeach; endif; ?>
                     <?php if ( isset( $general_settings['hide_original_price'] ) && $general_settings['hide_original_price'] != 'yes' ) : ?>
                         <option value="sell_media_original_file" data-price="<?php sell_media_item_price( $_POST['product_id'], false ); ?>">
                             <?php _e( 'Original', 'sell_media' ); ?>
@@ -515,6 +516,9 @@ sell_media_image_sizes( $_POST['product_id'], false );
 function sell_media_image_sizes( $post_id=null, $echo=true ){
 
     $download_sizes = sell_media_get_downloadable_size( $post_id );
+
+    if ( empty( $download_sizes ) ) return;
+
     $html = null;
     if ( $echo ){
         foreach( $download_sizes as $k => $v ){
@@ -652,7 +656,7 @@ function sell_media_item_min_price( $post_id=null, $echo=true, $key='price' ){
 
     $terms = wp_get_post_terms( $post_id, 'price-group' );
 
-    $prices = array();
+    $prices[] = '';
 
     $original_price = get_post_meta( $post_id, 'sell_media_price', true );
     if ( ! empty( $original_price ) ){
@@ -679,7 +683,7 @@ function sell_media_item_min_price( $post_id=null, $echo=true, $key='price' ){
  *
  * @return Array of downloadable sizes or single size if $term_id is present
  */
-function sell_media_get_downloadable_size( $post_id=null, $term_id=null ){
+function sell_media_get_downloadable_size( $post_id=null, $term_id=null, $size_not_available=null ){
     $attached_file = get_post_meta( $post_id, '_sell_media_attached_file', true );
     $wp_upload_dir = wp_upload_dir();
     $attached_path_file  = $wp_upload_dir['basedir'] . SellMedia::upload_dir . '/' . $attached_file;
@@ -706,6 +710,10 @@ function sell_media_get_downloadable_size( $post_id=null, $term_id=null ){
         $default_price_group = empty( $size_settings['default_price_group'] ) ? null : $size_settings['default_price_group'];
 
         $default_price_group_obj = get_term( $default_price_group, 'price-group' );
+
+        if ( is_wp_error( $default_price_group_obj ) )
+            return;
+
         $children = get_term_children( $default_price_group_obj->term_id, 'price-group' );
 
         $price_groups = array();
@@ -756,6 +764,14 @@ function sell_media_get_downloadable_size( $post_id=null, $term_id=null ){
              * available download sizes.
              */
             if ( empty( $download_sizes[ $price->term_id ]['width'] ) ) {
+
+                $unavailable_size[ $price->term_id ] = array(
+                    'name' => $download_sizes[ $price->term_id ]['name'],
+                    'price' => $download_sizes[ $price->term_id ]['price'],
+                    'height' => $pg_height,
+                    'width' => $pg_width
+                    );
+
                 unset( $download_sizes[ $price->term_id ] );
             }
 
@@ -767,10 +783,37 @@ function sell_media_get_downloadable_size( $post_id=null, $term_id=null ){
             if ( $original['height'] > $original['width']
                 && isset( $download_sizes[ $price->term_id ] )
                 && $download_sizes[ $price->term_id ]['height'] <  $smallest_height ){
+
+                    $unavailable_size[ $price->term_id ] = array(
+                        'name' => $download_sizes[ $price->term_id ]['name'],
+                        'price' => $download_sizes[ $price->term_id ]['price'],
+                        'height' => $pg_height,
+                        'width' => $pg_width
+                        );
+
                     unset( $download_sizes[ $price->term_id ] );
             }
         }
     }
 
-    return empty( $term_id ) ? $download_sizes : $download_sizes[ $term_id ];
+    if ( ! empty( $size_not_available ) ){
+        $sizes = array(
+            'available' => $download_sizes,
+            'unavailable' => empty( $unavailable_size ) ? null : $unavailable_size
+            );
+    } elseif ( empty( $term_id ) ) {
+        $sizes = $download_sizes;
+    } else {
+        $sizes = $download_sizes[ $term_id ];
+    }
+
+    return $sizes;
 }
+
+
+
+
+
+
+
+
