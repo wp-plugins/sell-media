@@ -514,13 +514,6 @@ function sell_media_build_download_link( $payment_id=null, $customer_email=null 
     $payment_meta = get_post_meta( $payment_id, '_sell_media_payment_meta', true );
     $downloads = maybe_unserialize( $payment_meta['products'] );
 
-    // This was a hack for reprints and quantity
-    // $downloads = array();
-    // foreach( $products as $product ){
-    //     if ( ! empty( $product['price_id'] ) && ! is_array( $product['price_id'] ) ) {
-    //         $downloads[] = $product;
-    //     }
-    // }
     $tmp_links = array();
     $links = array();
 
@@ -561,6 +554,13 @@ function sell_media_build_download_link( $payment_id=null, $customer_email=null 
             . '&price_id=' . $price_id,
             'payment_id' => $payment_id
             );
+
+        $arguments = get_post_meta( $payment_id, '_paypal_args', true );
+        $sell_both = get_post_meta( $download[ $item_key ], '_sell_media_reprints_sell', true );
+
+        if ( ! empty( $arguments['shipping'] ) || $sell_both != 'both' ){
+            $tmp_links['url'] = null;
+        }
 
         $links[] = $tmp_links;
     }

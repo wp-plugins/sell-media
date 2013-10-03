@@ -45,7 +45,7 @@ function sell_media_list_downloads_shortcode( $purchase_key=null, $email=null ) 
             $message .= $payment_settings['paypal_email'];
         } else {
 
-            $payment_id = sell_media_get_payment_id_by( 'email', $email );
+            $payment_id = sell_media_get_payment_id_by( 'key', $purchase_key );
             $links = sell_media_build_download_link( $payment_id, $email );
 
             foreach( $links as $link ){
@@ -53,10 +53,18 @@ function sell_media_list_downloads_shortcode( $purchase_key=null, $email=null ) 
                	$image_attributes = wp_get_attachment_image_src( get_post_meta( $link['item_id'], '_sell_media_attachment_id', true ), 'medium', false );
 
                 $message .= '<div class="sell-media-aligncenter">';
-                $message .= '<a href="' . $link['url']. '">';
+                if ( ! empty( $link['url'] ) )
+                    $message .= '<a href="' . $link['url']. '">';
+
                 $message .= '<img src="' . $image_attributes[0] . '" width="' . $image_attributes[1] . '" height="' . $image_attributes[2] . '" class="sell-media-aligncenter" />';
-                $message .= '</a>';
-                $message .= '<strong><a href="' . $link['url'] . '" class="sell-media-buy-button">' . __( 'Download File', 'sell_media' ) . '</a></strong>';
+                
+                if ( ! empty( $link['url'] ) )
+                    $message .= '</a>';
+                
+                if ( ! empty( $link['url'] ) ){
+                    $message .= '<strong><a href="' . $link['url'] . '" class="sell-media-buy-button">' . __( 'Download File', 'sell_media' ) . '</a></strong>';
+                }
+                
                 $message .= '</div>';
             }
         }
@@ -88,6 +96,7 @@ function sell_media_checkout_shortcode($atts, $content = null) {
     if ( isset( $_SESSION['cart']['items'] ) )
         $items = $_SESSION['cart']['items'];
 
+    $cart = New Sell_Media_Cart;
     if ( $_POST ){
 
         // Check if the qty thats in the cart has changed
@@ -172,7 +181,6 @@ function sell_media_checkout_shortcode($atts, $content = null) {
              * Compare count in cart with count in post
              * update cart count as needed
              */
-            $cart = New Sell_Media_Cart;
             foreach( $_POST['sell_media_item_qty'] as $k => $v ){
                 if ( $_SESSION['cart']['items'][ $k ] != $v ){
                     $cart->update_item( $k, 'qty', $v );
@@ -277,6 +285,7 @@ function sell_media_checkout_shortcode($atts, $content = null) {
                                             <span class="currency"><?php print sell_media_get_currency_symbol(); ?></span><span class="subtotal-target"></span>
                                         </td>
                                     </tr>
+                                    <?php do_action('sell_media_below_subtotal', $cart->get_subtotal( $_SESSION['cart']['items'] ) ); ?>
                                     <tr>
                                         <th scope="row">
                                             <?php _e('Shipping &amp; Handling','sell_media'); ?>
@@ -347,7 +356,7 @@ function sell_media_checkout_shortcode($atts, $content = null) {
                 </tfoot>
                 <tbody class="sell-media-product-list">
                     <?php
-                    $cart = New Sell_Media_Cart;
+
                     foreach( $items as $item_id => $item ) : ?>
                         <?php
 
