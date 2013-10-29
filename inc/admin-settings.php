@@ -84,6 +84,7 @@ class SellMediaSettings {
         ), $this->general_settings );
 
         $this->payment_settings = array_merge( array(
+            'default_gateway' => 'paypal',
             'paypal_email' => '',
             'currency' => 'USD',
             'paypal_additional_test_email' => ''
@@ -134,85 +135,85 @@ class SellMediaSettings {
         $settings['section_general']['fields'] = array(
             array(
                 'id' => 'test_mode',
-                'label' => 'Test Mode',
+                'label' => __('Test Mode','sell_media'),
                 'function' => array( &$this, 'field_general_test_mode' ),
                 'key' => $this->general_settings_key
             ),
             array(
                 'id' => 'checkout_page',
-                'label' => 'Checkout Page',
+                'label' => __('Checkout Page','sell_media'),
                 'function' => array( &$this, 'field_general_checkout_page' ),
                 'key' => $this->general_settings_key
                 ),
             array(
                 'id' => 'thanks_page',
-                'label' => 'Thanks Page',
+                'label' => __('Thanks Page','sell_media'),
                 'function' => array( &$this, 'field_general_thanks_page' ),
                 'key' => $this->general_settings_key
                 ),
             array(
                 'id' => 'dashboard_page',
-                'label' => 'Dashboard Page',
+                'label' => __('Dashboard Page','sell_media'),
                 'function' => array( &$this, 'field_general_dashboard_page' ),
                 'key' => $this->general_settings_key
                 ),
             array(
                 'id' => 'login_page',
-                'label' => 'Login Page',
+                'label' => __('Login Page','sell_media'),
                 'function' => array( &$this, 'field_general_login_page' ),
                 'key' => $this->general_settings_key
                 ),
             array(
                 'id' => 'customer_notification',
-                'label' => 'Customer Notification',
+                'label' => __('Customer Notification','sell_media'),
                 'function' => array( &$this, 'field_general_customer_notification' ),
                 'key' => $this->general_settings_key
                 ),
             array(
                 'id' => 'style',
-                'label' => 'Style',
+                'label' => __('Style','sell_media'),
                 'function' => array( &$this, 'field_general_style' ),
                 'key' => $this->general_settings_key
                 ),
             array(
                 'id' => 'plugin_credit',
-                'label' => 'Plugin Credit',
+                'label' => __('Plugin Credit','sell_media'),
                 'function' => array( &$this, 'field_general_plugin_credit' ),
                 'key' => $this->general_settings_key
                 ),
             array(
                 'id' => 'post_type_slug',
-                'label' => 'Post Type Slug',
+                'label' => __('Post Type Slug','sell_media'),
                 'function' => array( &$this, 'field_post_type_slug' ),
                 'key' => $this->general_settings_key
                 ),
             array(
                 'id' => 'order_by',
-                'label' => 'Order By',
+                'label' => __('Order By','sell_media'),
                 'function' => array( &$this, 'field_order_by' ),
                 'key' => $this->general_settings_key
                 ),
             array(
                 'id' => 'terms_and_conditions',
-                'label' => 'Terms and Conditions',
+                'label' => __('Terms and Conditions','sell_media'),
                 'function' => array( &$this, 'field_terms_and_conditions' ),
                 'key' => $this->general_settings_key
                 ),
             array(
                 'id' => 'disable_search',
-                'label' => 'Disable Sell Media Search',
+                'label' => __('Disable Sell Media Search','sell_media'),
                 'function' => array( &$this, 'field_disable_search' ),
                 'key' => $this->general_settings_key
                 ),
             array(
                 'id' => 'hide_original_price',
-                'label' => 'Hide Original Price',
+                'label' => __('Hide Original Price','sell_media'),
                 'function' => array( &$this, 'field_hide_original_price' ),
                 'key' => $this->general_settings_key
                 ),
             array(
                 'id' => 'columns_to_show',
-                'label' => 'Columns to Show',
+                'label' => __('Columns to Show','sell_media'),
                 'function' => array( &$this, 'field_columns_to_show' ),
                 'key' => $this->general_settings_key
                 )
@@ -244,6 +245,9 @@ class SellMediaSettings {
 
         register_setting( $this->payment_settings_key, $this->payment_settings_key, array( &$this, 'register_settings_validate') );
         add_settings_section( 'section_payment', 'Payment Settings', array( &$this, 'section_payment_desc' ), $this->payment_settings_key );
+
+        add_settings_field( 'default_gateway', __('Default Payment','sell_media'), array( &$this, 'field_payment_default_gateway' ), $this->payment_settings_key, 'section_payment' );
+
         add_settings_field( 'paypal_email', 'Paypal Email Address', array( &$this, 'field_payment_paypal_email' ), $this->payment_settings_key, 'section_payment' );
         add_settings_field( 'currency', 'Currency', array( &$this, 'field_payment_currency' ), $this->payment_settings_key, 'section_payment' );
         add_settings_field( 'paypal_additional_test_email', 'Paypal Additional Test Emails', array( &$this, 'field_payment_additional_email' ), $this->payment_settings_key, 'section_payment' );
@@ -563,7 +567,7 @@ class SellMediaSettings {
             <label for="<?php echo $this->general_settings_key; ?>[<?php echo $k; ?>] ?>" class="desc"><?php echo $v['label']; ?></label>
             <br />
         <?php endforeach; ?>
-        <p class="desc"><?php _e( 'Select the columns to show', 'sell_media' ); ?></p>
+        <p class="desc"><?php _e( 'Select the columns to show on the admin page "All Items" page', 'sell_media' ); ?></p>
         <?php
     }
 
@@ -601,7 +605,7 @@ class SellMediaSettings {
     function field_payment_paypal_email() {
         ?>
         <input type="text" name="<?php echo $this->payment_settings_key; ?>[paypal_email]" value="<?php echo wp_filter_nohtml_kses( $this->payment_settings['paypal_email'] ); ?>" />
-        <p class="desc"><?php printf( __('The email address used to collect Paypal payments. %1$s: You must setup IPN Notifications in Paypal to process transactions. %2$s. Here is the listener URL you need to add in Paypal: %3$s'), '<strong>'.__('IMPORTANT', 'sell_media').'</strong>', '<a href="https://cms.paypal.com/us/cgi-bin/?cmd=_render-content&content_ID=developer/e_howto_admin_IPNSetup#id089EG030E5Z" target="_blank">Read Paypal instructions</a>', '<code>' . home_url( '?sell_media-listener=IPN' ) . '</code>'); ?></p>
+        <p class="desc"><?php printf( __('The email address used to collect Paypal payments. %1$s: You must setup IPN Notifications in Paypal to process transactions. %2$s. Here is the listener URL you need to add in Paypal: %3$s'), '<strong>'.__('IMPORTANT', 'sell_media').'</strong>', '<a href="https://cms.paypal.com/us/cgi-bin/?cmd=_render-content&content_ID=developer/e_howto_admin_IPNSetup#id089EG030E5Z" target="_blank">Read Paypal instructions</a>', '<code>' . site_url( '?sell_media-listener=IPN' ) . '</code>'); ?></p>
         <?php
     }
 
@@ -652,6 +656,27 @@ class SellMediaSettings {
         <div class="desc"><?php _e('This is useful when debugging Paypal. Enter a comma separeted list of emails, and when a purchase is made the same email that is sent to the buyer will be sent to the recipients in the above list.', 'sell_media' ); ?></div>
         <?php
     }
+
+
+    /*
+     * Default gateway
+     */
+    function field_payment_default_gateway(){
+        $gateways = array(
+            array(
+                'id' => 'paypal',
+                'name' => __('Paypal','sell_media')
+                )
+            );
+
+        $gateways = apply_filters('sell_media_payment_gateway', $gateways); ?>
+        <select name="<?php echo $this->payment_settings_key; ?>[default_gateway]" value="<?php echo $this->payment_settings['default_gateway']; ?>" id="sell_media_price_group_select">
+            <?php foreach( $gateways as $gateway ) : ?>
+                <option value="<?php echo $gateway['id']; ?>" <?php selected( $this->payment_settings['default_gateway'], $gateway['id'] ); ?>><?php echo $gateway['name']; ?></option>
+            <?php endforeach; ?>
+        </select>
+    <?php }
+
 
     /*
      * Default Price Option field callback

@@ -130,11 +130,10 @@ add_action( 'wp_ajax_sell_media_load_template', 'sell_media_load_template' );
  * @since 1.4.6
  */
 function sell_media_redirect_login_dashboard( $redirect_to, $request, $user ) {
-    // Is there a user?
-    if ( ! empty( $user->roles ) && is_array( $user->roles ) ) {
-        // Is it an administrator?
-        if ( in_array( 'sell_media_customer', $user->roles ) ){
-            return $_SERVER['HTTP_REFERER'];
+    global $user;
+    if ( isset( $user->roles ) && is_array( $user->roles ) ){
+        if ( in_array( "sell_media_customer", $user->roles ) ){
+            return site_url('dashboard');
         } else {
             return admin_url();
         }
@@ -461,7 +460,7 @@ function sell_media_get_payment_id_by( $key=null, $value=null ){
     }
 
     global $wpdb;
-    $query = "SELECT post_id FROM $wpdb->postmeta WHERE meta_key = '%s' AND meta_value = '%s'";
+    $query = "SELECT post_id FROM $wpdb->postmeta WHERE meta_key = '%s' AND meta_value = '%s' ORDER BY post_id DESC";
     $payment_id = $wpdb->get_results( $wpdb->prepare( $query, $key, $value ) );
 
     if ( is_null( $payment_id ) ){
@@ -517,51 +516,47 @@ function sell_media_build_download_link( $payment_id=null, $customer_email=null 
     $tmp_links = array();
     $links = array();
 
-    foreach( $downloads as $download ) {
+    if ( ! empty( $downloads ) ){
+        foreach( $downloads as $download ) {
 
-        // Backwards combatibility for versions =< 1.5.6
-        $item_key = empty( $download['item_id'] ) ? 'id' : 'item_id';
+            // Backwards combatibility for versions =< 1.5.6
+            $item_key = empty( $download['item_id'] ) ? 'id' : 'item_id';
 
-        if ( ! empty( $download['price'] ) ){
-            $price_id = $download['price']['id'];
-        } elseif ( ! empty( $download['price_id']['id'] ) ){
-            $price_id = $download['price_id']['id'];
-        } elseif ( ! empty( $download['price_id'] ) ){
-            $price_id = is_array( $download['price_id'] ) ? $download['price_id']['id'] : $download['price_id'];
-        } else {
-            $price_id = null;
+            if ( ! empty( $download['price'] ) ){
+                $price_id = $download['price']['id'];
+            } elseif ( ! empty( $download['price_id']['id'] ) ){
+                $price_id = $download['price_id']['id'];
+            } elseif ( ! empty( $download['price_id'] ) ){
+                $price_id = is_array( $download['price_id'] ) ? $download['price_id']['id'] : $download['price_id'];
+            } else {
+                $price_id = null;
+            }
+
+            if ( ! empty( $download['license_id'] ) ){
+                $license_id = $download['license_id'];
+            } elseif ( ! empty( $download['license']['id'] ) ){
+                $license_id = $download['license']['id'];
+            } else {
+                $license_id = null;
+            }
+            // end
+
+            $tmp_links = array(
+                'item_id'    => $download[ $item_key ],
+                'price_id'   => $price_id,
+                'license_id' => $license_id,
+                'thumbnail'  => sell_media_item_icon( get_post_meta( $download[ $item_key ], '_sell_media_attachment_id', true ), 'thumbnail', false ),
+                'url'        => site_url() . '?download='
+                . $payment_meta['purchase_key']
+                . '&email=' . $customer_email
+                . '&id='
+                . $download[ $item_key ]
+                . '&price_id=' . $price_id,
+                'payment_id' => $payment_id
+                );
+
+            $links[] = $tmp_links;
         }
-
-        if ( ! empty( $download['license_id'] ) ){
-            $license_id = $download['license_id'];
-        } elseif ( ! empty( $download['license']['id'] ) ){
-            $license_id = $download['license']['id'];
-        } else {
-            $license_id = null;
-        }
-        // end
-
-        $tmp_links = array(
-            'item_id'    => $download[ $item_key ],
-            'price_id'   => $price_id,
-            'license_id' => $license_id,
-            'thumbnail'  => sell_media_item_icon( get_post_meta( $download[ $item_key ], '_sell_media_attachment_id', true ), 'thumbnail', false ),
-            'url'        => site_url() . '?download='
-            . $payment_meta['purchase_key']
-            . '&email=' . $customer_email
-            . '&id='
-            . $download[ $item_key ]
-            . '&price_id=' . $price_id,
-            'payment_id' => $payment_id
-            );
-
-        $arguments = get_post_meta( $payment_id, '_paypal_args', true );
-
-        if ( ! empty( $arguments['shipping'] ) ){
-            $tmp_links['url'] = null;
-        }
-
-        $links[] = $tmp_links;
     }
 
     return empty( $links ) ? false : $links;
@@ -1200,4 +1195,36 @@ function sell_media_country_list( $current=null ){
         "ZW" => "Zimbabwe"
         );
     sell_media_build_select( $items, array( 'name' => 'sell_media_country', 'required' => false, 'title' => 'Country', 'current' => $current ) );
+}
+
+/**
+ * @return default payment gateway
+ */
+function sell_media_default_payment(){
+    $options = get_option( 'sell_media_payment_settings' );
+    return isset( $options['default_gateway'] ) ? $options['default_gateway'] : null;
+}
+
+
+/**
+ * Retrives the thank you page from the general settings and adds the needed URL params
+ * for validating the purchase.
+ *
+ * @param $purchase (array) Purcahse data from post meta
+ * @return $url (string) The url including query parameters for the "thank you" page
+ */
+function sell_media_thanks_url( $purchase=array() ){
+
+    $general_settings = get_option( 'sell_media_general_settings' );
+
+    $url = add_query_arg(
+        array(
+            'purchase_key' => $purchase['purchase_key'],
+            'email' => $purchase['email']
+        ),
+        get_permalink( $general_settings['thanks_page']
+        )
+    );
+
+    return $url;
 }

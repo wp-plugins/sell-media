@@ -31,14 +31,22 @@ function sell_media_add_payment_meta_boxes(){
         'sell_media_payment'
     );
 
-    add_meta_box(
-        'meta_field_paypal_details',
-        __( 'Paypal Details', 'sell_media' ),
-        'sell_media_payment_paypal_details',
-        'sell_media_payment'
-    );
+    global $pagenow;
+    global $post;
+    if ( $pagenow == 'post.php' && get_post_type( $post->ID ) == 'sell_media_payment' ){
+        $arguments = get_post_meta( $post->ID, '_paypal_args', true );
+        if ( ! empty( $arguments ) ){
+            add_meta_box(
+                'meta_field_paypal_details',
+                __( 'Paypal Details', 'sell_media' ),
+                'sell_media_payment_paypal_details',
+                'sell_media_payment'
+            );
+        }
+    }
 }
 add_action( 'add_meta_boxes', 'sell_media_add_payment_meta_boxes' );
+
 
 
 /**
@@ -51,22 +59,24 @@ add_action( 'add_meta_boxes', 'sell_media_add_payment_meta_boxes' );
  */
 function sell_media_payment_purchase_details( $post ){
 
-    print '<div class="sell-media-admin-payments">';
-    print '<input type="hidden" name="sell_media_custom_meta_box_nonce" value="' . wp_create_nonce( basename( __FILE__ ) ) . '" />';
+    echo '<div class="sell-media-admin-payments">';
+    echo '<input type="hidden" name="sell_media_custom_meta_box_nonce" value="' . wp_create_nonce( basename( __FILE__ ) ) . '" />';
 
     $payment_obj = New SellMediaPayments;
     echo $payment_obj->get_contact_info( $post->ID );
+    do_action('sell_media_below_payment_contact_details');
+
     echo $payment_obj->payment_table( $post->ID );
 
     do_action( 'sell_media_additional_customer_meta', $post );
-    print '</div>';
+    echo '</div>';
 
 }
 
 
 function sell_media_payment_paypal_details( $post ){
     $arguments = get_post_meta( $post->ID, '_paypal_args', true ); ?>
-    <p><?php _e('This is the info that was sent to Paypal at time of purchase. For detailed explanation please visit Paypals <a href="https://developer.paypal.com/webapps/developer/docs/classic/ipn/integration-guide/IPNIntro/#example_req_resp">IPN guide</a>.', 'sell_media'); ?></p>
+    <p><?php _e('This is the info that was sent to Paypal at time of purchase. For detailed explanation please visit Paypal\'s <a href="https://developer.paypal.com/webapps/developer/docs/classic/ipn/integration-guide/IPNIntro/#example_req_resp">IPN guide</a>.', 'sell_media'); ?></p>
     <p><em><?php _e('Note "custom" refers to the post id for the payment in WordPress','sell_media'); ?></em></p>
     <table class="wp-list-table widefat" cellspacing="0">
         <tbody>
@@ -263,9 +273,9 @@ function sell_media_payments_callback_fn(){
                         }
                     ?>
                     </td>
-                    <td><?php if (get_post_meta( $payment->ID, '_sell_media_payment_amount', true )) print sell_media_get_currency_symbol() . get_post_meta( $payment->ID, '_sell_media_payment_amount', true ); ?></td>
+                    <td><?php echo SellMediaPayments::total( $payment->ID ); ?></td>
                     <td><?php echo date('M d, Y', strtotime($payment->post_date)); ?></td>
-                    <td><?php if ( $payment->post_status == 'publish' ) print 'paid'; else print $payment->post_status; ?></td>
+                    <td><?php echo SellMediaPayments::status( $payment->ID ); ?></td>
                 </tr>
             <?php endforeach; ?>
             <?php else : ?>

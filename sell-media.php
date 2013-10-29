@@ -4,14 +4,14 @@
 Plugin Name: Sell Media
 Plugin URI: http://graphpaperpress.com/plugins/sell-media
 Description: A plugin for selling digital downloads and reprints.
-Version: 1.6.3
+Version: 1.6.4
 Author: Graph Paper Press
 Author URI: http://graphpaperpress.com
 Author Email: support@graphpaperpress.com
 License: GPL
 */
 
-define( 'SELL_MEDIA_VERSION', '1.6.3' );
+define( 'SELL_MEDIA_VERSION', '1.6.4' );
 define( 'SELL_MEDIA_PLUGIN_FILE', plugin_dir_path(__FILE__) . 'sell-media.php' );
 
 include( dirname(__FILE__) . '/inc/cart.php' );
@@ -58,7 +58,7 @@ add_action( 'admin_head', 'sell_media_screen_icon' );
  *
  * @since 0.1
  */
-if ( ! session_start() ) session_start();
+if ( ! isset( $_SESSION ) ) session_start();
 
 
 /**
@@ -100,7 +100,8 @@ class SellMedia {
         // Dont forget registration hook is called
         // BEFORE! taxonomies are regsitered! therefore
         // these terms and taxonomies are NOT derived from our object!
-        $this->registerLicenses();
+        $general_settings = get_option( 'sell_media_general_settings' );
+        $this->registerLicenses($general_settings);
 
         // Install new table for term meta
         $taxonomy_metadata = new SELL_MEDIA_Taxonomy_Metadata;
@@ -661,7 +662,8 @@ class SellMedia {
                     ),
                 'error' => array(
                     'email_exists' => __('Sorry that email already exists or is invalid', 'sell_media')
-                    )
+                    ),
+                'default_payment' => sell_media_default_payment()
                 )
             );
 

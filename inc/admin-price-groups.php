@@ -33,6 +33,13 @@ Class SellMediaNavStyleUI {
         global $pagenow;
         if ( ! empty( $pagenow ) && $pagenow == 'edit.php' && ! empty( $_GET['tab'] ) && $_GET['tab'] == 'sell_media_size_settings' ){
             wp_enqueue_script( 'sell_media-admin-price-groups', plugin_dir_url( dirname( __FILE__ ) ) . 'js/admin-price-groups.js', array( 'jquery' ) );
+            wp_localize_script('sell_media-admin-price-groups', 'sell_media_price_groups',
+                array(
+                    'currency_symbol' => sell_media_get_currency_symbol()
+                )
+            );
+
+
         }
     }
 
@@ -129,9 +136,11 @@ Class SellMediaNavStyleUI {
         if ( ! empty( $_POST['term_name'] )  && ! in_array( $_POST['term_name'], $termarray ) ) {
             $term = wp_insert_term( $_POST['term_name'], $_POST['taxonomy'] );
             $timestamp = time();
-            print admin_url('edit.php?post_type=sell_media_item&page=sell_media_plugin_options&tab=sell_media_size_settings' . '&term_parent=' . $term['term_id'] .'&cache_buster='.$timestamp);
+            $return_url = admin_url('edit.php?post_type=sell_media_item&page=sell_media_plugin_options&tab=sell_media_size_settings' . '&term_parent=' . $term['term_id'] .'&cache_buster='.$timestamp);
+        } else {
+            $return_url = null;
         }
-        wp_send_json( array( 'sell_media' => true ) );
+        wp_send_json( array( 'sell_media' => true, 'return_url' => $return_url ) );
     }
 
 
@@ -218,7 +227,7 @@ Class SellMediaNavStyleUI {
                         <td><input type="text" class="small-text" name="terms_children['. $term->term_id . '][height]" value="'. sell_media_get_term_meta( $term->term_id, 'height', true ) . '">
                         <p class="description">'. __('Max Height','sell_media') . '</p></td>
 
-                        <td><span class="description"'. sell_media_get_currency_symbol() . '</span>
+                        <td><span class="description">'. sell_media_get_currency_symbol() . '</span>
                         <input type="text" class="small-text" name="terms_children['. $term->term_id . '][price]" value="'. sprintf( '%0.2f', sell_media_get_term_meta( $term->term_id, 'price', true ) ) . '">
                         <p class="description">'. __('Price','sell_media') . '</p></td>'
                     )
@@ -255,7 +264,7 @@ Class SellMediaNavStyleUI {
                         <p class="description">' . __('Max Height','sell_media') . '</p>
                     </td>
                     <td>
-                        <span class="description">$</span>
+                        <span class="description">' . sell_media_get_currency_symbol() . '</span>
                         <input type="text" class="small-text" name="new_child[' . $i . '][price]" value="">
                         <p class="description">' . __('Price','sell_media') . '</p>
                     </td>

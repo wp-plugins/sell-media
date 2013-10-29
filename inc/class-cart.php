@@ -124,20 +124,34 @@ Class Sell_Media_Cart {
      * cart.
      *
      * @param $items (array) An array of items
+     *     @option integer "id" Post ID
+     *     @option string "name" Post name
+     *     @option array "price"
+     *          @option "id" Taxonomy (price group) ID
+     *          @option "name" name of item
+     *          @option "description" Description of item
+     *          @option "amount" Price of item, note including markup
+     *     @option integer "qty" The quantity
+     *     @option float "total" The total dollar amount
+     *     @option array "license"
+     *          @option "id" Taxonomy ID
+     *          @option "name" Name of the taxonomy
+     *          @option "markup" The markup as a %
      *
      * @return $amount (string) The updated amount the customer is charged
      */
     public function get_subtotal( $items=array() ){
         $amount = 0;
+
         if ( ! empty( $items ) ){
             foreach ( $items as $item ){
+                $qty = ( empty( $item['qty'] ) ) ? 1 : $item['qty'];
                 if ( empty( $item['license'] ) ){
-                    $price = $item['price']['amount'] * $item['qty'];
+                    $price = $item['price']['amount'] * $qty;
                 } else {
-                    $price = $this->item_markup_total( $item['id'], $item['price']['id'], $item['license']['id'] );
+                    $price = $this->item_markup_total( $item['id'], $item['price']['id'], $item['license']['id'] ) * $qty;
                 }
-                $qty = 1;
-                $amount = $amount + $price * $qty;
+                $amount += $price;
             }
         }
         return apply_filters( 'sell_media_subtotal', sprintf( "%0.2f", max( $amount, 0 ) ) );
@@ -345,12 +359,19 @@ Class Sell_Media_Cart {
      */
     public function check_email(){
         check_ajax_referer('check_email', 'security');
-        if ( !is_user_logged_in() ) {
-            email_exists( $_POST['email'] ) ? wp_send_json_error() : wp_send_json_success();
+        $response = array();
+        if ( email_exists( $_POST['email'] ) ){
+            $response = array(
+                'message' => __("Email exists or is invalid", 'sell_media'),
+                'status' => 1
+                );
         } else {
-            wp_send_json_success();
+            $response = array(
+                'message' => __("Email does not exists",'sell_media'),
+                'status' => 0
+                );
         }
-        die();
+        wp_send_json( $response );
     }
 
 
@@ -368,11 +389,23 @@ Class Sell_Media_Cart {
         // Update the item in the cart
         $_SESSION['cart']['items'][ $cart_id ][ $key ] = $value;
 
-        // Item the total
+        // Update total for the item
+        $_SESSION['cart']['items'][ $cart_id ]['total'] = $_SESSION['cart']['items'][ $cart_id ]['qty'] * $_SESSION['cart']['items'][ $cart_id ]['price']['amount'];
+
+        // Update the total
         $_SESSION['cart']['total'] = $this->get_subtotal( $_SESSION['cart']['items'] );
 
-        // Update the qty for the entire cart
-        $_SESSION['cart']['qty'] = $this->get_quantity( $_SESSION['cart']['items'] );
+        // If our key is the quantity, we update the qty for the entire cart along
+        // with updating our total for this specific item
+        if ( $key == 'qty' ){
+            $_SESSION['cart']['qty'] = $this->get_quantity( $_SESSION['cart']['items'] );
+            $_SESSION['cart']['items'][ $cart_id ]['total'] = $value * $this->item_markup_total(
+                $_SESSION['cart']['items'][ $cart_id ]['id'],
+                $_SESSION['cart']['items'][ $cart_id ]['price']['id'],
+                $_SESSION['cart']['items'][ $cart_id ]['license']['id']
+                );
+        }
+
     }
 
 }

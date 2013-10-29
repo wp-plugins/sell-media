@@ -254,6 +254,12 @@ table#sell-media-checkout-table {
   font-size: .9em;
   width: 25%;
 }
+#sell-media-checkout-table label.error {
+  color: #f00;
+  font-size: 11px;
+  clear: left;
+  margin-left: 25%;
+}
 .sell-media a.remove-all-handle,
 .sell-media .remove-item-handle {
   cursor: pointer;
@@ -757,9 +763,33 @@ input[type="submit"].sell-media-buy-button-success:active {
     top: 5px;
     width: 20px;
 }
+#sell_media_termsdiv {
+  clear: both;
+}
+#sell_media_terms_cb {
+  margin: 5px 5px 0 0;
+}
 
+/*= Error styling
+-------------------------------------------------------------- */
 .sell-media-error {
   font-size: 13px;
   margin: 0 0 0 7px;
   color:#ff0000;
+}
+#sell_media_checkout_form p {
+  width: 100%;
+  float: left;
+}
+#sell-media-checkout-table label.error {
+  color: #F00;
+  font-size: 11px;
+  float: left;
+  width: auto;
+  clear: both;
+  margin: 0 0 0 234px;
+}
+#sell-media-checkout-table input,
+#sell-media-checkout-table textarea {
+  float: left;
 }
