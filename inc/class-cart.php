@@ -29,19 +29,19 @@ Class Sell_Media_Cart {
      * @param $post_id (int) The post_id to a sell_media_item
      * @param $price_id (int) One of the following: 'term_id' (of price-group taxonomy), 'sell_media_original_file', 'default_price'
      *
-     * @return formated price without the currency symbolc
+     * @return formated price without the currency symbol
      */
     public function item_price( $post_id=null, $price_id=null ){
 
-        $default_price_array = get_option('sell_media_size_settings');
+        $settings = sell_media_get_plugin_options();
         $custom_price = get_post_meta( $post_id, 'sell_media_price', true );
 
         if ( $price_id == 'sell_media_original_file' && ! empty( $custom_price ) ){
             $item_price = $custom_price;
         } elseif ( $price_id == 'sell_media_original_file' && empty( $custom_price ) ){
-            $item_price = $default_price_array['default_price'];
+            $item_price = $settings->default_price;
         } elseif ( $price_id == 'default_price' && empty( $custom_price ) ){
-            $item_price = $default_price_array['default_price'];
+            $item_price = $settings->default_price;
         } elseif ( $price_id == 'default_price' && ! empty( $custom_price ) ) {
             $item_price = $custom_price;
         } else {
@@ -257,10 +257,11 @@ Class Sell_Media_Cart {
 
         // Update the total and the quantity
         $_SESSION['cart']['currency'] = sell_media_get_currency_symbol();
-        $_SESSION['cart']['total'] = $this->get_subtotal( $_SESSION['cart']['items'] );
+        $_SESSION['cart']['subtotal'] = $this->get_subtotal( $_SESSION['cart']['items'] );
+        $_SESSION['cart']['total'] = $this->get_subtotal( $_SESSION['cart']['items'] ) + apply_filters('sell_media_shipping_rate', "0.00" );
         $_SESSION['cart']['qty'] = $this->get_quantity( $_SESSION['cart']['items'] );
 
-        die();
+        wp_send_json_success( $_SESSION );
     }
 
 
@@ -275,11 +276,17 @@ Class Sell_Media_Cart {
 
         $item_index = $_POST['item_id'];
 
+        // remove all
         if ( is_array( $item_index ) ){
             foreach( $item_index as $id ){
+                $_SESSION['cart']['subtotal'] = $this->get_subtotal( $_SESSION['cart']['items'] ) - $_SESSION['cart']['items'][ $id ]['total'];
+                $_SESSION['cart']['total'] = $this->get_subtotal( $_SESSION['cart']['items'] ) - $_SESSION['cart']['items'][ $id ]['total'];
+                $_SESSION['cart']['qty'] = $this->get_quantity( $_SESSION['cart']['items'] ) - $_SESSION['cart']['items'][ $id ]['qty'];
                 unset( $_SESSION['cart']['items'][ $id ] );
             }
+        // remove single
         } else {
+            $_SESSION['cart']['subtotal'] = $this->get_subtotal( $_SESSION['cart']['items'] ) - $_SESSION['cart']['items'][ $item_index ]['total'];
             $_SESSION['cart']['total'] = $this->get_subtotal( $_SESSION['cart']['items'] ) - $_SESSION['cart']['items'][ $item_index ]['total'];
             $_SESSION['cart']['qty'] = $this->get_quantity( $_SESSION['cart']['items'] ) - $_SESSION['cart']['items'][ $item_index ]['qty'];
             unset( $_SESSION['cart']['items'][$item_index] );
@@ -393,7 +400,7 @@ Class Sell_Media_Cart {
         $_SESSION['cart']['items'][ $cart_id ]['total'] = $_SESSION['cart']['items'][ $cart_id ]['qty'] * $_SESSION['cart']['items'][ $cart_id ]['price']['amount'];
 
         // Update the total
-        $_SESSION['cart']['total'] = $this->get_subtotal( $_SESSION['cart']['items'] );
+        $_SESSION['cart']['subtotal'] = $this->get_subtotal( $_SESSION['cart']['items'] );
 
         // If our key is the quantity, we update the qty for the entire cart along
         // with updating our total for this specific item

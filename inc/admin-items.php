@@ -9,8 +9,8 @@
 function sell_media_add_price_meta_box( $post_type ) {
     add_meta_box(
                 'product_meta_box', // $id
-                'Item Details', // $title
-                'sell_media_show_custom_meta_box', // $callback
+                'Details', // $title
+                'sell_media_details_meta_box', // $callback
                 'sell_media_item', // $page
                 'normal', // $context
                 'high'); // $priority
@@ -34,10 +34,9 @@ add_action( 'add_meta_boxes', 'sell_media_add_price_meta_box' );
 function sell_media_admin_items_init(){
     global $sell_media_item_meta_fields;
     $prefix = 'sell_media';
-    $payment_settings = get_option( 'sell_media_size_settings' );
-    $default_price = $payment_settings['default_price'];
 
-    $size_settings = get_option('sell_media_size_settings');
+    $settings = sell_media_get_plugin_options();
+
     if ( ! empty( $_GET['post'] ) ) {
         $post_id = $_GET['post'];
     } elseif( ! empty( $_POST['post_ID'] ) ) {
@@ -59,7 +58,7 @@ function sell_media_admin_items_init(){
             'desc'  => '', // this needs validation
             'id'    => $prefix . '_price',
             'type'  => 'price',
-            'std'   => sprintf("%0.2f",$default_price),
+            'std'   => sprintf( "%0.2f", $settings->default_price ),
             'value' => get_post_meta( $post_id, $prefix . '_price', true )
         ),
         array(
@@ -72,12 +71,6 @@ function sell_media_admin_items_init(){
 
     $sell_media_item_meta_fields = apply_filters( 'sell_media_additional_item_meta', $sell_media_item_meta_fields, $post_id );
 
-    $sell_media_item_meta_fields[] = array(
-            'label' => __( 'Shortcode', 'sell_media' ),
-            'desc'  => __( 'The permalink for this item is displayed below the title above. The archive page showing all items for sale can be viewed <a href="' . get_post_type_archive_link( 'sell_media_item' ) . '">here</a>. You can optionally use shortcode to display this specific item on other Posts or Pages. Options include: text="purchase | buy" style="button | text" size="thumbnail | medium | large" align="left | center | right"', 'sell_media' ),
-            'id'    => $prefix . '_shortcode',
-            'type'  => 'html'
-        );
     do_action('sell_media_extra_meta_fields', 'sell_media_item_meta_fields');
 }
 add_action('admin_init', 'sell_media_admin_items_init');
@@ -108,7 +101,7 @@ add_action( 'edit_form_advanced', 'sell_media_editor' );
  * @author Thad Allender
  * @since 0.1
  */
-function sell_media_show_custom_meta_box( $fields=null ) {
+function sell_media_details_meta_box( $fields=null ) {
 
     global $post;
 
@@ -137,24 +130,20 @@ function sell_media_show_custom_meta_box( $fields=null ) {
 
             $meta = null; // I have to find out what "meta" was used for, just setting it to null
 
-            switch($field['type']) {
+            switch( $field['type'] ) {
 
                 // text
                 case 'text':
                     if ( $field['std'] )
                         $default = $field['std'];
-
                     echo '<input type="text" name="' . $field['id'].'" id="' . $field['id'] . '" placeholder="'. __( $default, 'sell_media' ) .'" value="' . wp_filter_nohtml_kses( $field['value'] ) . '" size="2"/><br /><span class="description">' . __( $field['desc'], 'sell_media' ) . '</span>';
-
                 break;
 
                 // price
                 case 'price':
                     if ( $field['std'] )
                         $default = $field['std'];
-
                     echo '<span class="description">' . sell_media_get_currency_symbol() . '</span> <input type="number" step="0.01" min="0" class="small-text" name="' . $field['id'].'" id="' . $field['id'] . '" placeholder="'. __( $default, 'sell_media' ) .'" value="' . wp_filter_nohtml_kses( $field['value'] ) . '" /><br /><span class="description">' . __( $field['desc'], 'sell_media' ) . '</span>';
-
                 break;
 
                 // textarea
@@ -206,14 +195,11 @@ function sell_media_show_custom_meta_box( $fields=null ) {
                     print '<div class="sell-media-upload-trigger">';
                     print '<div class="sell-media-temp-target">' . sell_media_item_icon( $attachment_id, 'thumbnail', false ) . '</div>';
                     print '</div>';
-
                     break;
 
                 // text
                 case 'html':
-                    $text = apply_filters( 'sell_media_purchase_text', __('Purchase') );
-                    echo '<p><code>[sell_media_item id="' . $post->ID . '" text="' . $text . '" style="button" size="medium"]</code></p>
-                    <p id="' . $field['id'] . '"><span class="description">' . __( $field['desc'], 'sell_media' ) . '</span></p>';
+                    echo '<p id="' . $field['id'] . '"><span class="description">' . __( $field['desc'], 'sell_media' ) . '</span></p>';
                     break;
 
                 case 'price_group':
@@ -221,13 +207,13 @@ function sell_media_show_custom_meta_box( $fields=null ) {
                      * get our current term id for the parent only
                      */
                     $parent_id = false;
-                    $size_settings = get_option('sell_media_size_settings');
+                    $settings = sell_media_get_plugin_options();
                     foreach( wp_get_post_terms( $post->ID, 'price-group' ) as $terms ){
                         if ( $terms->parent == 0 )
                             $parent_id = $terms->term_id;
                     }
                     if( false == $parent_id ) {
-                        $parent_id = empty( $size_settings['default_price_group'] ) ? null : $size_settings['default_price_group'];
+                        $parent_id = $settings->default_price_group;
                     }
                     ?>
                     <select name="_sell_media_price_group">
@@ -391,9 +377,7 @@ function sell_media_save_custom_meta( $post_id ) {
     }
 
     if ( ! empty( $_POST['_sell_media_price_group'] ) ){
-        $childs = get_term_children( $_POST['_sell_media_price_group'], 'price-group' );
-        $childs[] = $_POST['_sell_media_price_group'];
-        wp_set_post_terms( $post_id, $childs, 'price-group' );
+        wp_set_post_terms( $post_id, $_POST['_sell_media_price_group'], 'price-group' );
     }
 
 }

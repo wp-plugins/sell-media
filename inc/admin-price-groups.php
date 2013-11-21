@@ -69,9 +69,16 @@ Class SellMediaNavStyleUI {
         if ( ! empty( $form_data['terms_children'] ) ){
             foreach( $form_data['terms_children'] as $k => $v ){
                 wp_update_term( $k, $taxonomy, array( 'name' => $v['name'] ) );
-                sell_media_update_term_meta( $k, 'width', $v['width'] );
-                sell_media_update_term_meta( $k, 'height', $v['height'] );
-                sell_media_update_term_meta( $k, 'price', $v['price'] );
+
+                // Dynamically save ALL fields that are NOT 'name' as
+                // term meta! It would have been nice to store all
+                // meta into an array and loop over saving that,
+                // can't wait for term meta to make it into core.
+                foreach( $v as $kk => $vv ){
+                    if ( $k != 'name' ){
+                        sell_media_update_term_meta( $k, $kk, $vv );
+                    }
+                }
             }
         }
 
@@ -147,7 +154,11 @@ Class SellMediaNavStyleUI {
     public function setting_ui(){
 
         $parent_terms = get_terms( $this->taxonomy, array( 'hide_empty' => false, 'parent' => 0 ) );
-        $current_parent = $_GET['term_parent'];
+        $current_parent = empty( $_GET['term_parent'] ) ? '' : $_GET['term_parent'];
+
+        if ( is_wp_error( $parent_terms ) ){
+            wp_die('Your using SellMediaNavStyleUI for a taxonomy that doesn\'t exists');
+        }
 
         $tmp = array();
         $final = array();
@@ -177,7 +188,7 @@ Class SellMediaNavStyleUI {
             $final['menu'] = $tmp;
         }
 
-        if ( ! empty( $current_parent ) && $current_parent == 'new_term' ) {
+        if ( empty( $current_parent ) || $current_parent == 'new_term' ) {
             $final['menu'][] = array(
                 'html' => '<span class="nav-tab-active nav-tab menu-add-new"><abbr title="Add menu">+</abbr></span>'
                 );
@@ -208,7 +219,7 @@ Class SellMediaNavStyleUI {
             );
 
 
-        // build temrs array
+        // build terms array
         $tmp = null;
         $terms_obj = get_terms( $this->taxonomy, array( 'hide_empty' => false, 'child_of' => $current_term_id ) );
         foreach( $terms_obj as $term ){
@@ -241,11 +252,21 @@ Class SellMediaNavStyleUI {
             $final['terms'] = $tmp;
         }
 
+		$final_additional = apply_filters('sell_media_additional_meta_price_group', $this->taxonomy, $final['terms']);
 
-        // $final['terms'] = apply_filters('sell_media_rp_meta', $this->taxonomy, $final['terms']);
+		if ( ! empty( $final_additional ) ) {
+		    $final['terms'] = $final_additional;
+		} else {
+			$final['terms'] = $tmp;
+		}
 
+		if ( has_filter( 'sell_media_additional_meta_price_group' ) ) {
+			$final['terms'] = apply_filters('sell_media_additional_meta_price_group', $this->taxonomy, $final['terms']);
+		} else {
+			$final['terms'] = $tmp;
+		}
         // Default terms
-        $max = count( $final['terms'] ) < 1 ? 3 : 1;
+        $max = count( $final['terms'] ) < 1 ? 1 : 1;
         $html = null;
         for( $i = 1; $i <= $max; $i++ ) {
             $html .=
@@ -271,8 +292,8 @@ Class SellMediaNavStyleUI {
                 </tr>';
         }
 
-        $price_copy = apply_filters( 'sell_media_rp_price_copy', __('The sizes listed below determine the maximum dimensions in pixels.', 'sell_media'), $this->taxonomy );
-        $price_group_copy = apply_filters( 'sell_media_rp_price_group_copy', __('Create a price group to add prices to.', 'sell_media'), $this->taxonomy );
+        $price_copy = apply_filters( 'sell_media_default_price_copy', __('The sizes listed below determine the maximum dimensions in pixels.', 'sell_media'), $this->taxonomy );
+        $price_group_copy = apply_filters( 'sell_media_default_price_group_copy', __('Create a price group to add prices to.', 'sell_media'), $this->taxonomy );
 
         ?>
         <div id="menu-management-liquid" class="sell-media-price-groups-container">
@@ -281,7 +302,7 @@ Class SellMediaNavStyleUI {
 
                 <div class="nav-tabs-nav">
                     <div class="nav-tabs-wrapper">
-                        <div class="nav-tabs" style="padding: 0px; margin-right: -491px;">
+                        <div class="nav-tabs">
                             <?php foreach( $final['menu'] as $menu ) : ?>
                                 <?php echo $menu['html']; ?>
                             <?php endforeach; ?>
@@ -300,7 +321,7 @@ Class SellMediaNavStyleUI {
                     </div>
 
 
-                    <table class="form-table sell-media-price-groups-table">
+                    <table class="form-table sell-media-price-groups-table" id="sell-media-<?php echo $this->taxonomy; ?>">
                         <tbody>
                             <tr>
                                 <td colspan="4">
@@ -316,14 +337,14 @@ Class SellMediaNavStyleUI {
                             <?php if ( empty( $current_term_id ) ) : ?>
 
                             <?php else : ?>
-                                <?php if ( $final['terms'] ) : foreach( $final['terms'] as $term ) : ?>
+                                <?php if ( $final['terms'] && is_array( $final['terms'] ) ) : foreach( $final['terms'] as $term ) : ?>
                                     <tr>
                                         <td><?php echo $term['field']['html']; ?></td>
                                         <?php echo $term['meta']['html']; ?>
                                         <td><?php echo $term['delete']['html']; ?></td>
                                     </tr>
                                 <?php endforeach; endif ;?>
-                                <?php echo apply_filters( 'sell_media_pg_default_children', $html, $this->taxonomy, $current_term_id ); ?>
+                                <?php echo apply_filters( 'sell_media_default_price_group_children', $html, $this->taxonomy, $current_term_id ); ?>
                             <?php endif; ?>
                         </tbody>
 
@@ -347,4 +368,3 @@ Class SellMediaNavStyleUI {
         </div><!-- /#menu-management -->
     <?php }
 }
-New SellMediaNavStyleUI();

@@ -77,11 +77,13 @@ jQuery( document ).ready(function( $ ){
 
         if ( typeof( license_markup ) == "undefined" ) license_markup = 0;
 
+        current_total = sell_media.cart.subtotal;
+
         // Don't use the license_markup on the checkout table
         if ( $('#sell-media-checkout-table').length ){
             finalPrice = ( +price ).toFixed(2);
         } else {
-            finalPrice = ( +price + ( +license_markup * .01 ) * price ).toFixed(2);
+            finalPrice = ( +price + +current_total + ( +license_markup * .01 ) * price ).toFixed(2);
         }
 
         if ( $('.subtotal-target').length ){
@@ -166,12 +168,19 @@ jQuery( document ).ready(function( $ ){
             $('.item-price-target').each(function(){
                 total = +( $(this).text() ) + +total;
             });
+
+            if ( $('#sell-media-checkout-table').length ){
+                total = +total;
+            } else {
+                total = +sell_media.cart.subtotal + +total;
+            }
         } else {
             total = +sell_media.cart.subtotal;
         }
 
         $('.subtotal-target').html( total.toFixed(2) );
         $('.menu-cart-total').html( total.toFixed(2) );
+
         $('.sell-media-item-price').html( total.toFixed(2) );
     }
 
@@ -184,8 +193,8 @@ jQuery( document ).ready(function( $ ){
         $('.sell-media-quantity').each(function(){
             item_id = $(this).attr('data-id');
 
-            if ( $(this).attr('data-markup') == null ){
-                price = +$(this).attr('data-price');
+            if ( typeof( $(this).attr('data-markup') ) == "undefined" || $(this).attr('data-markup') == 0 ){
+                price = $(this).attr('data-price');
             } else {
                 price = calculate_total( $(this).attr('data-markup'), $(this).attr('data-price') );
             }
@@ -388,34 +397,41 @@ jQuery( document ).ready(function( $ ){
     $( document ).on('submit', '.sell-media-dialog-form', function(){
         $('.sell-media-buy-button').attr('disabled',true);
 
-        if ( $('.sell-media-buy-button').hasClass('sell-media-purchased') ){
-            $('.sell-media-buy-button').removeAttr('disabled');
-            location.href = sell_media.checkouturl;
-        } else {
+        var _data = "action=add_items&taxonomy=licenses&" + $( this ).serialize();
 
-            var _data = "action=add_items&taxonomy=licenses&" + $( this ).serialize();
-
-            if ( _user.count < 1 ) {
-                text = '(<span class="count-container"><span class="count-target"></span></span>)';
-                $('.empty').html( text );
-                $('.cart-handle').show();
-            }
-
-            $.ajax({
-                data: _data,
-                success: function( msg ) {
-                    cart_count();
-                    // sell_media_update_total();
-
-                    total = ( +( $('.menu-cart-total').html() ) + +( $('.sell-media-item-price').html() ) );
-                    $('.menu-cart-total').html( total.toFixed(2) );
-
-                    $button = $('.sell-media-form').find('.sell-media-buy-button');
-                    $button.addClass('sell-media-purchased').val('Checkout');
-                    $('.sell-media-buy-button').removeAttr('disabled');
-                }
-            });
+        if ( _user.count < 1 ) {
+            text = '(<span class="count-container"><span class="count-target"></span></span>)';
+            $('.empty').html( text );
+            $('.cart-handle').show();
         }
+
+        $.ajax({
+            data: _data,
+            success: function( msg ) {
+
+                sell_media.cart.subtotal = msg.data.cart.subtotal;
+
+                cart_count();
+                // sell_media_update_total();
+
+                total = ( +( $('.menu-cart-total').html() ) + +( $('.sell-media-item-price').html() ) );
+                $('.menu-cart-total').html( total.toFixed(2) );
+                $('.sell-media-buy-button').removeAttr('disabled');
+
+                if ( $('#sell_media_size_select').length )
+                    $('#sell_media_size_select').val('');
+
+                if ( $('#sell_media_license_select').length )
+                    $('#sell_media_license_select').val('');
+
+                if ( $('.sell-media-quantity') ){
+                    $('.sell-media-quantity').each(function(){
+                        $(this).val('');
+                    });
+                }
+            }
+        });
+
         return false;
     });
 

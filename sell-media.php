@@ -4,14 +4,14 @@
 Plugin Name: Sell Media
 Plugin URI: http://graphpaperpress.com/plugins/sell-media
 Description: A plugin for selling digital downloads and reprints.
-Version: 1.6.4
+Version: 1.6.5
 Author: Graph Paper Press
 Author URI: http://graphpaperpress.com
 Author Email: support@graphpaperpress.com
 License: GPL
 */
 
-define( 'SELL_MEDIA_VERSION', '1.6.4' );
+define( 'SELL_MEDIA_VERSION', '1.6.5' );
 define( 'SELL_MEDIA_PLUGIN_FILE', plugin_dir_path(__FILE__) . 'sell-media.php' );
 
 include( dirname(__FILE__) . '/inc/cart.php' );
@@ -25,18 +25,19 @@ include( dirname(__FILE__) . '/inc/class-search.php' );
 include( dirname(__FILE__) . '/inc/class-payments.php' );
 include( dirname(__FILE__) . '/inc/term-meta.php' );
 include( dirname(__FILE__) . '/inc/widgets.php' );
+include_once( dirname(__FILE__) . '/settings/settings.php');
 
 if ( is_admin() ) {
-    include( dirname(__FILE__) . '/inc/admin-bulk.php' );
     include( dirname(__FILE__) . '/inc/admin-attachments.php' );
+    include( dirname(__FILE__) . '/inc/admin-bulk.php' );
     include( dirname(__FILE__) . '/inc/admin-items.php' );
     include( dirname(__FILE__) . '/inc/admin-extensions.php' );
     include( dirname(__FILE__) . '/inc/admin-mime-types.php' );
     include( dirname(__FILE__) . '/inc/admin-payments.php' );
-    include( dirname(__FILE__) . '/inc/admin-settings.php' );
     include( dirname(__FILE__) . '/inc/admin-price-groups.php' );
     include( dirname(__FILE__) . '/inc/admin-notices.php' );
 }
+
 
 
 
@@ -51,6 +52,18 @@ function sell_media_screen_icon() {
     endif;
 }
 add_action( 'admin_head', 'sell_media_screen_icon' );
+
+
+/**
+ * Since Price Groups are added on the settings page, remove it from the submenu
+ * This approach still allows for Bulk Editing
+ *
+* @since 1.7
+*/
+function sell_media_adjust_admin_menu(){
+    remove_submenu_page( 'edit.php?post_type=sell_media_item', 'edit-tags.php?taxonomy=price-group&amp;post_type=sell_media_item' );
+}
+add_action( 'admin_menu', 'sell_media_adjust_admin_menu', 999 );
 
 
 /**
@@ -95,13 +108,12 @@ class SellMedia {
         if ( $version && $version > SELL_MEDIA_VERSION )
             return;
 
-        update_option( 'sell_media_version', SELL_MEDIA_VERSION );
-
-        // Dont forget registration hook is called
-        // BEFORE! taxonomies are regsitered! therefore
+        // Don't forget registration hook is called
+        // BEFORE! taxonomies are registered! therefore
         // these terms and taxonomies are NOT derived from our object!
-        $general_settings = get_option( 'sell_media_general_settings' );
-        $this->registerLicenses($general_settings);
+        $settings = sell_media_get_plugin_options();
+        $admin_columns = empty( $settings->admin_columns ) ? null : $settings->admin_columns;
+        $this->registerLicenses( $admin_columns );
 
         // Install new table for term meta
         $taxonomy_metadata = new SELL_MEDIA_Taxonomy_Metadata;
@@ -159,14 +171,24 @@ class SellMedia {
 
         add_role( 'sell_media_customer', 'Customer', array( 'read' => true ) );
 
+
+        // This is a new install so add the defaults to the options table
+        if ( empty( $version ) ){
+            include_once(plugin_dir_path(__FILE__).'settings/settings.php');
+            include_once(plugin_dir_path( __FILE__ ).'sell-media-settings.php');
+
+            $defaults = sell_media_get_plugin_option_defaults();
+            update_option( sell_media_get_current_plugin_id() . "_options" , $defaults );
+        } else {
+            // Update script to new settings
+            include( dirname(__FILE__) . '/inc/admin-upgrade.php' );
+        }
+
+
         $this->init();
         flush_rewrite_rules();
 
-
-        // Update script to new settings
-        if ( $version <= '1.5.1' ){
-            include( dirname(__FILE__) . '/inc/admin-upgrade.php' );
-        }
+        update_option( 'sell_media_version', SELL_MEDIA_VERSION );
 
     } // end install();
 
@@ -175,19 +197,24 @@ class SellMedia {
      * Runs when the plugin is initialized
      */
     public function init() {
-        $general_settings = get_option( 'sell_media_general_settings' );
-        $this->registerCollection($general_settings);
-        $this->registerLicenses($general_settings);
-        $this->registerKeywords($general_settings);
-        $this->registerCreator($general_settings);
-        $this->registerCity($general_settings);
-        $this->registerState($general_settings);
+
+        $settings = sell_media_get_plugin_options();
+        $admin_columns = empty( $settings->admin_columns ) ? null : $settings->admin_columns;
+
+        $this->registerCollection( $admin_columns );
+        $this->registerLicenses( $admin_columns );
+        $this->registerCreator( $admin_columns );
+        $this->registerCity( $admin_columns );
+        $this->registerKeywords( $admin_columns );
+        $this->registerState( $admin_columns );
         $this->registerItem();
         $this->registerPayment();
         $this->registerPriceGroup();
         $this->enqueueScripts();
 
+        include_once(plugin_dir_path( __FILE__ ).'sell-media-settings.php');
     }
+
 
     /**
      * Flush permalinks every time plugin version number is updated
@@ -205,8 +232,9 @@ class SellMedia {
         }
     }
 
+
     /**
-     * Add all menus under Sell Media. Settings are added on admin-settings.php
+     * Add all menus under Sell Media.
      *
      * @since 1.0
      */
@@ -228,12 +256,7 @@ class SellMedia {
      *
      * @author Thad Allender
      */
-    public function registerLicenses($general_settings) {
-        if( isset( $general_settings['show_license'] ) && $general_settings['show_license'] == 1 ) {
-            $showcol = true;
-        } else {
-            $showcol = false;
-        }
+    public function registerLicenses($admin_columns=null) {
         $labels = array(
             'name' => _x( 'Licenses', '', 'sell_media' ),
             'singular_name' => _x( 'License', '', 'sell_media' ),
@@ -256,7 +279,7 @@ class SellMedia {
             'labels' => $labels,
             'public' => true,
             'show_in_nav_menus' => true,
-            'show_admin_column' => $showcol,
+            'show_admin_column' => ( ! empty( $admin_columns ) && in_array('show_license', $admin_columns) ) ? true : false,
             'show_ui' => true,
             'show_tagcloud' => true,
             'hierarchical' => true,
@@ -273,12 +296,7 @@ class SellMedia {
      *
      * @author Thad Allender
      */
-    public function registerKeywords($general_settings) {
-        if( isset( $general_settings['show_keywords']) && $general_settings['show_keywords'] == 1 ) {
-            $showcol = true;
-        } else {
-            $showcol = false;
-        }
+    public function registerKeywords($admin_columns=null) {
         $labels = array(
             'name' => _x( 'Keywords', '', 'sell_media' ),
             'singular_name' => _x( 'Keyword', '', 'sell_media' ),
@@ -301,7 +319,7 @@ class SellMedia {
             'labels' => $labels,
             'public' => true,
             'show_in_nav_menus' => true,
-            'show_admin_column' => $showcol,
+            'show_admin_column' => ( ! empty( $admin_columns ) && in_array('show_keywords', $admin_columns) ) ? true : false,
             'show_ui' => true,
             'show_tagcloud' => true,
             'hierarchical' => false,
@@ -396,12 +414,7 @@ class SellMedia {
      *
      * @author Thad Allender
      */
-    public function registerCreator($general_settings) {
-         if( isset( $general_settings['show_creators']) && $general_settings['show_creators'] == 1 ) {
-            $showcol = true;
-        } else {
-            $showcol = false;
-        }
+    public function registerCreator($admin_columns=null) {
         $labels = array(
             'name' => _x( 'Creator', '', 'sell_media' ),
             'singular_name' => _x( 'Creator', '', 'sell_media' ),
@@ -424,7 +437,7 @@ class SellMedia {
             'labels' => $labels,
             'public' => true,
             'show_in_nav_menus' => true,
-            'show_admin_column' => $showcol,
+            'show_admin_column' => ( ! empty( $admin_columns ) && in_array('show_creators', $admin_columns) ) ? true : false,
             'show_tagcloud' => true,
             'hierarchical' => false,
             'rewrite' => true,
@@ -440,12 +453,7 @@ class SellMedia {
      *
      * @author Thad Allender
      */
-    public function registerCollection($general_settings) {
-         if( isset( $general_settings['show_collection']) && $general_settings['show_collection'] == 1 ) {
-            $showcol = true;
-        } else {
-            $showcol = false;
-        }
+    public function registerCollection($admin_columns=null) {
         $labels = array(
             'name' => _x( 'Collections', '', 'sell_media' ),
             'singular_name' => _x( 'Collection', '', 'sell_media' ),
@@ -468,7 +476,7 @@ class SellMedia {
             'labels' => $labels,
             'public' => true,
             'show_in_nav_menus' => true,
-            'show_admin_column' => $showcol,
+            'show_admin_column' => ( ! empty( $admin_columns ) && in_array('show_collection', $admin_columns) ) ? true : false,
             'show_ui' => true,
             'show_tagcloud' => true,
             'hierarchical' => true,
@@ -503,7 +511,7 @@ class SellMedia {
             'menu_name' => _x( 'Sell Media', '', 'sell_media' ),
         );
 
-        $general_settings = get_option( 'sell_media_general_settings' );
+        $settings = sell_media_get_plugin_options();
 
         $args = array(
             'labels' => $labels,
@@ -521,7 +529,7 @@ class SellMedia {
             'query_var' => true,
             'can_export' => true,
             'rewrite' => array (
-                'slug' => empty( $general_settings['post_type_slug'] ) ? 'items' : $general_settings['post_type_slug'],
+                'slug' => empty( $settings->post_type_slug ) ? 'items' : $settings->post_type_slug,
                 'feeds' => true ),
             'capability_type' => 'post'
         );
@@ -572,26 +580,26 @@ class SellMedia {
 
     public function registerPriceGroup() {
         $labels = array(
-            'name' => _x( 'Price Group', '', 'sell_media' ),
-            'singular_name' => _x( 'Price Group', '', 'sell_media' ),
-            'search_items' => _x( 'Search Price Group', '', 'sell_media' ),
-            'popular_items' => _x( 'Popular Price Group', '', 'sell_media' ),
-            'all_items' => _x( 'All Price Group', '', 'sell_media' ),
-            'parent_item' => _x( 'Parent Price Group', '', 'sell_media' ),
-            'parent_item_colon' => _x( 'Parent Price Group:', '', 'sell_media' ),
+            'name' => _x( 'Price Groups', '', 'sell_media' ),
+            'singular_name' => _x( 'Price Groups', '', 'sell_media' ),
+            'search_items' => _x( 'Search Price Groups', '', 'sell_media' ),
+            'popular_items' => _x( 'Popular Price Groups', '', 'sell_media' ),
+            'all_items' => _x( 'All Price Groups', '', 'sell_media' ),
+            'parent_item' => _x( 'Parent Price Groups', '', 'sell_media' ),
+            'parent_item_colon' => _x( 'Parent Price Groups:', '', 'sell_media' ),
             'edit_item' => _x( 'Edit Price Group', '', 'sell_media' ),
             'update_item' => _x( 'Update Price Group', '', 'sell_media' ),
             'add_new_item' => _x( 'Add New Price Group', '', 'sell_media' ),
             'new_item_name' => _x( 'New Price Group', '', 'sell_media' ),
-            'separate_items_with_commas' => _x( 'Separate Price Group with commas', '', 'sell_media' ),
-            'add_or_remove_items' => _x( 'Add or remove Price Group', '', 'sell_media' ),
-            'choose_from_most_used' => _x( 'Choose from most used Price Group', '', 'sell_media' ),
-            'menu_name' => _x( 'Price Group', '', 'sell_media' ),
+            'separate_items_with_commas' => _x( 'Separate Price Groups with commas', '', 'sell_media' ),
+            'add_or_remove_items' => _x( 'Add or remove Price Groups', '', 'sell_media' ),
+            'choose_from_most_used' => _x( 'Choose from most used Price Groups', '', 'sell_media' ),
+            'menu_name' => _x( 'Price Groups', '', 'sell_media' ),
         );
 
         $args = array(
             'labels' => $labels,
-            'public' => false, // Hide it from the admin
+            'public' => true,
 
             'show_in_nav_menus' => true,
             'show_tagcloud' => true,
@@ -604,7 +612,6 @@ class SellMedia {
 
         register_taxonomy( 'price-group', array('sell_media_item'), $args );
     }
-
 
     /**
      * Registers and enqueues stylesheets for the administration panel
@@ -646,24 +653,24 @@ class SellMedia {
             $amount = 0;
             $quantity = 0;
 
-            $options = get_option('sell_media_general_settings');
-            $page_id = $options['checkout_page'];
+            $settings = sell_media_get_plugin_options();
             $cart_obj = New Sell_Media_Cart;
 
             wp_localize_script('sell_media', 'sell_media',
                 array(
                 'ajaxurl' => admin_url("admin-ajax.php"),
                 'pluginurl' => plugin_dir_url( dirname( __FILE__ ) ),
-                'checkouturl' => get_permalink( $page_id ),
+                'checkouturl' => empty( $settings->checkout_page ) ? null : get_permalink( $settings->checkout_page ),
                 'cart' => array(
                     'subtotal' => empty( $_SESSION['cart']['items'] ) ? 0 : $cart_obj->get_subtotal( $_SESSION['cart']['items'] ),
+                    'total' => empty( $_SESSION['cart']['total'] ) ? 0 : $_SESSION['cart']['total'] + apply_filters('sell_media_shipping_rate', "0.00" ),
                     'quantity' => empty( $_SESSION['cart']['qty'] ) ? 0 : $_SESSION['cart']['qty'],
                     'currency_symbol' => sell_media_get_currency_symbol()
                     ),
                 'error' => array(
                     'email_exists' => __('Sorry that email already exists or is invalid', 'sell_media')
                     ),
-                'default_payment' => sell_media_default_payment()
+                'default_gateway' => $settings->default_gateway
                 )
             );
 
@@ -848,12 +855,12 @@ class SellMedia {
 
     public function order_by( $orderby_statement ) {
 
-        $general_settings = get_option( 'sell_media_general_settings' );
+        $settings = sell_media_get_plugin_options();
 
-        if ( ! empty( $general_settings['order_by'] ) && is_archive() ||
-             ! empty( $general_settings['order_by'] ) && is_tax() ){
+        if ( ! empty( $settings->order_by ) && is_archive() ||
+             ! empty( $settings->order_by ) && is_tax() ){
             global $wpdb;
-            switch( $general_settings['order_by'] ){
+            switch( $settings->order_by ){
                 case 'title-asc' :
                     $order_by = "{$wpdb->prefix}posts.post_title ASC";
                     break;

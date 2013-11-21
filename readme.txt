@@ -5,7 +5,7 @@ Donate link: http://graphpaperpress.com/plugins/sell-media/
 Tags: commerce, digital downloads, download, downloads, e-commerce, paypal, photography, sell digital, sell download, selling, sell photos, sell videos, sell media, stock photos
 Requires at least: 3.4
 Tested up to: 3.7
-Stable tag: 1.6.4
+Stable tag: 1.6.5
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -23,7 +23,7 @@ The Sell Media plugin allows you to:
 *   License your media for specific usages, including commercial, editorial, or personal usages.
 *   Create you own stock photo or video site.
 *   Protect file uploads.
-*   Accept payments via Paypal.
+*   Accept payments via PayPal.
 *   Earn passive income by selling and licensing your media.
 
 Take Sell Media to the next level with these powerful extensions:
@@ -66,7 +66,7 @@ Shortcodes are small snippets of code that when added to a Post, Page or Widget 
 
 * **Checkout Shortcode** - (REQUIRED) Create a page called "Checkout" and add this shortcode to it: `[sell_media_checkout]`
 * **Thanks Shortcode** - (REQUIRED) Create a page called "Thanks" and add this shortcode to it: `[sell_media_thanks]`
-* **Buy Button Shortcode** - (OPTIONAL) Used for displaying specific items for sale: `[sell_media_item]`
+* **Buy Button Shortcode** - (OPTIONAL) Used for displaying specific items for sale: `[sell_media_item id="1893" text="Purchase" style="button" size="medium"]` Options include: text="purchase | buy" style="button | text" size="thumbnail | medium | large" align="left | center | right"
 * **Search Form Shortcode** - (OPTIONAL) Used to display a search form exclusively for searching items for sale within Sell Media: `[sell_media_searchform]`
 * **All items shortcode** - (OPTIONAL) Displays all (or a certain collection) items in a grid view: `[sell_media_all_items collection="type-your-collection-slug-here"]`
 * **Download list shortcode** - (OPTIONAL) List logged in users downloads: `[sell_media_download_list]`
@@ -81,7 +81,7 @@ Shortcodes are small snippets of code that when added to a Post, Page or Widget 
 
 You have two options:
 
-1. After adding a new item for sale on the Sell Media -> Add New page, copy and paste the shortcode at the bottom of the screen into a Post, Page or Text Widget. This shortcode will embed the image and an "Add to Cart" button below the image. The shortcode looks something like this: `[sell_media id="257" text="Purchase" style="button" color="blue" size="medium"]`
+1. After adding a new item for sale on the Sell Media -> Add New page, copy and paste the shortcode at the bottom of the screen into a Post, Page or Text Widget. This shortcode will embed the image and an "Add to Cart" button below the image. The shortcode looks something like this: `[sell_media id="257" text="Purchase" style="button" color="blue" size="medium"]` You can locate the ID of the item by looking at the URL when editing that item in WordPress. For example, http://test.com/wp-admin/post.php?post=1891&action=edit The ID is 1891, so the shortcode would be `[sell_media id="1891" text="Purchase" style="button" color="blue" size="medium"]`
 2. Each item you add for sale also has a dedicated URL. Click the View Item button after saving your first Sell Media item. You could then add the link to that specific item to one of your Menus on Appearance -> Menus -> Custom Menu Item.
 
 = How do I bulk upload images for sale? =
@@ -192,6 +192,13 @@ Action hooks available:
 
 == Changelog ==
 
+= 1.6.5 =
+* Bug: Various bug fixes with Price Groups
+* Feature: Added new settings API
+* Tweak: Add to cart button no longer changes to check out after adding 1 item
+* Tweak: Added tweak from [@NETLINK](https://github.com/NETLINK) so PayPal IPN URL can be added as a param.
+* Tweak: Added support for WPML
+
 = 1.6.4 =
 * Feature: Added various hooks and filters
 * Feature: Using jQuery validation in place of HTML5 validation
@@ -228,7 +235,7 @@ Action hooks available:
 
 = 1.6.1 =
 
-* Bug: Updated paypal arguments for buyer download email
+* Bug: Updated PayPal arguments for buyer download email
 * Bug: Fixing issue were cart was not emptied
 * Bug: New users are sent an automated WordPress email when registering
 

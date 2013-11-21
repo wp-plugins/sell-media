@@ -146,12 +146,14 @@ Class Sell_Media_Download {
         foreach( $products as $product ){
             if ( ! empty( $product['license'] ) ){
                 $tmp_term = get_term_by( 'id', $product['license']['id'], 'licenses' );
-                $tmp = array(
-                    'id' => $product['license']['id'],
-                    'name' => $tmp_term->name,
-                    'description' => $tmp_term->description
-                    );
-                $licenses[] = $tmp;
+                if ( ! empty( $tmp_term ) ){
+                    $tmp = array(
+                        'id' => $product['license']['id'],
+                        'name' => $tmp_term->name,
+                        'description' => $tmp_term->description
+                        );
+                    $licenses[] = $tmp;
+                }
             }
         }
 
@@ -396,12 +398,9 @@ function sell_media_email_purchase_receipt( $purchase_key=null, $email=null, $pa
     $message['from_name'] = get_bloginfo('name');
     $message['from_email'] = get_option('admin_email');
 
-    $email_settings = get_option( 'sell_media_email_settings' );
-    $message['subject'] = $email_settings['success_email_subject'];
-    $message['body'] = $email_settings['success_email_body'];
-
-    if ( function_exists('sell_media_reprints_sf_options'))
-        $options = sell_media_reprints_sf_options();
+    $settings = sell_media_get_plugin_options();
+    $message['subject'] = $settings->success_email_subject;
+    $message['body'] = $settings->success_email_body;
 
     // Build the download links markup
     $links = null;
@@ -445,11 +444,10 @@ function sell_media_email_purchase_receipt( $purchase_key=null, $email=null, $pa
     $message['headers'] .= "Content-Type: text/html; charset=utf-8\r\n";
 
     /**
-     * Check if we have additional test emails, if so we concatinate them
+     * Check if we have additional test emails, if so we concatenate them
      */
-    $additonal_emails = get_option( 'sell_media_payment_settings' );
-    if ( ! empty( $additonal_emails['paypal_additional_test_email'] ) ){
-        $email = $email . ', ' . $additonal_emails['paypal_additional_test_email'];
+    if ( ! empty( $settings->paypal_additional_test_email ) ){
+        $email = $email . ', ' . $settings->paypal_additional_test_email;
     }
 
     // Call the mail object to add license if we have any
