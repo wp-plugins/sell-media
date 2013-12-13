@@ -131,7 +131,7 @@ Class Sell_Media_Download {
 
 
     /**
-     * Retrive the license(s) for a given item associated with a purchase/download
+     * Retrieve the license(s) for a given item associated with a purchase/download
      *
      * @param $purchase_key (string) The purchase key to retrive the license from
      * @todo license should be stored at time of purchase with?
@@ -141,6 +141,7 @@ Class Sell_Media_Download {
     public function get_license( $purchase_key=null ){
 
         $products = $this->get_purchases( $purchase_key );
+
         $licenses = array();
         $tmp = array();
         foreach( $products as $product ){
@@ -349,41 +350,6 @@ function sell_media_process_download() {
 add_action( 'init', 'sell_media_process_download', 100 );
 
 
-function sell_media_string_attachment( $phpmailer ){
-
-    global $_purchase_key;
-
-    /**
-     * Since this function is ran before licenses are init'd
-     * we need to manually load them
-     */
-    $t = New SellMedia;
-    $t->registerLicenses();
-
-    $download_obj = New Sell_Media_Download;
-    $licenses = $download_obj->get_license( $_purchase_key );
-
-    $str_attachments = array();
-    $tmp = array();
-    foreach( $licenses as $licenses ){
-        $tmp = array(
-            'data' => $licenses['description'],
-            'file_name' => 'license-' . strtolower( sanitize_file_name( $licenses['name'] ) ) . '.txt',
-            'encoding' => 'base64',
-            'type' => 'application/octet-stream',
-        );
-        $str_attachments[] = $tmp;
-    }
-
-    foreach( $str_attachments as $attachment ){
-        $phpmailer->AddStringAttachment( $attachment['data'], $attachment['file_name'], $attachment['encoding'], $attachment['type'] );
-    }
-
-    $_purchase_key = null;
-
-}
-
-
 /**
  * Build the email to be sent to the user and send the email
  * containing download links for PUBLISHED items only
@@ -438,10 +404,31 @@ function sell_media_email_purchase_receipt( $purchase_key=null, $email=null, $pa
 
     $message['body'] = str_replace( array_keys( $tags ), $tags, nl2br( $message['body'] ) );
 
+
+
+    /**
+     * Since this function is ran before licenses are init'd
+     * we need to manually load them
+     */
+    $t = New SellMedia;
+    $t->registerLicenses();
+    $licenses = $download_obj->get_license( $purchase_key );
+
+    // If we have license add them to the message['body']
+    if ( $licenses ){
+        $license_message = sprintf("<br /><br />%s<br />", __("Your purchase entitles you to the following usage:", "sell_media") );
+        foreach( $licenses as $licenses ){
+            $license_message .= "<br />{$licenses['name']}<br />";
+            $license_message .= "{$licenses['description']}<br />";
+        }
+        $message['body'] .= $license_message;
+    }
+
     $message['headers'] = "From: " . stripslashes_deep( html_entity_decode( $message['from_name'], ENT_COMPAT, 'UTF-8' ) ) . " <{$message['from_email']}>\r\n";
     $message['headers'] .= "Reply-To: ". $message['from_email'] . "\r\n";
     $message['headers'] .= "MIME-Version: 1.0\r\n";
     $message['headers'] .= "Content-Type: text/html; charset=utf-8\r\n";
+
 
     /**
      * Check if we have additional test emails, if so we concatenate them
@@ -449,11 +436,6 @@ function sell_media_email_purchase_receipt( $purchase_key=null, $email=null, $pa
     if ( ! empty( $settings->paypal_additional_test_email ) ){
         $email = $email . ', ' . $settings->paypal_additional_test_email;
     }
-
-    // Call the mail object to add license if we have any
-    global $_purchase_key;
-    $_purchase_key = $purchase_key;
-    add_action('phpmailer_init', 'sell_media_string_attachment');
 
     // Send the email
     $r = wp_mail( $email, $message['subject'], $message['body'], $message['headers'] );
