@@ -183,17 +183,24 @@ function sell_media_details_meta_box( $fields=null ) {
                 case 'file':
 
                     $sell_media_attachment_id = get_post_meta( $post->ID, '_sell_media_attachment_id', true );
+
                     $attachment_id = ( $sell_media_attachment_id ) ? $sell_media_attachment_id : get_post_thumbnail_id( $post->ID );
                     $src_attribute = wp_get_attachment_url( $attachment_id );
                     $url = ( $src_attribute ) ? $src_attribute : null;
                     $attached_file = get_post_meta( $post->ID, '_sell_media_attached_file', true );
 
-                    print '<input type="hidden" name="sell_media_selected_file_id" id="sell_media_selected_file_id" />';
+                    $thumbnail = sell_media_item_icon( $attachment_id, 'thumbnail', false );
+                    $hide = empty( $thumbnail ) ? 'style="display: none";' : null;
+
+                    print '<input type="hidden" name="sell_media_selected_file_id" class="sell_media_selected_file_id" />';
+                    print '<input type="hidden" name="_sell_media_attached_file" class="sell_media_attached_file sell-media-item-url field-has-button" value="' . $attached_file . '" size="30" />';
+
                     print '<input type="text" name="_sell_media_attached_file_url" id="_sell_media_attached_file_url" class="sell-media-item-url field-has-button" value="' . $url . '" size="30" />';
-                    print '<input type="hidden" name="_sell_media_attached_file" id="_sell_media_attached_file" class="sell-media-item-url field-has-button" value="' . $attached_file . '" size="30" />';
-                    print '<a class="sell-media-upload-trigger button"id="_sell_media_button" value="Upload">' . __('Upload', 'sell_media') . '</a><br class="clear"/>';
+
+                    print '<a class="sell-media-upload-trigger button" value="Upload">' . __('Upload', 'sell_media') . '</a><br class="clear"/>';
+
                     print '<div class="sell-media-upload-trigger">';
-                    print '<div class="sell-media-temp-target">' . sell_media_item_icon( $attachment_id, 'thumbnail', false ) . '</div>';
+                    print '<div class="sell-media-temp-target" ' . $hide . '>' . $thumbnail . '</div>';
                     print '</div>';
                     break;
 
@@ -417,6 +424,31 @@ function sell_media_item_header( $columns ){
 }
 add_filter( 'manage_edit-sell_media_item_columns', 'sell_media_item_header' );
 
+//Makes custom columns sortables
+add_filter( 'manage_edit-sell_media_item_sortable_columns', 'sell_media_sortable_column' );
+function sell_media_sortable_column( $columns ) {
+    $columns['sell_media_price'] = 'sell_media_price';
+    $columns['author'] = 'author';
+    return $columns;
+}
+
+//Sort the custom columns
+add_filter( 'request', 'sell_media_column_orderby' );
+function sell_media_column_orderby( $vars ) {
+    if ( isset( $vars['orderby'] ) && 'sell_media_price' == $vars['orderby'] ) {
+        $vars = array_merge( $vars, array(
+            'meta_key' => 'sell_media_price',
+            'orderby' => 'meta_value_num'
+        ) );
+    }
+    if ( isset( $vars['orderby'] ) && 'author' == $vars['orderby'] ) {
+        $vars = array_merge( $vars, array(
+            'orderby' => 'author'
+        ) );
+    }
+    return $vars;
+}
+
 
 /**
  * Filter custom column content on the edit media table.
@@ -492,7 +524,7 @@ function sell_media_before_delete_post( $postid, $attachment_id=null ){
 
     /**
      * Get the attachment/thumbnail file so we can replace the "original", i.e.
-     * lower quality "original" with the file in the proctedted area.
+     * lower quality "original" with the file in the protected area.
      */
     $attached_file = get_post_meta( $postid, '_sell_media_attached_file', true );
     if ( empty( $attachment_id ) ){

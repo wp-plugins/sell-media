@@ -5,7 +5,7 @@ Donate link: http://graphpaperpress.com/plugins/sell-media/
 Tags: commerce, digital downloads, download, downloads, e-commerce, paypal, photography, sell digital, sell download, selling, sell photos, sell videos, sell media, stock photos
 Requires at least: 3.4
 Tested up to: 3.7
-Stable tag: 1.6.8
+Stable tag: 1.6.9
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -192,6 +192,17 @@ Action hooks available:
 * Double check your Sell Media Settings after upgrading
 
 == Changelog ==
+
+= 1.6.9 =
+* Tweak: Next/Previous on the default single item page now cycles through collections in same category
+* Added additional name space for translation
+* Added filter for State and Country list
+* Password protected collections now expire their password after a set time limit
+* Sorting by title, date, author, price in the admin made possible
+* Addressed issue where shipping was added twice on some hooks
+* Bug: Checkout page is now using the derived image size for the description, prior the price group height/width was used
+* Bug: Sanitize slug
+* Bug: Login redirect fix
 
 = 1.6.8 =
 * Tweak: Pending items are no longer displayed when the download history shortcode is used

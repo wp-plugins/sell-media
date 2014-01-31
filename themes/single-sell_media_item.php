@@ -13,12 +13,14 @@ get_header(); ?>
 	<?php while ( have_posts() ) : the_post(); ?>
 
 		<div class="sell-media-content">
-		    <?php sell_media_item_icon( get_post_meta( $post->ID, '_sell_media_attachment_id', true ), 'large' ); ?>
+			<?php if ( sell_media_is_mimetype( get_post_meta( $post->ID, '_sell_media_attachment_id', true ) ) ) : ?>
+				<?php sell_media_item_icon( get_post_meta( $post->ID, '_sell_media_attachment_id', true ), 'large' ); ?>
+			<?php endif; ?>
 			<div><?php the_content(); ?></div>
 			<p class="sell-media-credit"><?php sell_media_plugin_credit(); ?></p>
 			<div class="sell-media-prev-next">
-				<?php previous_post_link('<span class="prev">&laquo; %link</span>', '%title'); ?>
-				<?php next_post_link('<span class="next">%link &raquo;</span>', '%title'); ?>
+				<?php previous_post_link('<span class="prev">&laquo; %link</span>', '%title', true, '', 'collection' ); ?>
+				<?php next_post_link('<span class="next">%link &raquo;</span>', '%title', true, '', 'collection'); ?>
 			</div>
 			<?php edit_post_link('edit', '<p>', '</p>'); ?>
 		</div>
@@ -27,12 +29,15 @@ get_header(); ?>
 			<h1 class="entry-title"><?php the_title(); ?></h1>
 			<ul>
 				<li class="filename"><span class="title"><?php _e( 'File ID', 'sell_media' ); ?>:</span> <?php echo get_the_id(); ?></li>
+				<li class="filetype"><span class="title"><?php _e( 'File Type', 'sell_media' ); ?>:</span> <?php echo get_post_mime_type( get_post_meta( $post->ID, '_sell_media_attachment_id', true ) ); ?></li>
 
-				<?php if( sell_media_item_size( $post->ID ) ) : ?>
-					<li class="size">
-						<span class="title"><?php _e( 'Size', 'sell_media' ); ?>:</span>
-						<?php print sell_media_item_size( $post->ID); ?>
-					</li>
+				<?php if ( sell_media_is_mimetype( get_post_meta( $post->ID, '_sell_media_attachment_id', true ) ) ) : ?>
+					<?php if ( sell_media_item_size( $post->ID ) ) : ?>
+						<li class="size">
+							<span class="title"><?php _e( 'Size', 'sell_media' ); ?>:</span>
+							<?php print sell_media_item_size( $post->ID); ?>
+						</li>
+					<?php endif; ?>
 				<?php endif; ?>
 
 				<?php if ( true == sell_media_item_has_taxonomy_terms( $post->ID, 'collection' ) ) { ?>
@@ -45,9 +50,9 @@ get_header(); ?>
 				<?php do_action('sell_media_additional_list_items'); ?>
 
 			</ul>
-			<?php sell_media_item_buy_button( $post->ID, 'button', 'Purchase' ); ?>
+			<?php sell_media_item_buy_button( $post->ID, 'button', __( 'Purchase' ) ); ?>
 		</div><!-- .sell-media-meta -->
-	
+
 	<?php endwhile; ?>
 	<?php do_action( 'sell_media_single_bottom_hook' ); ?>
 	</div><!-- #content -->

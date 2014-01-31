@@ -4,14 +4,14 @@
 Plugin Name: Sell Media
 Plugin URI: http://graphpaperpress.com/plugins/sell-media
 Description: A plugin for selling digital downloads and reprints.
-Version: 1.6.8
+Version: 1.6.9
 Author: Graph Paper Press
 Author URI: http://graphpaperpress.com
 Author Email: support@graphpaperpress.com
 License: GPL
 */
 
-define( 'SELL_MEDIA_VERSION', '1.6.8' );
+define( 'SELL_MEDIA_VERSION', '1.6.9' );
 define( 'SELL_MEDIA_PLUGIN_FILE', plugin_dir_path(__FILE__) . 'sell-media.php' );
 
 include( dirname(__FILE__) . '/inc/cart.php' );
@@ -91,7 +91,9 @@ class SellMedia {
         add_action( 'admin_init', array( &$this, 'initAdmin' ) );
         add_action( 'admin_menu', array( &$this, 'adminMenus' ) );
         add_action( 'pre_get_posts', array( &$this, 'collection_password_check' ) );
-        add_filter( 'posts_orderby', array( &$this, 'order_by') );
+        if( !is_admin() ){
+            add_filter( 'posts_orderby', array( &$this, 'order_by') );
+        }
     }
 
 
@@ -826,6 +828,18 @@ class SellMedia {
             }
 
             if ( ! isset( $_SESSION ) ) session_start();
+
+            /**
+             * Since we do not have a "logout link" and can't rely on
+             * "garbage collection", we end our session after 30 minutes.
+             */
+            if ( isset( $_SESSION['sell_media']['recent_activity'] ) &&
+                ( time() - $_SESSION['sell_media']['recent_activity'] > ( 30 * 60 ) ) ) {
+                session_destroy();
+                session_unset();
+            }
+            $_SESSION['sell_media']['recent_activity'] = time(); // the start of the session.
+
 
             if ( ! empty( $password ) ) {
                 if ( ! empty( $_POST['collection_password'] ) && $_POST['collection_password'] == $password
