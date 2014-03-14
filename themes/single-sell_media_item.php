@@ -13,45 +13,50 @@ get_header(); ?>
 	<?php while ( have_posts() ) : the_post(); ?>
 
 		<div class="sell-media-content">
-			<?php if ( sell_media_is_mimetype( get_post_meta( $post->ID, '_sell_media_attachment_id', true ) ) ) : ?>
+			<?php $product_obj = new SellMediaProducts; if ( $product_obj->mimetype_is_image( get_post_meta( $post->ID, '_sell_media_attachment_id', true ) ) ) : ?>
 				<?php sell_media_item_icon( get_post_meta( $post->ID, '_sell_media_attachment_id', true ), 'large' ); ?>
 			<?php endif; ?>
-			<div><?php the_content(); ?></div>
+			<div class="sell-media-content-text">
+				<?php the_content(); ?>
+			</div>
+		</div>
+
+		<div class="sell-media-meta">
+			<p class="sell-media-single-button"><?php sell_media_item_buy_button( $post->ID, 'button', __( 'Purchase' ) ); ?></p>
+			<h1 class="entry-title"><?php the_title(); ?></h1>
+			<ul>
+				<li class="filename"><span class="title"><?php _e( 'File ID', 'sell_media' ); ?>:</span> <?php echo get_the_id(); ?></li>
+				<li class="filetype"><span class="title"><?php _e( 'File Type', 'sell_media' ); ?>:</span> <?php echo get_post_mime_type( get_post_meta( $post->ID, '_sell_media_attachment_id', true ) ); ?></li>
+
+				<?php if ( true == wp_get_post_terms( $post->ID, 'collection' ) ) { ?>
+					<li class="collections"><span class="title"><?php _e( 'Collections', 'sell_media' ); ?>:</span> <?php sell_media_collections( $post->ID ); ?></li>
+				<?php } ?>
+				<?php if ( true == wp_get_post_terms( $post->ID, 'keywords' ) ) {?>
+					<li class="keywords"><span class="title"><?php _e( 'Keywords', 'sell_media' ); ?>:</span>
+					<?php $product_terms = wp_get_object_terms( $post->ID, 'keywords' );
+			        if ( !empty( $product_terms ) ) {
+			            if ( !is_wp_error( $product_terms ) ) {
+			                foreach ( $product_terms as $term ) {
+			                    echo '<a href="' . get_term_link( $term->slug, 'keywords' ) . '">' . $term->name . '</a> ';
+			                }
+			            }
+			        }?>
+					</li>
+				<?php } ?>
+
+				<?php do_action('sell_media_additional_list_items'); ?>
+
+			</ul>
+		</div><!-- .sell-media-meta -->
+
+		<div class="sell-media-postmeta">
 			<p class="sell-media-credit"><?php sell_media_plugin_credit(); ?></p>
 			<div class="sell-media-prev-next">
 				<?php previous_post_link('<span class="prev">&laquo; %link</span>', '%title', true, '', 'collection' ); ?>
 				<?php next_post_link('<span class="next">%link &raquo;</span>', '%title', true, '', 'collection'); ?>
 			</div>
 			<?php edit_post_link('edit', '<p>', '</p>'); ?>
-		</div>
-
-		<div class="sell-media-meta">
-			<h1 class="entry-title"><?php the_title(); ?></h1>
-			<ul>
-				<li class="filename"><span class="title"><?php _e( 'File ID', 'sell_media' ); ?>:</span> <?php echo get_the_id(); ?></li>
-				<li class="filetype"><span class="title"><?php _e( 'File Type', 'sell_media' ); ?>:</span> <?php echo get_post_mime_type( get_post_meta( $post->ID, '_sell_media_attachment_id', true ) ); ?></li>
-
-				<?php if ( sell_media_is_mimetype( get_post_meta( $post->ID, '_sell_media_attachment_id', true ) ) ) : ?>
-					<?php if ( sell_media_item_size( $post->ID ) ) : ?>
-						<li class="size">
-							<span class="title"><?php _e( 'Size', 'sell_media' ); ?>:</span>
-							<?php print sell_media_item_size( $post->ID); ?>
-						</li>
-					<?php endif; ?>
-				<?php endif; ?>
-
-				<?php if ( true == sell_media_item_has_taxonomy_terms( $post->ID, 'collection' ) ) { ?>
-					<li class="collections"><span class="title"><?php _e( 'Collections', 'sell_media' ); ?>:</span> <?php sell_media_collections( $post->ID ); ?></li>
-				<?php } ?>
-				<?php if ( true == sell_media_item_has_taxonomy_terms( $post->ID, 'keywords' ) ) { ?>
-					<li class="keywords"><span class="title"><?php _e( 'Keywords', 'sell_media' ); ?>:</span> <?php sell_media_image_keywords( $post->ID ); ?></li>
-				<?php } ?>
-				<?php sell_media_image_sizes( $post->ID ); ?>
-				<?php do_action('sell_media_additional_list_items'); ?>
-
-			</ul>
-			<?php sell_media_item_buy_button( $post->ID, 'button', __( 'Purchase' ) ); ?>
-		</div><!-- .sell-media-meta -->
+		</div><!-- .sell-media-postmeta -->
 
 	<?php endwhile; ?>
 	<?php do_action( 'sell_media_single_bottom_hook' ); ?>

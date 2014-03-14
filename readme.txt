@@ -5,7 +5,7 @@ Donate link: http://graphpaperpress.com/plugins/sell-media/
 Tags: commerce, digital downloads, download, downloads, e-commerce, paypal, photography, sell digital, sell download, selling, sell photos, sell videos, sell media, stock photos
 Requires at least: 3.4
 Tested up to: 3.7
-Stable tag: 1.7
+Stable tag: 1.8
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -43,14 +43,36 @@ Take Sell Media to the next level with these powerful extensions:
 4. Visit Sell Media -> Licenses and add or configure your default licenses for new uploads.
 5. Visit Sell Media -> Add New and upload an image, video, audio file or pdf for sale.
 
-= IMPORTANT: Final Step For Paypal Setup =
+= IMPORTANT: PayPal Setup =
 
-You must setup your Paypal IPN URL for Sell Media to work.
+In order for PayPal to communicate with your site, you must do three things:
+
+1. Set your IPN in PayPal
+2. Enable Auto Return in PayPal
+3. Enable Payment Data Transfer in PayPal
+
+Setting your IPN in PayPal
 
 1. Login to your PayPal account.
 2. Mouse over the Profile menu option and then click on the Selling Tools menu option.
 3. Scroll down to "Getting paid and managing my risk" and click the Update link beside "Instant payment notifications".
-4. Paste your Paypal IPN URL onto that page in Paypal. Your Paypal IPN URL is located on the Sell Media Settings page.
+4. Paste your PayPal IPN URL onto that page in PayPal. Your PayPal IPN URL is located on the Sell Media Settings page.
+
+Enabling Auto Return in PayPal
+
+1. Log in to your PayPal account at https://www.paypal.com. The My Account Overview page appears.
+2. Click the Profile subtab. The Profile Summary page appears.
+3. Click the My Selling Tools link in the left column.
+4. Under the Selling Online section, click the Update link in the row for Website Preferences.
+5. Under Auto Return for Website Payments, click the On radio button to enable Auto Return.
+6. In the Return URL field, enter the URL to your Thanks Page. NOTE: PayPal checks the Return URL that you enter. If the URL is not properly formatted or cannot be validated, PayPal will not activate Auto Return.
+
+Enabling Payment Data Transfer in PayPal
+
+7. On the same page as you set your Auto Return url, find the Payment Data Transfer section and click the On radio button to enable Payment Data Transfer.
+8. Scroll to the bottom of the page, and click the Save button.
+
+PayPal is now ready to communicate with your website.
 
 == Frequently Asked Questions ==
 
@@ -135,9 +157,9 @@ Again, it is important that we emphasize that if you are on a shared hosting pac
 
 = Transactions are not posting. Why? =
 
-Please visit the Add Media -> Settings -> Payments page and double check all of your settings. Also, if you are using Paypal, you need to make sure you have [added your IPN Listener URL to Paypal](https://cms.paypal.com/us/cgi-bin/?cmd=_render-content&content_ID=developer/e_howto_admin_IPNSetup).
+Please visit the Add Media -> Settings -> Payments page and double check all of your settings. Also, if you are using PayPal, you need to make sure you have [added your IPN Listener URL to PayPal](https://cms.paypal.com/us/cgi-bin/?cmd=_render-content&content_ID=developer/e_howto_admin_IPNSetup).
 
-Also, PayPal computers use IP ranges 66.211.*.* and 173.0.*.* and visit the IPN URL with NO User-Agent. Some web hosting companies have their servers set up to block incoming pings when the User-Agent is not explicitly set (as is the case with Paypal's IPN). In this case, you'll want to modify your .htaccess file to override user-agent blocking with these address ranges.
+Also, PayPal computers use IP ranges 66.211.*.* and 173.0.*.* and visit the IPN URL with NO User-Agent. Some web hosting companies have their servers set up to block incoming pings when the User-Agent is not explicitly set (as is the case with PayPal's IPN). In this case, you'll want to modify your .htaccess file to override user-agent blocking with these address ranges.
 
 = What are license types? =
 
@@ -189,9 +211,28 @@ Action hooks available:
 
 == Upgrade Notice ==
 
-* Double check your Sell Media Settings after upgrading
+* You must enable Auto Return Payment Data Transfer in PayPal for purchases to be recorded. See readme.txt for instructions.
 
 == Changelog ==
+
+= 1.8 =
+* Feature: UI changes for responsive/mobile support
+* Feature: Tax suport
+* Feature: Added 3 shipping methods for prints
+* Tweak: sellMediaCart js now powers cart
+* Tweak: Removed $_SESSION cart
+* Tweak: Validate prices before sending to payment gateway
+* Tweak: Standardize data storage for payment meta _sell_media_payment_meta
+* Tweak: Responsive grids
+* Tweak: Checkout page reworked
+* Tweak: Improved emails
+* Tweak: New classes for all major parts of plugin
+* Tweak: Derive buyer data from payment gateway
+* Tweak: Publish paid purchases only
+* Tweak: Translations updates
+* Bug: Ajax setup
+* Bug: Pending payments
+* Bug: Conflict with JetPack infinite scroll
 
 = 1.7 =
 * Bug: Fixed issue with price groups not appearing in the drop down
@@ -311,8 +352,8 @@ Action hooks available:
 = 1.5.6 =
 
 * Feature: Admin shows collection icon on collection edit column
-* Feature: Added detailed Paypal log per item on the single item payments page
-* Bug: Better Paypal support
+* Feature: Added detailed PayPal log per item on the single item payments page
+* Bug: Better PayPal support
 * Tweak: Improved search results
 
 = 1.5.5 =
@@ -363,7 +404,7 @@ Action hooks available:
 = 1.5.1 =
 
 * New: Price groups, users are no longer limited to "small, medium, large", they can create infinite price groups and assign them to items.
-* New: Added Paypal log.txt file to admin settings
+* New: Added PayPal log.txt file to admin settings
 * New: Added field for admins to add CC accounts for paypal purchases
 * New: Added Option to change sort order on archive pages
 * New: Added POT file
@@ -565,7 +606,7 @@ Action hooks available:
 = 1.0.3 =
 
 * Added Google Charts on Reports page
-* Added Paypal IPN instructions on Settings
+* Added PayPal IPN instructions on Settings
 * Max-width fix for Firefox on Sell Media archives
 * Post Type Taxonomy archives conflict fix
 * Download file fix

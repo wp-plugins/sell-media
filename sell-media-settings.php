@@ -383,18 +383,6 @@ $options = array(
         ),
 
     // Payment Tab
-    "default_gateway" => array(
-        "tab" => "sell_media_payment_settings",
-        "name" => "default_gateway",
-        "title" => __("Default Payment Gateway","sell_media"),
-        "description" => "",
-        "section" => "payment_section_1",
-        "since" => "1.0",
-        "id" => "payment_section_1",
-        "type" => "select",
-        "default" => "paypal",
-        "valid_options" => sell_media_settings_payment_gateway()
-        ),
     "paypal_email" => array(
         "tab" => "sell_media_payment_settings",
         "name" => "paypal_email",
@@ -432,7 +420,35 @@ $options = array(
         "type" => "text",
         "sanitize" => "html"
     ),
-
+    "tax" => array(
+        "tab" => "sell_media_payment_settings",
+        "name" => "tax",
+        "title" => __("Tax","sell_media"),
+        "description" => "Check to charge tax. You must set your tax rates below.",
+        "section" => "payment_section_1",
+        "since" => "1.0",
+        "id" => "payment_section_1",
+        "default" => "",
+        "type" => "checkbox",
+        "valid_options" => array(
+            "yes" => array(
+                "name" => "yes",
+                "title" => __("Yes, charge tax","sell_media")
+            )
+        )
+    ),
+    "tax_rate" => array(
+        "tab" => "sell_media_payment_settings",
+        "name" => "tax_rate",
+        "title" => __("Tax Rate","sell_media"),
+        "description" => "Set you tax rates. This tax rate will be applied to all cart orders (use .05 for 5 percent, .10 for 10 percent, etc)",
+        "section" => "payment_section_1",
+        "since" => "1.0",
+        "id" => "payment_section_1",
+        "default" =>"",
+        "type" => "text",
+        "sanitize" => "html"
+    ),
 
     // Email
     "from_name" => array(
@@ -445,7 +461,7 @@ $options = array(
         "id" => "email_section_1",
         "type" => "text",
         "sanitize" => "html",
-        "default" => get_option('blogname')
+        "default" => get_option("blogname")
     ),
     "from_email" => array(
         "tab" => "email_plugin_tab",
@@ -457,7 +473,7 @@ $options = array(
         "id" => "email_section_1",
         "type" => "text",
         "sanitize" => "html",
-        "default" => get_option('admin_email')
+        "default" => get_option("admin_email")
     ),
     "success_email_subject" => array(
         "tab" => "email_plugin_tab",

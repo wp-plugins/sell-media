@@ -15,13 +15,13 @@ function sell_media_add_price_meta_box( $post_type ) {
                 'normal', // $context
                 'high'); // $priority
 
-    add_meta_box(
-                'sales_stats_meta_box', // $id
-                'Sales Stats', // $title
-                'sell_media_sales_stats', // $callback
-                'sell_media_item', // $page
-                'side', // $context
-                'high'); // $priority
+    // add_meta_box(
+    //             'sales_stats_meta_box', // $id
+    //             'Sales Stats', // $title
+    //             'sell_media_sales_stats', // $callback
+    //             'sell_media_item', // $page
+    //             'side', // $context
+    //             'high'); // $priority
 }
 add_action( 'add_meta_boxes', 'sell_media_add_price_meta_box' );
 
@@ -313,18 +313,11 @@ function sell_media_save_custom_meta( $post_id ) {
         $wp_upload_dir = wp_upload_dir();
         if ( ! file_exists( $wp_upload_dir['basedir'] . SellMedia::upload_dir . '/' . $attached_file ) ){
 
-            $mime_type = wp_check_filetype( $wp_upload_dir['basedir'] . SellMedia::upload_dir . '/' . $attached_file );
-            $image_mimes = array(
-                'image/jpeg',
-                'image/png',
-                'image/gif',
-                'image/bmp',
-                'image/tiff'
-                );
-
             // Image mime type support
-            if ( in_array( $mime_type['type'], $image_mimes ) ){
-                sell_media_move_image_from_attachment( $attachment_id );
+            $product_obj = new SellMediaProducts;
+            if ( $product_obj->mimetype_is_image( $_sell_media_attachment_id ) ){
+                $images_obj = new SellMediaImages;
+                $images_obj->move_image_from_attachment( $attachment_id );
             } else {
                 sell_media_default_move( $attached_file );
             }
@@ -424,16 +417,15 @@ function sell_media_item_header( $columns ){
 }
 add_filter( 'manage_edit-sell_media_item_columns', 'sell_media_item_header' );
 
-//Makes custom columns sortables
-add_filter( 'manage_edit-sell_media_item_sortable_columns', 'sell_media_sortable_column' );
+// Makes custom columns sortables
 function sell_media_sortable_column( $columns ) {
     $columns['sell_media_price'] = 'sell_media_price';
     $columns['author'] = 'author';
     return $columns;
 }
+add_filter( 'manage_edit-sell_media_item_sortable_columns', 'sell_media_sortable_column' );
 
-//Sort the custom columns
-add_filter( 'request', 'sell_media_column_orderby' );
+// Sort the custom columns
 function sell_media_column_orderby( $vars ) {
     if ( isset( $vars['orderby'] ) && 'sell_media_price' == $vars['orderby'] ) {
         $vars = array_merge( $vars, array(
@@ -448,6 +440,7 @@ function sell_media_column_orderby( $vars ) {
     }
     return $vars;
 }
+add_filter( 'request', 'sell_media_column_orderby' );
 
 
 /**
@@ -470,7 +463,8 @@ function sell_media_item_content( $column, $post_id ){
             print $html;
             break;
         case "sell_media_price":
-            sell_media_item_price( $post_id );
+            $p = new SellMediaProducts;
+            echo $p->get_price( $post_id, null, true );
             break;
         default:
             break;
@@ -616,5 +610,33 @@ function sell_media_trash_payment_redirect() {
             wp_redirect($redirect);
             exit();
         }
+    }
+}
+
+/**
+ * Moves and uploaded file from the uploads dir into the "protected"
+ * Sell Media dir, note the original file is deleted.
+ *
+ * @param $original_file Full path of the file with the file.
+ * @since 1.0.1
+ */
+function sell_media_default_move( $original_file=null ){
+
+    $dir = wp_upload_dir();
+    $original_file_path = $dir['basedir'] . '/' . $original_file;
+    $destination_file = $dir['basedir'] . SellMedia::upload_dir . '/' . $original_file;
+
+    if ( file_exists( $original_file_path ) ){
+        // Check if the destinatin dir is exists, i.e.
+        // sell_media/YYYY/MM if not we create it first
+        $destination_dir = dirname( $destination_file );
+
+        if ( ! file_exists( $destination_dir ) ){
+            wp_mkdir_p( dirname( $destination_dir ) );
+        }
+
+        // Copy original to our protected area
+        @copy( $original_file_path, $destination_file );
+        @unlink( $original_file_path );
     }
 }

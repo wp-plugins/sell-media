@@ -24,6 +24,7 @@ function sell_media_is_payment_complete($payment_id) {
  * @return null
  */
 function sell_media_add_payment_meta_boxes(){
+
     add_meta_box(
         'meta_field',
         __( 'Purchase Details', 'sell_media' ),
@@ -31,19 +32,28 @@ function sell_media_add_payment_meta_boxes(){
         'sell_media_payment'
     );
 
+    add_meta_box(
+        'meta_field_additional',
+        __( 'Additional Purchase Details', 'sell_media' ),
+        'sell_media_payment_additional_purchase_details',
+        'sell_media_payment'
+    );
+
     $screen = get_current_screen();
 
     if ( $screen->id == 'sell_media_payment' ) {
         global $post;
-        $arguments = get_post_meta( $post->ID, '_paypal_args', true );
-        if ( ! empty( $arguments ) ){
+        $paypal_args = get_post_meta( $post->ID, '_paypal_args', true );
+        $stripe_args = get_post_meta( $post->ID, '_stripe_args', true );
+        if ( ! empty( $paypal_args ) || ! empty( $stripe_args ) ){
             add_meta_box(
-                'meta_field_paypal_details',
-                __( 'Paypal Details', 'sell_media' ),
-                'sell_media_payment_paypal_details',
+                'meta_field_details',
+                __( 'Payment Gateway Details', 'sell_media' ),
+                'sell_media_payment_gateway_details',
                 'sell_media_payment'
             );
         }
+        add_action( 'sell_media_payment_gatway_metabox', $post->id );
     }
 }
 add_action( 'add_meta_boxes', 'sell_media_add_payment_meta_boxes' );
@@ -59,39 +69,124 @@ add_action( 'add_meta_boxes', 'sell_media_add_payment_meta_boxes' );
  */
 function sell_media_payment_purchase_details( $post ){
 
+    $payment_obj = new SellMediaPayments;
+
     echo '<div class="sell-media-admin-payments">';
     echo '<input type="hidden" name="sell_media_custom_meta_box_nonce" value="' . wp_create_nonce( basename( __FILE__ ) ) . '" />';
 
-    $payment_obj = New SellMediaPayments;
-    echo $payment_obj->get_contact_info( $post->ID );
-    do_action('sell_media_below_payment_contact_details');
+    printf(
+        '<ul>
+        <li>%s: ' . $payment_obj->get_meta_key( $post->ID, 'first_name' ) . ' ' . $payment_obj->get_meta_key( $post->ID, 'last_name' ) . ' ' . '</li>
+        <li>%s: ' . $payment_obj->get_meta_key( $post->ID, 'email' ) . ' ' . '</li>
+        <li>%s: ' . $payment_obj->total( $post->ID ) . ' ' . '</li>
+        </ul>',
+        __( 'Name', 'sell_media' ),
+        __( 'Email', 'sell_media' ),
+        __( 'Total', 'sell_media' )
+    );
+
+    do_action( 'sell_media_below_payment_contact_details', $post->ID );
 
     echo $payment_obj->payment_table( $post->ID );
 
-    do_action( 'sell_media_additional_customer_meta', $post );
+    do_action( 'sell_media_additional_customer_meta', $post->ID );
+
     echo '</div>';
 
 }
 
+/**
+ * Our callback for the additional payment meta fields, this prints out
+ * all of the _sell_media_payment_meta info
+ *
+ * @access public
+ * @since 0.1
+ * @return html
+ */
+function sell_media_payment_additional_purchase_details( $post ){
 
-function sell_media_payment_paypal_details( $post ){
-    $arguments = get_post_meta( $post->ID, '_paypal_args', true ); ?>
-    <p><?php _e('This is the info that was sent to Paypal at time of purchase. For detailed explanation please visit Paypal\'s <a href="https://developer.paypal.com/webapps/developer/docs/classic/ipn/integration-guide/IPNIntro/#example_req_resp">IPN guide</a>.', 'sell_media'); ?></p>
-    <p><em><?php _e('Note "custom" refers to the post id for the payment in WordPress','sell_media'); ?></em></p>
+    $p = new SellMediaPayments;
+    $args = $p->get_meta( $post->ID );
+
+    ?>
+    
+    <p><?php _e( 'This is the additional payment data stored with the purchase.', 'sell_media'); ?></p>
     <table class="wp-list-table widefat" cellspacing="0">
         <tbody>
-            <?php if ( $arguments ) : foreach( $arguments as $k => $v ) : ?>
-                <tr>
-                    <td><?php echo $k; ?></td><td><?php echo $v; ?></td>
-                </tr>
+            <?php if ( $args ) : foreach( $args as $k => $v ) : ?>
+                <?php if ( ! is_array( $v ) ) : ?>
+                    <tr>
+                        <td><?php echo ucwords( str_replace('_', ' ', $k ) ); ?></td><td><?php echo $v; ?></td>
+                    </tr>
+                <?php else : ?>
+                    <?php $i = 0; ?>
+                    <?php foreach( $v as $name => $value ) : $i++ ?>
+                        <?php if ( ! is_array( $name ) ) : ?>
+                            <tr>
+                                <td><?php _e( 'Product', 'sell_media' ); ?> <?php echo $i; ?></td>
+                                <td>
+                                    <ul>
+                                        <?php if ( $value['name'] ) : ?>
+                                            <li><?php _e( 'Name', 'sell_media' ); ?>: <?php echo $value['name']; ?></li>
+                                        <?php endif; ?>
+                                        <?php if ( $value['id'] ) : ?>
+                                            <li><?php _e( 'ID', 'sell_media' ); ?>: <a href="<?php echo admin_url(); ?>post.php?post=<?php echo $value['id']; ?>&amp;action=edit"><?php echo $value['id']; ?></a></li>
+                                        <?php endif; ?>
+                                        <?php if ( $value['type'] ) : ?>
+                                            <li><?php _e( 'Type', 'sell_media' ); ?>: <?php echo $value['type']; ?></li>
+                                        <?php endif; ?>
+                                        <?php if ( $value['size']['name'] ) : ?>
+                                            <li><?php _e( 'Size', 'sell_media' ); ?>: <?php echo $value['size']['name']; ?></li>
+                                        <?php endif; ?>
+                                        <?php if ( $value['license']['name'] ) : ?>
+                                            <li><?php _e( 'License', 'sell_media' ); ?>: <?php echo $value['license']['name']; ?></li>
+                                        <?php endif; ?>
+                                        <?php if ( $value['qty'] ) : ?>
+                                            <li><?php _e( 'Qty', 'sell_media' ); ?>: <?php echo $value['qty']; ?></li>
+                                        <?php endif; ?>
+                                        <?php if ( $value['total'] ) : ?>
+                                            <li><?php _e( 'Subtotal', 'sell_media' ); ?>: <?php echo sell_media_get_currency_symbol(); ?><?php echo number_format( $value['total'], 2, '.', ',' ); ?></li>
+                                        <?php endif; ?>
+                                    </ul>
+                                </td>
+                            </tr>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
+                <?php endif; ?>
             <?php endforeach; else : ?>
                 <tr>
-                    <td><?php _e('This payment has no saved Paypal details','sell_media'); ?></td>
+                    <td><?php _e( 'This payment has no additional payment details', 'sell_media' ); ?></td>
                 </tr>
             <?php endif; ?>
         </tbody>
     </table>
     <?php
+}
+
+
+/**
+ * Our callback for the additional payment meta fields, this prints out
+ * all of the _paypal_args or _stripe_args metadata info
+ *
+ * @access public
+ * @since 0.1
+ * @return html
+ */
+function sell_media_payment_gateway_details( $post ){
+
+    $paypal_args = get_post_meta( $post->ID, '_paypal_args', true );
+    $stripe_args = get_post_meta( $post->ID, '_stripe_args', true );
+    if ( $paypal_args ) {
+        $arguments = $paypal_args;
+        $gateway = __( 'PayPal', 'sell_media' );
+    } else {
+        $arguments = $stripe_args;
+        $gateway = __( 'Stripe', 'sell_media' );
+    }
+    echo '<p>' . __( 'This is the data that was sent from ', 'sell_media' ) . $gateway . __( ' at time of purchase. Use this for debugging, if needed.', 'sell_media' ) . '</p>';
+    echo '<pre style="overflow:hidden">';
+    print_r( $arguments );
+    echo '</pre>';
 }
 
 
@@ -137,7 +232,7 @@ add_action( 'save_post', 'sell_media_save_contact' );
  */
 function sell_media_payments_callback_fn(){
 
-    $current_page = admin_url('edit.php?post_type=download&page=sell_media_payments');?>
+    $current_page = admin_url( 'edit.php?post_type=download&page=sell_media_payments' ); ?>
     <div class="wrap">
         <?php
         if (isset($_GET['p'])) $page = $_GET['p']; else $page = 1;
@@ -195,7 +290,7 @@ function sell_media_payments_callback_fn(){
         <div class="tool-box total-revenue">
             <h3 class="title"><?php _e( 'Total Earnings To Date:', 'sell_media' ); ?>&nbsp;<strong><?php print sell_media_get_currency_symbol(); ?><?php print sell_media_total_revenue( $post_status='publish' ); ?></strong></h3>
             <p><?php _e( "Below is a breakdown of each transaction. Payments marked as &quot;Pending&quot; mean the buyer checked out, but abandoned payment.", 'sell_media' ); ?></p>
-            <p><?php printf( '%s <a href="'.sell_media_plugin_data( $field='AuthorURI' ) . '/downloads/category/extensions/" class="button secondary" target="_blank">%s</a>', __( 'Want to increase your sales?', 'sell_media' ), __( 'Download Extensions for Sell Media','sell_media') ); ?></p>
+            <p><?php printf( '%s <a href="' . sell_media_plugin_data( $field='PluginURI' ) . '" class="button secondary" target="_blank">%s</a>', __( 'Want to increase your sales?', 'sell_media' ), __( 'Download new Sell Media extensions','sell_media') ); ?></p>
             <?php do_action( 'sell_media_payments_below_total_earning' ); ?>
         </div>
         <div class="clear"></div>
@@ -244,38 +339,26 @@ function sell_media_payments_callback_fn(){
             <?php foreach( $payments as $payment ) : ?>
                 <?php $payment_meta = get_post_meta($payment->ID, '_sell_media_payment_meta', true); ?>
                 <tr>
-                    <td><a href="<?php print site_url() . '/wp-admin/post.php?post='.$payment->ID.'&action=edit'; ?>"><?php echo $payment->ID; ?></a></td>
+                    <td><a href="<?php print admin_url() . 'post.php?post=' . $payment->ID . '&action=edit'; ?>"><?php echo $payment->ID; ?></a></td>
                     <td>
                         <?php if ( ! empty( $payment_meta['first_name'] ) ) echo $payment_meta['first_name']; ?>
                         <?php if ( ! empty( $payment_meta['last_name'] ) ) echo $payment_meta['last_name']; ?>
                     </td>
                     <td>
-                    <?php
-                        $payment_meta_array = get_post_meta( $payment->ID, '_sell_media_payment_meta', true );
-                        if ( $payment_meta_array ){
-                            $products_meta_array = unserialize( $payment_meta_array['products'] );
-
-                            if ( ! $products_meta_array ) continue;
-                            $count = count( $products_meta_array );
+                        <?php
+                            $p = new SellMediaPayments;
+                            $products = $p->get_products( $payment->ID );
                             $i = 0;
-
-                            foreach( $products_meta_array as $product ){
-                                $comma = ( $count - 1) == $i ? null : ", ";
-                                $item_id = empty( $product['item_id'] ) ? $product['id'] : $product['item_id'];
-
-                                print '<a href="' . get_edit_post_link( $item_id ) . '">' . get_the_title( $item_id ) . "</a>" . $comma;
-                                if ( isset( $product['License'] ) ){
-                                    $license = get_term_by( 'id', $product['License'], 'licenses' );
-                                    if ( $license ) print ' &ndash; <em>'.$license->name . '</em><br />';
-                                }
-                                $i++;
+                            $count = count( $products );
+                            if ( $products ) foreach ( $products as $product ) {
+                                echo '<a href="' . get_edit_post_link( $product['id'] ) . '">' . $product['name'] . '</a>';
+                                echo $i++ != $count - 1 ? ', ' : null;
                             }
-                        }
-                    ?>
+                        ?>
                     </td>
-                    <td><?php echo SellMediaPayments::total( $payment->ID ); ?></td>
+                    <td><?php echo $p->total( $payment->ID ); ?></td>
                     <td><?php echo date('M d, Y', strtotime($payment->post_date)); ?></td>
-                    <td><?php echo SellMediaPayments::status( $payment->ID ); ?></td>
+                    <td><?php echo $p->status( $payment->ID ); ?></td>
                 </tr>
             <?php endforeach; ?>
             <?php else : ?>
@@ -316,36 +399,6 @@ function sell_media_payments_callback_fn(){
 
 
 /**
- * Total Earnings
- *
- * @since 0.1
-*/
-
-function sell_media_total_revenue( $post_status=null ) {
-    $total = ( float ) 0;
-    $payments = get_transient( 'sell_media_total_revenue_' . $post_status );
-    if ( false === $payments || '' === $payments ) {
-        $args = array(
-            'mode' => 'live',
-            'post_type' => 'sell_media_payment',
-            'posts_per_page' => -1,
-            'post_status' => $post_status,
-            'meta_key' => '_sell_media_payment_amount'
-        );
-        set_transient( 'sell_media_total_revenue_' . $post_status, $payments, 1800 );
-    }
-    $payments = get_posts( $args );
-    if ( $payments ) {
-        foreach( $payments as $payment ) {
-            $subtotal = get_post_meta( $payment->ID, '_sell_media_payment_amount', true );
-            $total += $subtotal;
-        }
-    }
-    return number_format( ( float ) $total, 2, '.', '' );
-}
-
-
-/**
  * Callback function to print out the payments report page
  *
  * @access public
@@ -360,7 +413,7 @@ function sell_media_reports_callback_fn(){
         <h2><?php _e( 'Earnings Report', 'sell_media' ); ?></h2>
         <div class="tool-box total-revenue">
             <h3 class="title"><?php _e( 'Total Earnings To Date:', 'sell_media' ); ?>&nbsp;<strong><?php print sell_media_get_currency_symbol(); ?><?php print sell_media_total_revenue( $post_status='publish' ); ?></strong></h3>
-            <p><?php printf('%s <a href="' . sell_media_plugin_data( $field='AuthorURI' ) . '/downloads/category/extensions/" class="button secondary" target="_blank">%s</a>', __( 'Below is a breakdown of earnings per day, month and year. Want to increase your sales?', 'sell_media' ), __( 'Download Extensions for Sell Media', 'sell_media' ) ); ?></p>
+            <p><?php printf('%s <a href="' . sell_media_plugin_data( $field='PluginURI' ) . '" class="button secondary" target="_blank">%s</a>', __( 'Below is a breakdown of earnings per day, month and year. Want to increase your sales?', 'sell_media' ), __( 'Download new Sell Media extensions', 'sell_media' ) ); ?></p>
             <?php do_action( 'sell_media_payments_below_total_earning' ); ?>
         </div>
 
@@ -477,6 +530,19 @@ function sell_media_reports_callback_fn(){
     </div>
 <?php }
 
+
+/**
+ * Total Earnings
+ *
+ * @since 0.1
+*/
+
+function sell_media_total_revenue( $post_status=null ) {
+    $p = new SellMediaPayments;
+    return $p->get_total_payments( $post_status );
+}
+
+
 /**
  *  Function to print out total payments by date
  *
@@ -485,25 +551,8 @@ function sell_media_reports_callback_fn(){
  * @return html
  */
 function sell_media_get_sales_by_date( $day = null, $month_num, $year ) {
-    $args = array(
-        'post_type' => 'sell_media_payment',
-        'posts_per_page' => -1,
-        'year' => $year,
-        'monthnum' => $month_num,
-        'post_status' => 'publish'
-    );
-    if( ! empty( $day ) )
-        $args['day'] = $day;
-
-    $sales = get_posts( $args );
-    $total = 0;
-    if( $sales ) {
-        foreach ( $sales as $sale ) {
-            $payment_amount = get_post_meta( $sale->ID, '_sell_media_payment_amount', true );
-            $total = $total + $payment_amount;
-        }
-    }
-    return $total;
+    $p = new SellMediaPayments;
+    return $p->get_payments_by_date( $day, $month_num, $year );
 }
 
 /**

@@ -3,51 +3,54 @@
  * Template Redirect
  * @since 1.0.4
  */
-function sell_media_template_redirect(){
+function sell_media_template_redirect( $original_template ){
+
     $post_type = get_query_var('post_type');
     $sell_media_taxonomies = get_object_taxonomies( 'sell_media_item' );
 
     if ( $post_type == '' )
        $post_type = 'sell_media_item';
 
-    $custom_templates = array(
+    $default_templates = array(
         'single'  => plugin_dir_path( dirname( __FILE__ ) ) . 'themes/single-sell_media_item.php',
         'archive' => plugin_dir_path( dirname( __FILE__ ) ) . 'themes/archive-sell_media_item.php'
         );
 
-    $default_templates = array(
+    $custom_templates = array(
         'single'   => locate_template( 'single-sell_media_item.php' ),
         'archive'  => locate_template( 'archive-sell_media_item.php' ),
         'taxonomy' => locate_template( 'taxonomy-' . get_query_var('taxonomy') . '.php' )
         );
 
-
     /**
      * Single
      */
     if ( is_single() && get_query_var('post_type') == 'sell_media_item' ) {
-        if ( file_exists( $default_templates['single'] ) ) return;
-        load_template( $custom_templates['single'] );
-        exit;
+        $template = ( file_exists( $custom_templates['single'] ) ) ? $custom_templates['single'] : $default_templates['single'];
     }
+
     /**
      * Archive -- Check if this is an archive page AND post type is sell media
      */
     elseif ( is_post_type_archive( $post_type ) && $post_type == 'sell_media_item' ) {
-        if ( file_exists( $default_templates['archive'] ) ) return;
-        load_template( $custom_templates['archive'] );
-        exit;
+        $template = ( file_exists( $custom_templates['archive'] ) ) ? $custom_templates['archive'] : $default_templates['archive'];
     }
+
     /**
      * Taxonomies
      */
     elseif ( is_tax() && in_array( get_query_var('taxonomy'), $sell_media_taxonomies ) ) {
-        if ( file_exists( $default_templates['taxonomy'] ) ) return;
-        load_template( $custom_templates['archive'] );
-        exit;
+        $template = ( file_exists( $custom_templates['taxonomy'] ) ) ? $custom_templates['archive'] : $default_templates['archive'];
     }
+
+    else {
+        $template = $original_template;
+    }
+
+    return $template;
 }
-add_action( 'template_redirect', 'sell_media_template_redirect',6 );
+add_action( 'template_include', 'sell_media_template_redirect',6 );
+
 
 function sell_media_get_search_form( $form ) {
     $settings = sell_media_get_plugin_options();
@@ -107,6 +110,7 @@ function sell_media_get_search_form( $form ) {
     <?php return ob_get_clean();
 }
 add_filter( 'get_search_form', 'sell_media_get_search_form' );
+
 
 /**
  * Loads a template from a specified path
@@ -437,169 +441,6 @@ function sell_media_test_mode(){
 
 
 /**
- * Use this to get the payment id, i.e. $post_id for a $post_type
- * of 'sell_mediapayment'.
- *
- * @param $name = _sell_media_payment_purchase_key | _sell_media_payment_user_email
- * @param $value = $purchase_key
- * @return full post object
- * @since 0.1
- */
-function sell_media_get_payment_id_by( $key=null, $value=null ){
-    switch( $key ) {
-        case '_sell_media_payment_purchase_key':
-        case 'key':
-            $key = '_sell_media_payment_purchase_key';
-            break;
-        case '_sell_media_payment_user_email':
-        case 'email':
-            $key = '_sell_media_payment_user_email';
-            break;
-        default:
-            break;
-    }
-
-    global $wpdb;
-    $query = "SELECT post_id FROM $wpdb->postmeta WHERE meta_key = '%s' AND meta_value = '%s' ORDER BY post_id DESC";
-    $payment_id = $wpdb->get_results( $wpdb->prepare( $query, $key, $value ) );
-
-    if ( is_null( $payment_id ) ){
-        return fasle;
-    } else {
-        return $payment_id[0]->post_id;
-    }
-}
-
-
-/**
- * Determine if a payment is approved.
- *
- * Checks post status for a post type of 'sell_media_payment'
- * @param $payment_id
- * @return bool
- * @since 0.1
- */
-function sell_media_is_payment_approved( $payment_id=null ){
-
-    $status = get_post_status( $payment_id );
-
-    if ( $status == 'publish' ){
-        return true;
-    } else {
-        wp_die("Payment ID: {$payment_id} is still pending message?");
-    }
-}
-
-
-/**
- * wp query on post meta $post_id = $product_id, unserialize and return array of sell_media_item IDs
- *
- * @note this does NOT determine if the payment is approved!
- * @since 0.1
- */
-function sell_media_get_cusotmer_products( $payment_id=null ){
-    $payment_meta = get_post_meta( $payment_id, '_sell_media_payment_meta', true );
-
-    return maybe_unserialize( $payment_meta['products'] );
-}
-
-
-/**
- * Builds download link url
- *
- * @since 0.1
- */
-function sell_media_build_download_link( $payment_id=null, $customer_email=null ){
-    $payment_meta = get_post_meta( $payment_id, '_sell_media_payment_meta', true );
-    $downloads = maybe_unserialize( $payment_meta['products'] );
-
-    $tmp_links = array();
-    $links = array();
-
-    if ( ! empty( $downloads ) ){
-        foreach( $downloads as $download ) {
-
-            // Backwards compatibility for versions =< 1.5.6
-            $item_key = empty( $download['item_id'] ) ? 'id' : 'item_id';
-
-            if ( ! empty( $download['price'] ) ){
-                $price_id = $download['price']['id'];
-            } elseif ( ! empty( $download['price_id']['id'] ) ){
-                $price_id = $download['price_id']['id'];
-            } elseif ( ! empty( $download['price_id'] ) ){
-                $price_id = is_array( $download['price_id'] ) ? $download['price_id']['id'] : $download['price_id'];
-            } else {
-                $price_id = null;
-            }
-
-            if ( ! empty( $download['license_id'] ) ){
-                $license_id = $download['license_id'];
-            } elseif ( ! empty( $download['license']['id'] ) ){
-                $license_id = $download['license']['id'];
-            } else {
-                $license_id = null;
-            }
-            // end
-
-            $tmp_links = array(
-                'item_id'    => $download[ $item_key ],
-                'price_id'   => $price_id,
-                'license_id' => $license_id,
-                'thumbnail'  => sell_media_item_icon( get_post_meta( $download[ $item_key ], '_sell_media_attachment_id', true ), 'thumbnail', false ),
-                'url'        => site_url() . '?download='
-                . $payment_meta['purchase_key']
-                . '&email=' . $customer_email
-                . '&id='
-                . $download[ $item_key ]
-                . '&price_id=' . $price_id,
-                'payment_id' => $payment_id
-                );
-
-            $links[] = $tmp_links;
-        }
-    }
-
-    return empty( $links ) ? false : $links;
-}
-
-
-/**
- * Retrieves the purchase title from the purchase key
- * serialized array.
- *
- * @since 0.1
- */
-function sell_media_purchase_info( $product_id=null ){
-
-    $purchase = get_post_meta( $product_id, '_sell_media_payment_meta', true );
-    $products = maybe_unserialize( $purchase['products'] );
-
-    $purchase = array();
-    foreach( $products as $product ){
-
-        $tmp_term = get_term_by( 'id', $product['License'], 'licenses' );
-        $tmp['title'] = get_the_title( $product['ProductID'] );
-        $tmp['license'] = $tmp_term->name;
-        $tmp['price'] = $product['CalculatedPrice'];
-
-        $purchase[] = $tmp;
-    }
-
-    return $purchase;
-}
-
-
-/**
- * Get PHP Arg Separator Output
- *
- * @since 0.1
- */
-function sell_media_get_php_arg_separator_output() {
-    return ini_get('arg_separator.output');
-}
-
-
-/**
  * Change Downloads Upload Dir
  *
  * Hooks the sell_media_set_upload_dir filter when appropriate.
@@ -619,23 +460,6 @@ function sell_media_change_downloads_upload_dir() {
 }
 add_action('admin_init', 'sell_media_change_downloads_upload_dir', 999);
 
-
-/**
- * Prints Upload Dir for use in moving attachments into products dir
- *
- * Sets the upload dir to /sell_media.
- *
- * @access private
- * @since 0.1
- * @return path
- */
-function sell_media_get_upload_dir() {
-    $upload = wp_upload_dir();
-    $upload['subdir'] = SellMedia::upload_dir . $upload['subdir'];
-    $upload['path'] = $upload['basedir'] . $upload['subdir'];
-    $upload['url']  = $upload['baseurl'] . $upload['subdir'];
-    return $upload;
-}
 
 
 /**
@@ -677,46 +501,6 @@ function sell_media_collections(){
 
 
 /**
- * Given an attachment ID prints the URI to the image.
- *
- * @since 0.1
- */
-function sell_media_attachment_link( $attachment_id=null ){
-    print get_attachment_link( $attachment_id );
-}
-
-
-/**
- * Print the link to a product based on the attachment ID
- *
- * @since 0.1
- */
-function sell_media_item_link_by_attachment( $attachment_id=null ){
-    $product_id = get_post_meta( $attachment_id, '_sell_media_for_sale_product_id', true );
-    print get_permalink( $product_id );
-}
-
-/**
- * Checks if the attachment ID is an image mime type
- *
- * @param $attachment_id ID of the attachment
- * @param $mimetype an array of mimetypes
- * @return boolean true/false
- * @since 1.6.9
- */
-function sell_media_is_mimetype( $attachment_id=null, $mimetypes=array( 'image/jpeg', 'image/gif', 'image/png', 'image/bmp', 'image/tiff', 'image/icon' ) ){
-
-    $attachment_mimetype = get_post_mime_type( $attachment_id );
-
-    if ( in_array( $attachment_mimetype, $mimetypes ) ) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
-
-/**
  * Returns the attachment ID file size
  *
  * @param $attachment_id ID of the attachment
@@ -748,47 +532,6 @@ function sell_media_update_sales_stats( $product_id=null, $license_id=null, $pri
 
     return update_post_meta( $product_id, 'sell_media_sales_stats', $sales_stats_s );
 }
-
-
-/**
- * Admin Sell Media Icon
- *
- * Echo the CSS for the Sell Media Item post type icon. This is lame.
- *
- * @since 0.1
- * @return void
-*/
-
-function sell_media_admin_menu_icon() {
-    global $post_type;
-    $icon_url = plugin_dir_url( dirname( __FILE__ ) ) . 'images/menu_icons.png';
-    ?>
-    <style type="text/css" media="screen">
-        #adminmenu #menu-posts-sell_media_item div.wp-menu-image { background: transparent url( "<?php echo $icon_url; ?>" ) no-repeat 7px -26px; }
-        #adminmenu #menu-posts-sell_media_item:hover div.wp-menu-image,
-        #adminmenu #menu-posts-sell_media_item.wp-has-current-submenu div.wp-menu-image { background: transparent url( "<?php echo $icon_url; ?>" ) no-repeat 7px 5px; }
-    </style>
-    <?php
-}
-add_action( 'admin_head', 'sell_media_admin_menu_icon' );
-
-
-/**
- * Sell Media Enqueue Styles
- *
- * Enqueue the Sell Media style chosen on the settings page.
- *
- * @since 1.2.6
- * @return void
-*/
-function sell_media_enqueue_styles(){
-    $settings = sell_media_get_plugin_options();
-    if ( isset( $settings->style ) && '' != $settings->style )
-        wp_enqueue_style( 'sell-media-style', plugin_dir_url( dirname( __FILE__ ) ) . 'css/sell_media-' . $settings->style . '.css' );
-    else
-        wp_enqueue_style( 'sell-media-style', plugin_dir_url( dirname( __FILE__ ) ) . 'css/sell_media-light.css' );
-}
-add_action( 'wp_enqueue_scripts', 'sell_media_enqueue_styles' );
 
 
 /**
@@ -842,28 +585,10 @@ function sell_media_plugin_data( $field=null ){
 
 
 /**
- * Updates the payment status
+ * Build select fields
  *
- * @access public
- * @since 0.1
- * @return null
+ * @since 1.2
  */
-function sell_media_update_payment_status($payment_id, $new_status = 'publish') {
-
-    if ( $new_status == 'completed' || $new_status == 'complete' ) {
-        $new_status = 'publish';
-    }
-
-    $payment = get_post($payment_id);
-
-    $old_status = $payment->post_status;
-
-    do_action( 'sell_media_before_update_payment_status', $payment_id, $new_status, $old_status );
-    $id = wp_update_post( array( 'ID' => $payment_id, 'post_status' => $new_status ) );
-    do_action( 'sell_media_after_update_payment_status', $payment_id, $new_status, $old_status );
-    return $id;
-}
-
 function sell_media_build_select( $items=array(), $args=array() ){
     extract( $args );
 
@@ -892,351 +617,6 @@ function sell_media_build_select( $items=array(), $args=array() ){
     </select>
 <?php }
 
-function sell_media_us_states_list( $current=null, $req=false ){
-    $items = array(
-        'AL'=>"Alabama",
-        'AK'=>"Alaska",
-        'AZ'=>"Arizona",
-        'AR'=>"Arkansas",
-        'CA'=>"California",
-        'CO'=>"Colorado",
-        'CT'=>"Connecticut",
-        'DE'=>"Delaware",
-        'DC'=>"District Of Columbia",
-        'FL'=>"Florida",
-        'GA'=>"Georgia",
-        'HI'=>"Hawaii",
-        'ID'=>"Idaho",
-        'IL'=>"Illinois",
-        'IN'=>"Indiana",
-        'IA'=>"Iowa",
-        'KS'=>"Kansas",
-        'KY'=>"Kentucky",
-        'LA'=>"Louisiana",
-        'ME'=>"Maine",
-        'MD'=>"Maryland",
-        'MA'=>"Massachusetts",
-        'MI'=>"Michigan",
-        'MN'=>"Minnesota",
-        'MS'=>"Mississippi",
-        'MO'=>"Missouri",
-        'MT'=>"Montana",
-        'NE'=>"Nebraska",
-        'NV'=>"Nevada",
-        'NH'=>"New Hampshire",
-        'NJ'=>"New Jersey",
-        'NM'=>"New Mexico",
-        'NY'=>"New York",
-        'NC'=>"North Carolina",
-        'ND'=>"North Dakota",
-        'OH'=>"Ohio",
-        'OK'=>"Oklahoma",
-        'OR'=>"Oregon",
-        'PA'=>"Pennsylvania",
-        'RI'=>"Rhode Island",
-        'SC'=>"South Carolina",
-        'SD'=>"South Dakota",
-        'TN'=>"Tennessee",
-        'TX'=>"Texas",
-        'UT'=>"Utah",
-        'VT'=>"Vermont",
-        'VA'=>"Virginia",
-        'WA'=>"Washington",
-        'WV'=>"West Virginia",
-        'WI'=>"Wisconsin",
-        'WY'=>"Wyoming"
-    );
-    $items = apply_filters( 'sell_media_state_filter', $items );
-    sell_media_build_select( $items, array( 'name' => 'sell_media_reprints_sf_state', 'required' => $req, 'title' => 'State/Province', 'current' => $current ) );
-}
-
-function sell_media_country_list( $current=null, $req=false ){
-    $items = array(
-        "US" => "United States",
-        "AF" => "Afghanistan",
-        "AX" => "Åland Islands",
-        "AL" => "Albania",
-        "DZ" => "Algeria",
-        "AS" => "American Samoa",
-        "AD" => "Andorra",
-        "AO" => "Angola",
-        "AI" => "Anguilla",
-        "AQ" => "Antarctica",
-        "AG" => "Antigua and Barbuda",
-        "AR" => "Argentina",
-        "AM" => "Armenia",
-        "AW" => "Aruba",
-        "AU" => "Australia",
-        "AT" => "Austria",
-        "AZ" => "Azerbaijan, Republic of",
-        "BS" => "Bahamas",
-        "BH" => "Bahrain",
-        "BD" => "Bangladesh",
-        "BB" => "Barbados",
-        "BY" => "Belarus",
-        "BE" => "Belgium",
-        "BZ" => "Belize",
-        "BJ" => "Benin",
-        "BM" => "Bermuda",
-        "BT" => "Bhutan",
-        "BO" => "Bolivia, Plurinational State of",
-        "BQ" => "Bonaire, Sint Eustatius and Saba",
-        "BA" => "Bosnia and Herzegovina",
-        "BW" => "Botswana",
-        "BV" => "Bouvet Island",
-        "BR" => "Brazil",
-        "IO" => "British Indian Ocean Territory",
-        "BN" => "Brunei Darussalam",
-        "BG" => "Bulgaria",
-        "BF" => "Burkina Faso",
-        "BI" => "Burundi",
-        "KH" => "Cambodia",
-        "CM" => "Cameroon",
-        "CA" => "Canada",
-        "CV" => "Cape Verde",
-        "KY" => "Cayman Islands",
-        "CF" => "Central African Republic",
-        "TD" => "Chad",
-        "CL" => "Chile",
-        "CN" => "China",
-        "CX" => "Christmas Island",
-        "CC" => "Cocos (Keeling) Islands",
-        "CO" => "Colombia",
-        "KM" => "Comoros",
-        "CG" => "Congo",
-        "CD" => "Congo, the Democratic Republic of the",
-        "CK" => "Cook Islands",
-        "CR" => "Costa Rica",
-        "CI" => "Côte d'Ivoire",
-        "HR" => "Croatia",
-        "CU" => "Cuba",
-        "CW" => "Curaçao",
-        "CY" => "Cyprus",
-        "CZ" => "Czech Republic",
-        "DK" => "Denmark",
-        "DJ" => "Djibouti",
-        "DM" => "Dominica",
-        "DO" => "Dominican Republic",
-        "EC" => "Ecuador",
-        "EG" => "Egypt",
-        "SV" => "El Salvador",
-        "GQ" => "Equatorial Guinea",
-        "ER" => "Eritrea",
-        "EE" => "Estonia",
-        "ET" => "Ethiopia",
-        "FK" => "Falkland Islands (Malvinas)",
-        "FO" => "Faroe Islands",
-        "FJ" => "Fiji",
-        "FI" => "Finland",
-        "FR" => "France",
-        "GF" => "French Guiana",
-        "PF" => "French Polynesia",
-        "TF" => "French Southern Territories",
-        "GA" => "Gabon",
-        "GM" => "Gambia",
-        "GE" => "Georgia",
-        "DE" => "Germany",
-        "GH" => "Ghana",
-        "GI" => "Gibraltar",
-        "GR" => "Greece",
-        "GL" => "Greenland",
-        "GD" => "Grenada",
-        "GP" => "Guadeloupe",
-        "GU" => "Guam",
-        "GT" => "Guatemala",
-        "GG" => "Guernsey",
-        "GN" => "Guinea",
-        "GW" => "Guinea-Bissau",
-        "GY" => "Guyana",
-        "HT" => "Haiti",
-        "HM" => "Heard Island and McDonald Islands",
-        "VA" => "Holy See (Vatican City State)",
-        "HN" => "Honduras",
-        "HK" => "Hong Kong",
-        "HU" => "Hungary",
-        "IS" => "Iceland",
-        "IN" => "India",
-        "ID" => "Indonesia",
-        "IR" => "Iran, Islamic Republic of",
-        "IQ" => "Iraq",
-        "IE" => "Ireland",
-        "IM" => "Isle of Man",
-        "IL" => "Israel",
-        "IT" => "Italy",
-        "JM" => "Jamaica",
-        "JP" => "Japan",
-        "JE" => "Jersey",
-        "JO" => "Jordan",
-        "KZ" => "Kazakhstan",
-        "KE" => "Kenya",
-        "KI" => "Kiribati",
-        "KP" => "Korea, Democratic People's Republic of",
-        "KR" => "Korea, Republic of",
-        "KW" => "Kuwait",
-        "KG" => "Kyrgyzstan",
-        "LA" => "Lao People's Democratic Republic",
-        "LV" => "Latvia",
-        "LB" => "Lebanon",
-        "LS" => "Lesotho",
-        "LR" => "Liberia",
-        "LY" => "Libyan Arab Jamahiriya",
-        "LI" => "Liechtenstein",
-        "LT" => "Lithuania",
-        "LU" => "Luxembourg",
-        "MO" => "Macao",
-        "MK" => "Macedonia, the former Yugoslav Republic of",
-        "MG" => "Madagascar",
-        "MW" => "Malawi",
-        "MY" => "Malaysia",
-        "MV" => "Maldives",
-        "ML" => "Mali",
-        "MT" => "Malta",
-        "MH" => "Marshall Islands",
-        "MQ" => "Martinique",
-        "MR" => "Mauritania",
-        "MU" => "Mauritius",
-        "YT" => "Mayotte",
-        "MX" => "Mexico",
-        "FM" => "Micronesia, Federated States of",
-        "MD" => "Moldova, Republic of",
-        "MC" => "Monaco",
-        "MN" => "Mongolia",
-        "ME" => "Montenegro",
-        "MS" => "Montserrat",
-        "MA" => "Morocco",
-        "MZ" => "Mozambique",
-        "MM" => "Myanmar",
-        "NA" => "Namibia",
-        "NR" => "Nauru",
-        "NP" => "Nepal",
-        "NL" => "Netherlands",
-        "NC" => "New Caledonia",
-        "NZ" => "New Zealand",
-        "NI" => "Nicaragua",
-        "NE" => "Niger",
-        "NG" => "Nigeria",
-        "NU" => "Niue",
-        "NF" => "Norfolk Island",
-        "MP" => "Northern Mariana Islands",
-        "NO" => "Norway",
-        "OM" => "Oman",
-        "PK" => "Pakistan",
-        "PW" => "Palau",
-        "PS" => "Palestinian Territory, Occupied",
-        "PA" => "Panama",
-        "PG" => "Papua New Guinea",
-        "PY" => "Paraguay",
-        "PE" => "Peru",
-        "PH" => "Philippines",
-        "PN" => "Pitcairn",
-        "PL" => "Poland",
-        "PT" => "Portugal",
-        "PR" => "Puerto Rico",
-        "QA" => "Qatar",
-        "RE" => "Réunion",
-        "RO" => "Romania",
-        "RU" => "Russian Federation",
-        "RW" => "Rwanda",
-        "BL" => "Saint Barthélemy",
-        "SH" => "Saint Helena, Ascension and Tristan da Cunha",
-        "KN" => "Saint Kitts and Nevis",
-        "LC" => "Saint Lucia",
-        "MF" => "Saint Martin (French part)",
-        "PM" => "Saint Pierre and Miquelon",
-        "VC" => "Saint Vincent and the Grenadines",
-        "WS" => "Samoa",
-        "SM" => "San Marino",
-        "ST" => "Sao Tome and Principe",
-        "SA" => "Saudi Arabia",
-        "SN" => "Senegal",
-        "RS" => "Serbia",
-        "SC" => "Seychelles",
-        "SL" => "Sierra Leone",
-        "SG" => "Singapore",
-        "SX" => "Sint Maarten (Dutch part)",
-        "SK" => "Slovakia",
-        "SI" => "Slovenia",
-        "SB" => "Solomon Islands",
-        "SO" => "Somalia",
-        "ZA" => "South Africa",
-        "GS" => "South Georgia and the South Sandwich Islands",
-        "SS" => "South Sudan",
-        "ES" => "Spain",
-        "LK" => "Sri Lanka",
-        "SD" => "Sudan",
-        "SR" => "Suriname",
-        "SJ" => "Svalbard and Jan Mayen",
-        "SZ" => "Swaziland",
-        "SE" => "Sweden",
-        "CH" => "Switzerland",
-        "SY" => "Syrian Arab Republic",
-        "TW" => "Taiwan, Province of China",
-        "TJ" => "Tajikistan",
-        "TZ" => "Tanzania, United Republic of",
-        "TH" => "Thailand",
-        "TL" => "Timor-Leste",
-        "TG" => "Togo",
-        "TK" => "Tokelau",
-        "TO" => "Tonga",
-        "TT" => "Trinidad and Tobago",
-        "TN" => "Tunisia",
-        "TR" => "Turkey",
-        "TM" => "Turkmenistan",
-        "TC" => "Turks and Caicos Islands",
-        "TV" => "Tuvalu",
-        "UG" => "Uganda",
-        "UA" => "Ukraine",
-        "AE" => "United Arab Emirates",
-        "GB" => "United Kingdom",
-        "UM" => "United States Minor Outlying Islands",
-        "UY" => "Uruguay",
-        "UZ" => "Uzbekistan",
-        "VU" => "Vanuatu",
-        "VE" => "Venezuela, Bolivarian Republic of",
-        "VN" => "Viet Nam",
-        "VG" => "Virgin Islands, British",
-        "VI" => "Virgin Islands, U.S.",
-        "WF" => "Wallis and Futuna",
-        "EH" => "Western Sahara",
-        "YE" => "Yemen",
-        "ZM" => "Zambia",
-        "ZW" => "Zimbabwe"
-        );
-    $items = apply_filters( 'sell_media_country_filter', $items );
-    sell_media_build_select( $items, array( 'name' => 'sell_media_country', 'required' => $req, 'title' => 'Country', 'current' => $current ) );
-}
-
-/**
- * @return default payment gateway
- */
-function sell_media_default_gateway(){
-    $settings = sell_media_get_plugin_options();
-    return isset( $settings->default_gateway ) ? $settings->default_gateway : null;
-}
-
-
-/**
- * Retrieves the thank you page from the general settings and adds the needed URL params
- * for validating the purchase.
- *
- * @param $purchase (array) Purchase data from post meta
- * @return $url (string) The URL including query parameters for the "thank you" page
- */
-function sell_media_thanks_url( $purchase=array() ){
-
-    $settings = sell_media_get_plugin_options();
-
-    $url = add_query_arg(
-        array(
-            'purchase_key' => $purchase['purchase_key'],
-            'email' => $purchase['email']
-        ),
-        get_permalink( $settings->thanks_page
-        )
-    );
-
-    return $url;
-}
 
 /**
  * Return either the the custom price group or the default price group from settings

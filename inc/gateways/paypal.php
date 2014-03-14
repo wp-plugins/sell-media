@@ -25,76 +25,6 @@ function sell_media_get_paypal_redirect( $ssl_check=false ) {
 
 
 /**
- * Passes the Customers Product to PayPal via a redirect.
- * more info here: https://cms.paypal.com/mx/cgi-bin/?cmd=_render-content&content_ID=developer/e_howto_html_Appx_websitestandard_htmlvariables#id08A6HH00W2J
- *
- * @param $purchase_data array containing the following:
- * array(
- *     'first_name'   => $user['first_name'],
- *     'last_name'    => $user['last_name'],
- *     'products'     => maybe_serialize( $items ),
- *     'email'        => $user['email'],
- *     'date'         => date( 'Y-m-d H:i:s' ),
- *     'purchase_key' => $purchase_key,
- *     'payment_id'   => $payment_id
- * );
- */
-function sell_media_process_paypal_purchase( $purchase_data, $payment_id ) {
-
-    $settings = sell_media_get_plugin_options();
-    $listener_url = trailingslashit( home_url() ).'?sell_media-listener=IPN';
-
-    $args = array(
-        'purchase_key' => $purchase_data['purchase_key'],
-        'email' => $purchase_data['email']
-    );
-
-    $return_url = add_query_arg( $args, get_permalink( $settings->thanks_page ) );
-    $paypal_redirect = trailingslashit( sell_media_get_paypal_redirect() ) . '?';
-
-    $cart_obj = New Sell_Media_Cart;
-
-    $paypal_args = array(
-        'cmd'            => '_xclick',
-        'amount'         => $cart_obj->get_subtotal( $_SESSION['cart']['items'] ),
-        'business'       => $settings->paypal_email,
-        'email'          => $purchase_data['email'],
-        'no_shipping'    => '0', // 0 (defualt) prompt for address, not required, 1 no prompt, 2 prompt & required
-        'no_note'        => '1',
-        'currency_code'  => $settings->currency,
-        'charset'        => get_bloginfo( 'charset' ),
-        'rm'             => '2',
-        // According to the docs the param is 'return_url', but that doesn't work as expected
-        // 'https://developer.paypal.com/webapps/developer/docs/classic/ipn/integration-guide/IPNandPDTVariables/'
-        // 'return_url'     => $return_url,
-        'return'     => $return_url,
-        'ipn_notification_url' => $listener_url, // Is this a valid parameter??
-        'notify_url' => $listener_url, // This needs to be added in order for IPN to work
-        'mc_currency'    => $settings->currency,
-        'mc_gross'       => $cart_obj->get_subtotal( $_SESSION['cart']['items'] ),
-        'payment_status' => '',
-        'item_name'      => __( 'Purchase from ', 'sell_media' ) . get_bloginfo( 'name' ),
-        'item_number'    => $purchase_data['purchase_key'],
-        'custom'         => $purchase_data['payment_id'] // post id, i.e., payment id
-    );
-
-    // Add additional args;
-    $paypal_args = apply_filters('sell_media_before_paypal_args', $paypal_args );
-
-    // Lets save all the info being sent to PayPal at time of purchase
-    update_post_meta( $payment_id, '_paypal_args', $paypal_args );
-
-    $paypal_redirect .= http_build_query( $paypal_args );
-
-    sell_media_empty_cart();
-
-    print '<script type="text/javascript">window.location ="' . $paypal_redirect . '"</script>';
-    exit;
-}
-add_action( 'sell_media_gateway_paypal', 'sell_media_process_paypal_purchase' );
-
-
-/**
  * Listen for a $_GET request from our PayPal IPN.
  * This would also do the "set-up" for an "alternate purchase verification"
  */
@@ -116,6 +46,7 @@ add_action( 'init', 'sell_media_listen_for_paypal_ipn' );
  * This is the Pink Lilly of the whole operation.
  */
 function sell_media_process_paypal_ipn() {
+
 
     /*
     Since this script is executed on the back end between the PayPal server and this
@@ -186,18 +117,6 @@ function sell_media_process_paypal_ipn() {
         $message = null;
 
         /**
-         * Verify the mc_gross amount
-         *
-         * Check the purchase price from $_POST against the arguments that are saved during
-         * time of purchase.
-         */
-        $paypal_args = get_post_meta( $_POST['custom'], '_paypal_args', true );
-        if ( ! empty( $_POST['mc_gross'] ) && $_POST['mc_gross'] != $paypal_args['mc_gross'] ){
-            $message .= "\nPayment does NOT match\n";
-        }
-
-
-        /**
          * Verify seller PayPal email with PayPal email in settings
          *
          * Check if the seller email that was processed by the IPN matches what is saved as
@@ -206,6 +125,17 @@ function sell_media_process_paypal_ipn() {
         $settings = sell_media_get_plugin_options();
         if ( $_POST['receiver_email'] != $settings->paypal_email ){
             $message .= "\nEmail seller email does not match email in settings\n";
+        }
+
+        /**
+         * Verify seller PayPal email with PayPal email in settings
+         *
+         * Check if the seller email that was processed by the IPN matches what is saved as
+         * the seller email in our DB
+         */
+        $settings = sell_media_get_plugin_options();
+        if ( $_POST['mc_currency'] != $settings->currency ){
+            $message .= "\nCurrency does not match those assigned in settings\n";
         }
 
 
@@ -223,39 +153,47 @@ function sell_media_process_paypal_ipn() {
         }
 
 
-        // Check currency buyer paid with matches what seller allows
-
-
         /**
          * Verify the payment is set to "Completed".
          *
-         * For a completed payment we update the payment status to publish, send the
-         * download email and empty the cart.
+         * Create a new payment, send customer an email and empty the cart
          */
         if ( ! empty( $_POST['payment_status'] ) && $_POST['payment_status'] == 'Completed' ){
 
-            $payment = array(
-                'ID' => $_POST['custom'],
-                'post_status' => 'publish'
-                );
+            $data = array(
+                'post_title' => $_POST['payer_email'],
+                'post_status' => 'publish',
+                'post_type' => 'sell_media_payment'
+            );
 
-            wp_update_post( $payment );
+            $payment_id = wp_insert_post( $data );
 
-            $message .= "\nSuccess! Updated payment status to: published\n";
-            $message .= "Payment status is set to: {$_POST['payment_status']}\n\n";
-            $message .= "Sending payment id: {$_POST['custom']}\n";
-            $message .= "To email: {$_POST['payer_email']}\n";
-            $message .= "Purchase receipt: {$_POST['item_number']}\n";
+            if ( $payment_id ) {
 
-            $email_status = sell_media_email_purchase_receipt( $_POST['item_number'], $_POST['payer_email'], $_POST['custom'] );
-            $message .= "{$email_status}\n";
+                update_post_meta( $payment_id, '_paypal_args', $_POST );
 
-            $payment_meta_array = get_post_meta( $_POST['custom'], '_sell_media_payment_meta', true );
-            $products_meta_array = unserialize( $payment_meta_array['products'] );
-            do_action( 'sell_media_after_successful_payment', $products_meta_array, $_POST['custom'] );
+                // record the PayPal payment details
+                $p = new SellMediaPayments;
+                $p->paypal_copy_args( $payment_id );
 
-            $cart = sell_media_empty_cart();
-            $message .= "Emptied cart: {$cart}\n";
+                // create new user, auto log them in, email them registration
+                $c = new SellMediaCustomer;
+                $c->insert( $_POST['payer_email'], $_POST['first_name'], $_POST['last_name'] );
+
+                $message .= "\nSuccess! Your purchase has been completed.\n";
+                $message .= "Your transaction number is: {$_POST['txn_id']}\n";
+                $message .= "To email: {$_POST['payer_email']}\n";
+
+                // Send email to buyer and admin
+                $email_status = $p->email_receipt( $payment_id, $_POST['payer_email'] );
+                $admin_email_status = $p->email_receipt( $payment_id, get_option( 'admin_email' ) );
+                
+                $message .= "{$email_status}\n";
+                $message .= "{$admin_email_status}\n";
+
+                do_action( 'sell_media_after_successful_payment', $payment_id );
+
+            }
 
         } else {
             $message .= "\nPayment status not set to Completed\n";

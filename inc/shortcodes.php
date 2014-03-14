@@ -7,69 +7,32 @@
  * @return string
  * @since 0.1
  */
-function sell_media_list_downloads_shortcode( $purchase_key=null, $email=null ) {
+function sell_media_list_downloads_shortcode( $tx=null ) {
 
-    if ( isset( $_GET['purchase_key'] ) && ! empty( $_GET['purchase_key'] ) ){
-        $purchase_key = $_GET['purchase_key'];
+    do_action( 'sell_media_thanks_hook' );
+
+    $tx = null;
+
+    if ( isset( $_GET['tx'] ) && ! empty( $_GET['tx'] ) ) {
+        $tx = $_GET['tx'];
+    } elseif ( isset( $_POST['stripeToken'] ) && ! empty( $_POST['stripeToken'] ) ) {
+        $tx = $_POST['stripeToken'];
+    } else {
+        $tx = null;
     }
 
-    if ( isset( $_GET['email'] ) && ! empty( $_GET['email'] ) ){
-       	$email = $_GET['email'];
+    if ( $tx ) {
+        $p = new SellMediaPayments;
+        $post_id = $p->get_id_from_tx( $transaction_id=$tx );
+        $html = null;
+        $html = $p->get_payment_products_formatted( $post_id );
+        $html .= '<script>sellMediaCart.empty();</script>';
+        return '<p class="sell-media-thanks-message">' . $html . '</p>';
+        do_action( 'sell_media_thanks_hook_below' );
+    } else {
+        return false;
     }
 
-    $message = null;
-    if ( ! empty( $purchase_key ) && ! empty( $email ) ){
-
-        $args = array(
-            'post_type' => 'sell_media_payment',
-            'post_status' => 'publish',
-            'meta_query' => array(
-                'relation' => 'AND',
-                    array(
-                        'key' => '_sell_media_payment_purchase_key',
-                        'value' => $purchase_key
-                    )
-                )
-            );
-
-        $payments = new WP_Query( $args );
-        foreach( $payments->posts as $payment ) {
-            $payment_meta = get_post_meta( $payment->ID, '_sell_media_payment_meta', true );
-            $downloads = maybe_unserialize( $payment_meta['products'] );
-        }
-
-        if ( empty( $downloads ) ) {
-            $settings = sell_media_get_plugin_options();
-            $message .= __( 'Your purchase is pending. This happens if you paid with an eCheck, if you opened a new account or if there is a problem with the checkout system. Please contact the seller if you have questions about this purchase: ') ;
-            $message .= $settings->paypal_email;
-        } else {
-
-            $payment_id = sell_media_get_payment_id_by( 'key', $purchase_key );
-            $links = sell_media_build_download_link( $payment_id, $email );
-
-            foreach( $links as $link ){
-
-               	$image_attributes = wp_get_attachment_image_src( get_post_meta( $link['item_id'], '_sell_media_attachment_id', true ), 'medium', false );
-
-                // Currently there is no "type", i.e., download vs. physical print
-                // so we use price groups to determine if the purchase was a download
-                // and only show download links for downloads
-                $term_obj = get_term_by( 'id', $link['price_id'], 'price-group' );
-
-                $message .= '<div class="sell-media-aligncenter">';
-
-                if ( $term_obj || $link['price_id'] == 'sell_media_original_file' ){
-                    $message .= '<a href="' . $link['url']. '"><img src="' . $image_attributes[0] . '" width="' . $image_attributes[1] . '" height="' . $image_attributes[2] . '" class="sell-media-aligncenter" /></a>';
-                    $message .= '<strong><a href="' . $link['url'] . '" class="sell-media-buy-button">' . __( 'Download File', 'sell_media' ) . '</a></strong>';
-                } else {
-                    $message .= '<img src="' . $image_attributes[0] . '" width="' . $image_attributes[1] . '" height="' . $image_attributes[2] . '" class="sell-media-aligncenter" />';
-                }
-
-                $message .= '</div>';
-            }
-        }
-    }
-    return '<p class="sell-media-thanks-message">' . $message . '</p>';
 }
 add_shortcode( 'sell_media_thanks', 'sell_media_list_downloads_shortcode' );
 
@@ -82,339 +45,6 @@ function sell_media_search_shortcode( $atts, $content = null ) {
     return get_search_form();
 }
 add_shortcode('sell_media_searchform', 'sell_media_search_shortcode');
-
-/**
- * Checkout shortcode [sell_media_checkout]
- *
- * @since 0.1
- */
-function sell_media_checkout_shortcode($atts, $content = null) {
-
-    $cart = New Sell_Media_Cart;
-
-    $settings = sell_media_get_plugin_options();
-
-    $i = 0;
-
-    if ( isset( $_SESSION['cart']['items'] ) )
-        $items = $_SESSION['cart']['items'];
-
-    if ( $_POST ){
-
-        /**
-         * Compare count in cart with count in post
-         * update cart count as needed
-         */
-        foreach( $_POST['sell_media_item_qty'] as $k => $v ){
-            if ( $_SESSION['cart']['items'][ $k ] != $v ){
-                $cart->update_item( $k, 'qty', $v );
-            }
-        }
-        $items = $_SESSION['cart']['items'];
-
-        // Create User
-        $user = array();
-        $user['first_name'] = $_POST['first_name'];
-        $user['last_name'] = $_POST['last_name'];
-        $user['email'] = $_POST['email'];
-
-        // $user['user_id'] =
-
-        // construct the payment title
-        if ( isset( $user['first_name'] ) || isset( $user['last_name'] ) ) {
-            $payment_title = $user['first_name'] . ' ' . $user['last_name'];
-        } else {
-            $payment_title = $user['user_email'];
-        }
-
-        $data = array(
-            'post_title' => $payment_title,
-            'post_status' => 'pending',
-            'post_type' => 'sell_media_payment',
-            'post_date' => date('Y-m-d H:i:s')
-            );
-
-        $payment_id = wp_insert_post( $data );
-
-        // Create Purchase
-        if ( $payment_id ) {
-
-            $purchase_key = strtolower( md5( uniqid() ) ); // random key
-
-            if ( isset( $_SERVER['HTTP_X_FORWARD_FOR'] ) ) {
-                $ip = $_SERVER['HTTP_X_FORWARD_FOR'];
-            } else {
-                $ip = $_SERVER['REMOTE_ADDR'];
-            }
-
-            // filter the total session
-            $_SESSION['cart']['total'] = apply_filters( 'sell_media_update_total', $_SESSION['cart']['total'] );
-
-            $purchase = array(
-                'first_name' => $user['first_name'],
-                'last_name' => $user['last_name'],
-                'products' => maybe_serialize( $items ),
-                'email' => $user['email'],
-                'date' => date( 'Y-m-d H:i:s' ),
-                'purchase_key' => $purchase_key,
-                'payment_id' => $payment_id,
-                'CalculatedPrice' => $_SESSION['cart']['total']
-                );
-
-            // record the payment details
-            update_post_meta( $payment_id, '_sell_media_payment_meta', $purchase );
-            update_post_meta( $payment_id, '_sell_media_payment_user_email', $purchase['email'] );
-            update_post_meta( $payment_id, '_sell_media_payment_first_name', $user['first_name'] );
-            update_post_meta( $payment_id, '_sell_media_payment_last_name', $user['last_name'] );
-            update_post_meta( $payment_id, '_sell_media_payment_user_ip', $ip );
-            update_post_meta( $payment_id, '_sell_media_payment_purchase_key', $purchase['purchase_key'] );
-            update_post_meta( $payment_id, '_sell_media_payment_amount', $_SESSION['cart']['total'] );
-            update_post_meta( $payment_id, '_sell_media_payment_quantity', $_SESSION['cart']['qty'] );
-
-            global $current_user;
-            do_action( 'sell_media_before_checkout', $purchase );
-
-            // Record the user
-            if ( ! $current_user->ID ){
-                $password = wp_generate_password( $length=12, $include_standard_special_chars=false );
-                $data = array(
-                    'user_login' => $purchase['email'],
-                    'user_pass' => $password,
-                    'user_email' => $purchase['email'],
-                    'first_name' => $user['first_name'],
-                    'last_name' => $user['last_name'],
-                    'role' => 'sell_media_customer'
-                    );
-
-                $user_id = wp_insert_user( $data );
-
-                // Email new user password
-                if ( $settings->customer_notification == true ){
-
-                    $message  = sprintf( __('New user registration on %s:'), get_option('blogname') ) . "\r\n\r\n";
-                    $message .= sprintf( __('Username: %s'), stripslashes( $data['user_login'] ) ) . "\r\n\r\n";
-                    $message .= sprintf( __('E-mail: %s'), stripslashes( $data['user_email'] ) ) . "\r\n";
-
-                    if ( empty( $data['user_pass'] ) )
-                        return;
-
-                    $message  = __('Hi there,') . "\r\n\r\n";
-                    $message .= sprintf( __("Welcome to %s! Here's how to log in:"), get_option('blogname')) . "\r\n\r\n";
-                    $message .= wp_login_url() . "\r\n";
-                    $message .= sprintf( __('Username: %s'), $data['user_login'] ) . "\r\n";
-                    $message .= sprintf( __('Password: %s'), $data['user_pass'] ) . "\r\n\r\n";
-                    $message .= sprintf( __('If you have any problems, please contact me at %s.'), get_option('admin_email') ) . "\r\n\r\n";
-                    $message .= __('Adios!');
-
-                    $r = wp_mail(
-                        $data['user_email'],
-                        sprintf( __('[%s] Your username and password'), get_option('blogname') ),
-                        $message
-                    );
-                }
-
-            } else {
-                $user_id = $current_user->ID;
-            }
-            update_post_meta( $payment_id, '_sell_media_user_id', $user_id );
-
-            if ( ! is_wp_error( $user_id ) ){
-                do_action('sell_media_after_user_created');
-            }
-
-            // Get the new post meta
-            $payment_meta = get_post_meta( $payment_id, '_sell_media_payment_meta', true );
-
-            // Get the user by Email then assign their ID into the
-            // payments meta array
-            $user = get_user_by( 'email', $user['email'] );
-            $payment_meta['user_id'] = $user_id;
-
-            // Upate the _sell_media_payment_meta with the User ID
-            update_post_meta( $payment_id, '_sell_media_payment_meta', $payment_meta );
-
-            if ( empty( $_POST['sell_media_payment_gateway'] ) || $_POST['sell_media_payment_gateway'] == 'paypal' ){
-                sell_media_process_paypal_purchase( $purchase, $payment_id );
-            } else {
-                do_action( 'sell_media_process_purchase', $purchase );
-                if ( $settings->thanks_page ){
-                    $url = get_permalink( $settings->thanks_page );
-                    echo '<script type="text/javascript">window.location ="' . $url . '"</script>';
-                    exit;
-                }
-            }
-        }
-    }
-
-    ob_start(); ?>
-    <div id="sell-media-checkout" class="sell-media">
-        <?php if ( empty( $items ) ) : ?>
-             <p><?php _e('You have no items in your cart. ', 'sell_media'); ?><a href="<?php print get_post_type_archive_link('sell_media_item'); ?>"><?php _e('Continue shopping', 'sell_media'); ?></a>.</p>
-        <?php else : ?>
-            <form action="" method="post" id="sell_media_checkout_form" class="sell-media-form">
-            <?php wp_nonce_field('check_email','sell_media_cart_nonce'); ?>
-            <input type="hidden" value="<?php echo sell_media_default_gateway(); ?>" name="sell_media_payment_gateway" id="sell_media_payment_gateway" />
-            <table id="sell-media-checkout-table">
-                <thead>
-                    <tr class="sell-media-header">
-                        <th class="sell-media-header-details"><h3><?php _e('Item', 'sell_media'); ?></h3></th>
-                        <th class="sell-media-header-quantity"><h3><?php _e('Quantity', 'sell_media'); ?></h3></th>
-                        <th class="sell-media-header-price"><h3><?php _e('Price', 'sell_media'); ?></h3></th>
-                    </tr>
-                </thead>
-                <tfoot>
-                    <tr class="product-checkout-row">
-                        <td colspan="3">
-                            <div class="sell-media-subtotal">
-                                <div class="sell-media-title"><h3><?php _e( 'Total' , 'sell_media' ) ?></h3></div>
-                                <table id="sell-media-subtotal-table">
-                                    <tr>
-                                        <th scope="row"><?php _e('Subtotal','sell_media'); ?></th>
-                                        <td>
-                                            <span class="currency"><?php print sell_media_get_currency_symbol(); ?></span><span class="subtotal-target"></span>
-                                        </td>
-                                    </tr>
-                                    <?php do_action('sell_media_below_subtotal', $cart->get_subtotal( $_SESSION['cart']['items'] ) ); ?>
-                                    <tr>
-                                        <th scope="row">
-                                            <?php _e('Shipping &amp; Handling','sell_media'); ?>
-                                        </th>
-                                        <td>
-                                            <span class="currency"><?php print sell_media_get_currency_symbol(); ?></span><span class="shipping-target"><?php print apply_filters('sell_media_shipping_rate', "0.00" ); ?></span>
-                                        </td>
-                                    <tr>
-                                        <th scope="row">
-                                            <?php _e('Total','sell_media'); ?>
-                                        </th>
-                                        <td>
-                                            <span class="final-total green">
-                                                <span class="currency"><?php print sell_media_get_currency_symbol(); ?></span><span class="total-target"></span>
-                                            </span>
-                                         </td>
-                                    </tr>
-                                </table>
-                            </div>
-                                <?php do_action('sell_media_above_registration_form'); ?>
-                                <?php if ( ! is_user_logged_in() ) : ?>
-                                    <h3 class="checkout-title"><?php _e( 'Create Account', 'sell_media' ); ?></h3>
-                                    <p><?php _e( 'Create an account to complete your purchase. Already have an account', 'sell_media' ); ?>? <a href="<?php echo get_permalink( $settings->login_page ); ?>" title="Login"><?php _e( 'Login', 'sell_media' ); ?></a>
-                                    <a href="<?php echo wp_lostpassword_url( site_url( '/checkout/' ) ); ?>"><?php _e( 'Lost your password?', 'sell_media'); ?></a>
-                                    </p>
-                                    <fieldset id="sell_media_first_name_field_wrap" class="sell_media_fieldset">
-                                        <label for="sell_media_first_name_field"><?php _e( 'First Name', 'sell_media' ); ?></label>
-                                        <input type="text"id="sell_media_first_name_field" name="first_name" data-required="true" required />
-                                    </fieldset>
-                                    <fieldset id="sell_media_last_name_field_wrap" class="sell_media_fieldset">
-                                        <label for="sell_media_last_name_field"><?php _e( 'Last Name', 'sell_media' ); ?></label>
-                                        <input type="text" class="" id="sell_media_last_name_field" name="last_name" data-required="true" required />
-                                    </fieldset>
-                                    <fieldset id="sell_media_email_field_wrap" class="sell_media_fieldset">
-                                        <label for="sell_media_email_field"><?php _e( 'Email', 'sell_media' ); ?></label>
-                                        <input type="email" id="sell_media_email_field" name="email" data-required="true" required />
-                                    </fieldset>
-                                    <?php do_action('sell_media_below_registration_form'); ?>
-                                <?php else : ?>
-                                    <?php $current_user = wp_get_current_user(); ?>
-                                    <input type="hidden" id="sell_media_first_name_field" name="first_name" value="<?php print $current_user->user_firstname; ?>" />
-                                    <input type="hidden" id="sell_media_last_name_field" name="last_name" value="<?php print $current_user->user_lastname; ?>" />
-                                    <input type="hidden" id="sell_media_email_field" name="email" value="<?php print $current_user->user_email; ?>" />
-                                    <?php do_action('sell_media_below_registration_form'); ?>
-                                <?php endif; ?>
-
-                                <?php if ( ! empty ( $settings->terms_and_conditions ) ) : ?>
-                                    <fieldset id="sell_media_termsdiv_wrap" class="sell_media_fieldset">
-                                        <input type="checkbox" name="termsandconditions" id="sell_media_terms_cb" data-required="true" value="" required="required" />
-                                        <span class="sell-media-termnotice">
-                                            <a href="#" id="agree_terms_and_conditions">
-                                            <?php echo apply_filters( 'sell_media_filter_terms_conditions', 'I agree to the terms and conditions' ); ?>
-                                            </a>
-                                        </span>
-                                    </fieldset>
-                                <?php endif; ?>
-                                <fieldset class="button-container sell_media_fieldset">
-                                    <input type="submit" class="sell-media-buy-button-success sell-media-buy-button-checkout" value="<?php _e('Complete Purchase', 'sell_media'); ?>" />
-                                    <span class="inline"><em>&nbsp;<?php _e( 'or', 'sell_media' ); ?></em> <a href="<?php echo get_post_type_archive_link('sell_media_item'); ?>"><?php _e('Continue Shopping','sell_media'); ?></a></span>
-                                </fieldset>
-
-                                <p class="sell-media-credit"><?php sell_media_plugin_credit(); ?></p>
-                        </td>
-                    </tr>
-                </tfoot>
-                <tbody class="sell-media-product-list">
-                    <?php
-
-                    foreach( $items as $item_id => $item ) : ?>
-                        <?php
-
-                        // Derive the license name
-                        if ( empty( $item['license']['id'] ) ){
-                            $license = __('None','sell_media');
-                            $license_id = false;
-                            $price = $item['price']['amount'];
-                            $markup_amount = 0;
-                        } else {
-                            $license_obj = get_term_by('id', $item['license']['id'], 'licenses' );
-                            $license = $license_obj->name;
-                            $license_id = $item['license']['id'];
-                            $price = $cart->item_markup_total( $item['id'], $item['price']['id'], $license_id );
-                            $markup_amount = $cart->item_markup_amount( $item['id'], $item['price']['id'], $license_id );
-                        }
-
-                        $size_name = $cart->item_size( $item['price']['id'] );
-                        $total     = $item['qty'] * $price;
-                        ?>
-
-                        <tr>
-                            <td class="product-details">
-                                <a href="<?php print get_permalink( $item['id'] ); ?>"><?php sell_media_item_icon( get_post_meta( $item['id'], '_sell_media_attachment_id', true ), array(75,0) ); ?></a>
-                                <div class="sell-media-table-meta">
-                                    <a href="<?php print get_permalink( $item['id'] ); ?>"><?php print get_the_title( $item['id'] ); ?></a>
-                                    <div class="sell-media-license"><?php _e('License','sell_media'); ?>: <?php print $license; ?></div>
-                                    <div class="sell-media-size"><?php _e('Size','sell_media');?>: <?php print $size_name; ?></div>
-                                    <?php if ( $item['price']['description'] ) : ?><div class="sell-media-size"><?php _e('Description','sell_media');?>: <?php print $item['price']['description']; ?></div><?php endif; ?>
-                                </div>
-                                <?php do_action('sell_media_below_product_cart_title', $item, $item['id'], $item['price']['id']); ?>
-                                <?php if ( !empty( $item['License'] ) ) : ?>
-                                    <?php $tmp_term = get_term_by( 'id', $item['License'], $item['taxonomy'] ); ?>
-                                    <?php if ( $tmp_term ) : ?>
-                                        <div class="sell-media-table-meta"><?php _e( 'License', 'sell_media' ); ?>: <?php print $tmp_term->name; ?></div>
-                                        <p><?php print $tmp_term->description; ?></p>
-                                    <?php endif; ?>
-                                <?php endif; ?>
-                            </td>
-                            <td class="product-quantity">
-                                <input
-                                name="sell_media_item_qty[<?php echo $item_id; ?>]"
-                                type="text"
-                                id="quantity-<?php print $item_id; ?>"
-                                value="<?php echo $item['qty']; ?>"
-                                class="small-text sell-media-quantity"
-                                data-id="<?php print $item_id; ?>"
-                                data-price="<?php print $price; ?>"
-                                data-markup="<?php print $markup_amount; ?>"
-                                />
-                            </td>
-                            <td class="product-price">
-                                <span class="currency-symbol"><?php print sell_media_get_currency_symbol(); ?></span>
-                                <span class="item-price-target" id="sub-total-target-<?php print $item_id; ?>"><?php print sprintf( "%0.2f", $total ); ?></span>
-                                <br />
-                                <span class="remove-item-handle" data-item_id="<?php print $item_id; ?>"><?php _e('Remove', 'sell_media'); ?></span>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                        <tr>
-                            <td></td>
-                            <td></td>
-                            <td><a href="#" class="remove-all-handle"><?php _e('Remove All', 'sell_media'); ?></a></td>
-                        </tr>
-                </tbody>
-            </table>
-            </form>
-        <?php endif; ?>
-    </div>
-    <?php return ob_get_clean();
-}
-add_shortcode('sell_media_checkout', 'sell_media_checkout_shortcode');
 
 /**
  * Adds the 'sell_media' short code to the editor. [sell_media_item]
@@ -438,8 +68,13 @@ function sell_media_item_shortcode( $atts ) {
     $thumb_id = get_post_meta( $id, '_sell_media_attachment_id', true );
     $image = wp_get_attachment_image_src( $thumb_id, $size );
     $text = apply_filters('sell_media_purchase_text', __( $text,'sell_media' ), $id );
+
+    $thumb_id = get_post_thumbnail_id( $post_id );
+    $attachment = get_post( $thumb_id );
+    $caption = $attachment->post_title;
+
     if ( $image ) {
-        $image = '<img src="' . $image[0] . '" alt="' . sell_media_image_caption( $id ) . '" title=" ' . sell_media_image_caption( $id ) . ' " class="sell-media-aligncenter" />';
+        $image = '<img src="' . $image[0] . '" alt="' . $caption . '" title=" ' . sell_media_image_caption( $id ) . ' " class="sell-media-aligncenter" />';
     } else {
         sell_media_item_icon( get_post_thumbnail_id( $id ), $size );
     }
@@ -483,7 +118,7 @@ function sell_media_all_items_shortcode( $atts ){
     $posts = New WP_Query( $args );
     ob_start(); ?>
     <div id="sell-media-shortcode-all" class="sell-media">
-        <div class="sell-media-short-code-all">
+        <div class="sell-media-shortcode-all">
             <div class="sell-media-grid-container">
                 <?php $i = 0; ?>
                 <?php foreach( $posts->posts as $post ) : $i++; ?>
@@ -496,12 +131,66 @@ function sell_media_all_items_shortcode( $atts ){
                 <?php endforeach; ?>
                 <?php sell_media_pagination_filter(); ?>
             </div><!-- .sell-media-grid-container -->
-        </div><!-- .sell-media-short-code-all -->
+        </div><!-- .sell-media-shortcode-all -->
     </div><!-- #sell-media-shortcode-all .sell_media -->
     <?php return ob_get_clean();
 }
 add_shortcode('sell_media_all_items', 'sell_media_all_items_shortcode');
 
+
+/**
+ * The checkout page
+ *
+ * @since 2.0
+ */
+function sell_media_checkout_shortcode(){
+    $settings = sell_media_get_plugin_options();
+    ob_start(); ?>
+    <?php do_action( 'sell_media_checkout_before_cart' ); ?>
+    <div id="sell-media-checkout-cart" style="display:none;">
+        <div class="sellMediaCart_items"></div>
+        <div class="sell-media-totals group">
+            <div class="subtotal">
+                <span class="sell-media-itemize"><?php _e( 'Subtotal', 'sell_media' ); ?>:</span> <span class="sellMediaCart_total"></span>
+            </div>
+            <div class="tax">
+                <span class="sell-media-itemize"><?php _e( 'Tax', 'sell_media' ); ?>: <?php if ( ! empty( $settings->tax ) ) echo '(' . round( ( float ) $settings->tax_rate * 100 ) . '&#37)'; ?></span> <span class="sellMediaCart_tax"></span>
+            </div>
+            <div class="shipping">
+                <span class="sell-media-itemize"><?php _e( 'Shipping', 'sell_media' ); ?>:</span> <span class="sellMediaCart_shipping"></span>
+            </div>
+            <div class="total sell-media-bold">
+                <span class="sell-media-itemize"><?php _e( 'Total', 'sell_media' ); ?>:</span> <span class="sellMediaCart_grandTotal"></span>
+            </div>
+        </div>
+        <?php do_action( 'sell_media_checkout_registration_fields' ); ?>
+        <?php do_action( 'sell_media_checkout_after_registration_fields' ); ?>
+        <div class="sell-media-checkout-button group">
+            <?php do_action( 'sell_media_above_checkout_button' ); ?>
+            <p><a href="javascript:void(0)" class="sellMediaCart_checkout sell-media-button"><?php _e( 'Checkout Now', 'sell_media' ); ?></a></p>
+            <p id="sell-media-continue-shopping" class="text-center"><?php echo __( 'or', 'sell_media' ); ?> <a href="<?php echo get_post_type_archive_link( 'sell_media_item' ); ?>"><?php echo __( 'continue shopping', 'sell_media' ); ?> &raquo;</a></p>
+            <?php
+            $settings = sell_media_get_plugin_options();
+            if ( ! empty ( $settings->terms_and_conditions ) ) : ?>
+                <p id="sell-media-tos" class="text-center small quiet"><?php echo apply_filters( 'sell_media_tos_label', 'By clicking "Checkout Now", you are agreeing to our <a href="javascript:void(0);" class="sell-media-empty-dialog-trigger">terms of service</a>.' ); ?></p>
+                <div id="sell-media-empty-dialog-box" class="sell-media-dialog-box" style="display:none">
+                    <span class="close">&times;</span>
+                    <div class="content">
+                        <p><?php echo stripslashes_deep( nl2br( $settings->terms_and_conditions ) ); ?></p>
+                    </div>
+                </div>
+                <div id="sell-media-empty-dialog-overlay" class="sell-media-dialog-overlay" style="display:none"></div>
+            <?php endif; ?>
+        </div>
+        <?php do_action( 'sell_media_below_registration_form' ); ?>
+    </div>
+    <p id="sell-media-empty-cart-message" style="display:none;">
+        <?php echo sprintf( __( 'Your cart is empty. %s', 'sell_media'), '<a href="' . get_post_type_archive_link( 'sell_media_item' ) . '">Continue shopping &raquo;</a>' ); ?>
+    </p>
+    <?php wp_nonce_field( 'validate_cart', 'cart_nonce_security' ); ?>
+    <?php return ob_get_clean();
+}
+add_shortcode( 'sell_media_checkout', 'sell_media_checkout_shortcode' );
 
 /**
  * Shows a list of everything user has downloaded.
@@ -511,26 +200,28 @@ add_shortcode('sell_media_all_items', 'sell_media_all_items_shortcode');
  */
 function sell_media_download_shortcode( $atts ) {
 	if ( is_user_logged_in() ) {
-            global $current_user;
-            global $wpdb;
-	    get_currentuserinfo();
+        global $current_user;
+        get_currentuserinfo();
 
-	    $payment_lists = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $wpdb->postmeta WHERE meta_key = %s AND meta_value LIKE %s order by post_id DESC", '_sell_media_payment_user_email', $current_user->user_email ), ARRAY_A );
-            $payment_obj = New SellMediaPayments;
-            $html = null;
+        $p = new SellMediaPayments;
+        $purchases = $p->get_user_payments( $current_user->user_email );
 
-            foreach( $payment_lists as $payment ){
-                if ( get_post_status( $payment['post_id'] ) != 'publish' ) {
-                    $payment_meta = get_post_meta( $payment['post_id'], '_sell_media_payment_meta', true );
-                    $html .= '<ul class="payment-meta">';
-                    $html .= '<li><strong>'.__('Date', 'sell_media').'</strong> ' . $payment_meta['date'] . '</li>';
-                    $html .= '<li><strong>'.__('Payment ID', 'sell_media').'</strong> ' . $payment_meta['payment_id'] . '</li>';
-                    $html .= '</ul>';
-                    $html .= $payment_obj->payment_table( $payment['post_id'], true );
-                }
-            }
+        $html = null;
+        $html = '<h2>';
+        $html .= __( 'Your Purchase History', 'sell_media' );
+        $html .= '</h2>';
 
-            return '<div id="purchase-history">'.$html.'</div>';
+        if ( $purchases ) foreach ( $purchases as $purchase ) {
+            $html .= '<div class="sell-media-purchase">';
+            $html .= '<p>';
+            $html .= '<strong>' . __( 'Purchase ID', 'sell_media' ) . ': ' . $purchase . '</strong>';
+            $html .= '<br /><span class="date">' . get_the_time( 'M N, Y', $purchase ) . '</span>';
+            $html .= '</p>';
+            $html .= $p->get_payment_products_formatted( $purchase );
+            $html .= '</div>';
+        }
+
+        return '<div id="purchase-history">' . $html . '</div>';
 
 	} else {
             do_shortcode( '[sell_media_login_form]' );
@@ -766,39 +457,3 @@ function sell_media_login_form_shortcode(){
 
 }
 add_shortcode( 'sell_media_login_form', 'sell_media_login_form_shortcode' );
-
-/**
- * Redirect the failed login to the same page
- *
- * @since 1.6
- */
-add_action( 'wp_login_failed', 'my_front_end_login_fail' );  // hook failed login
-
-function my_front_end_login_fail( $username ) {
-   $referrer = $_SERVER['HTTP_REFERER'];  // where did the post submission come from?
-   // if there's a valid referrer, and it's not the default log-in screen
-   if ( !empty($referrer) && !strstr($referrer,'wp-login') && !strstr($referrer,'wp-admin') ) {
-        $redirect = add_query_arg( array( 'login' => 'failed' ), $referrer );
-      wp_redirect( $redirect );
-      exit;
-   }
-}
-
-
-
-/**
- * Add to wp_footer
- * terms markup
- *
- * @return string
- * @since 1.6
- */
-function sell_media_terms_footer(){
-    $settings = sell_media_get_plugin_options();
-    if ( ! empty ( $settings->terms_and_conditions ) ) { ?>
-    <div id="terms-and-conditions-dialog" style="display: none;">
-        <span class="close">&times;</span>
-        <?php echo stripslashes_deep( nl2br( $settings->terms_and_conditions ) ); ?>
-    </div>
-<?php } }
-add_action( 'wp_footer', 'sell_media_terms_footer' );
