@@ -1,0 +1,6 @@
+[12-Feb-2014 20:46:49 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /Users/thad/Sites/wordpress/test.com/wp-content/plugins/sell-media/inc/gateways/paypal.php:51) in /Users/thad/Sites/wordpress/test.com/wp-content/plugins/sell-media/inc/gateways/php-paypal-ipn/ipnlistener.php on line 307
+[12-Feb-2014 20:46:49 UTC] Invalid HTTP request method.
+[13-Feb-2014 21:05:52 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /Users/thad/Sites/wordpress/test.com/wp-content/plugins/sell-media/inc/gateways/paypal.php:51) in /Users/thad/Sites/wordpress/test.com/wp-content/plugins/sell-media/inc/gateways/php-paypal-ipn/ipnlistener.php on line 307
+[13-Feb-2014 21:05:52 UTC] Invalid HTTP request method.
+[13-Feb-2014 21:06:15 UTC] Invalid HTTP request method.
+[13-Feb-2014 21:06:38 UTC] Invalid HTTP request method.
