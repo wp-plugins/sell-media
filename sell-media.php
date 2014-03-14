@@ -4,14 +4,14 @@
 Plugin Name: Sell Media
 Plugin URI: http://graphpaperpress.com/plugins/sell-media/
 Description: A plugin for selling digital downloads and reprints.
-Version: 1.8
+Version: 1.8.1
 Author: Graph Paper Press
 Author URI: http://graphpaperpress.com
 Author Email: support@graphpaperpress.com
 License: GPL
 */
 
-define( 'SELL_MEDIA_VERSION', '1.8' );
+define( 'SELL_MEDIA_VERSION', '1.8.1' );
 define( 'SELL_MEDIA_PLUGIN_FILE', plugin_dir_path(__FILE__) . 'sell-media.php' );
 
 include( dirname(__FILE__) . '/inc/class-customer.php' );
@@ -652,12 +652,14 @@ class SellMedia {
                 'license' => __( 'License', 'sell_media' ),
                 'price' => __( 'Price', 'sell_media' ),
                 'qty' => __( 'Qty', 'sell_media' ),
-                'sub_total' => __( 'Sub Total', 'sell_media' )
+                'sub_total' => __( 'Subtotal', 'sell_media' )
                 ),
             'cart_style' => apply_filters( 'sell_media_cart_style', 'table' ),
             'tax' => ( empty( $settings->tax ) ) ? 0 : $settings->tax_rate,
             'shipping' => apply_filters( 'sell_media_shipping', 0 ), // should PayPal force buyers add address
-            'cart_error' => __('There was an error loading the cart data. Please contact the site owner.','sell_media')
+            'cart_error' => __( 'There was an error loading the cart data. Please contact the site owner.', 'sell_media' ),
+            'checkout_text' => __( 'Checkout Now', 'sell_media' ),
+            'checkout_wait_text' => __( 'Please wait...', 'sell_media' )
         ) );
     }
 
@@ -879,8 +881,8 @@ class SellMedia {
      * Put the cart in the footer
      */
     public function footer(){
-
-        if ( is_home() || is_single() || is_archive() ) : ?>
+        $settings = sell_media_get_plugin_options();
+        if ( ! is_page( $settings->checkout_page ) || ! is_page( $settings->login_page ) || ! is_page( $settings->dashboard_page ) ) : ?>
 
             <div id="sell-media-dialog-box" class="sell-media-dialog-box" style="display:none">
                 <div id="sell-media-dialog-box-target"></div>
