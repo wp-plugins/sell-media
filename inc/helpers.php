@@ -40,7 +40,16 @@ function sell_media_template_redirect( $original_template ){
      * Taxonomies
      */
     elseif ( is_tax() && in_array( get_query_var('taxonomy'), $sell_media_taxonomies ) ) {
-        $template = ( file_exists( $custom_templates['taxonomy'] ) ) ? $custom_templates['archive'] : $default_templates['archive'];
+        // check if taxonomy template file exists in active theme
+        if ( file_exists( $custom_templates['taxonomy'] ) ) {
+            $template = $custom_templates['taxonomy'];
+        // cehck if archive template file exists in active theme
+        } elseif ( file_exists( $custom_templates['archive'] ) ) {
+            $template = $custom_templates['archive'];
+        // otherwise, use the archive-sell_media_item.php template in plugin
+        } else {
+            $template = $default_templates['archive'];
+        }
     }
 
     else {
@@ -667,4 +676,166 @@ function sell_media_get_price_groups( $post_id = NULL, $taxonomy = NULL ){
 
     return $price_groups;
 
+}
+
+/**
+ * Retrieve the URL of the symlink directory
+ *
+ * @since 1.8.5
+ * @return string $url URL of the symlink directory
+ */
+function sell_media_get_symlink_url() {
+    $wp_upload_dir = wp_upload_dir();
+    wp_mkdir_p( $wp_upload_dir['basedir'] . '/sell_media/symlinks' );
+    $url = $wp_upload_dir['baseurl'] . '/sell_media/symlinks';
+
+    return apply_filters( 'sell_media_get_symlink_url', $url );
+}
+
+/**
+ * Retrieve the absolute path to the symlink directory
+ *
+ * @since  1.8.5
+ * @return string $path Absolute path to the symlink directory
+ */
+function sell_media_get_symlink_dir() {
+    $wp_upload_dir = wp_upload_dir();
+    wp_mkdir_p( $wp_upload_dir['basedir'] . '/sell_media/symlinks' );
+    $path = $wp_upload_dir['basedir'] . '/sell_media/symlinks';
+
+    return apply_filters( 'sell_media_get_symlink_dir', $path );
+}
+
+/**
+ * Retrieve the absolute path to the file upload directory without the trailing slash
+ *
+ * @since  1.8.5
+ * @return string $path Absolute path to the sell_media upload directory
+ */
+function sell_media_get_upload_dir() {
+    $wp_upload_dir = wp_upload_dir();
+    wp_mkdir_p( $wp_upload_dir['basedir'] . '/sell_media' );
+    $path = $wp_upload_dir['basedir'] . '/sell_media';
+
+    return apply_filters( 'sell_media_get_upload_dir', $path );
+}
+
+/**
+ * Delete symbolic links after they have been used
+ *
+ * @access public
+ * @since  1.8.5
+ * @return void
+ */
+function sell_media_cleanup_file_symlinks() {
+    $path = sell_media_get_symlink_dir();
+    $dir = opendir( $path );
+
+    while ( ( $file = readdir( $dir ) ) !== false ) {
+        if ( $file == '.' || $file == '..' )
+            continue;
+
+        $transient = get_transient( md5( $file ) );
+        if ( $transient === false )
+            @unlink( $path . '/' . $file );
+    }
+}
+add_action( 'sell_media_cleanup_file_symlinks', 'sell_media_cleanup_file_symlinks' );
+
+/**
+ * Get File Extension
+ *
+ * Returns the file extension of a filename.
+ *
+ * @since 1.8.5
+ * @param unknown $str File name
+ * @return mixed File extension
+ */
+function sell_media_get_file_extension( $str ) {
+    $parts = explode( '.', $str );
+    return end( $parts );
+}
+
+
+/**
+ * Get full system path to the originally uploaded file
+ *
+ * Returns the full system path to the file
+ *
+ * @since 1.8.5
+ * @param product id ( post_id )
+ * @return file path
+ */
+function sell_media_get_original_protected_file( $product_id=null ){
+    $attached_file = get_post_meta( $product_id, '_sell_media_attached_file', true );
+    $file = sell_media_get_upload_dir() . '/' . $attached_file;
+    if ( file_exists( $file ) )
+        return $file;
+    else
+        return false;
+}
+
+
+/**
+ * Resize an image to the specified dimensions
+ * http://codex.wordpress.org/Class_Reference/WP_Image_Editor
+ *
+ * Returns the new image file path
+ *
+ * @since 1.8.5
+ * @param file path
+ * @param width
+ * @param width
+ * @return resized image file path
+ */
+function sell_media_resize_original_image( $product_id=null, $width=null, $height=null ){
+    $file_path = sell_media_get_original_protected_file( $product_id );
+    $img = wp_get_image_editor( $file_path );
+    if ( ! is_wp_error( $img ) ) {
+        // resize if height and width supplied
+        if ( $width || $height ) {
+            if ( $width >= $height ) {
+                $max = $width;
+            } else {
+                $max = $height;
+            }
+            $img->resize( $max, $max, false );
+            $img->set_quality( 100 );
+        }
+        $img->stream();
+    }
+}
+
+/**
+ * Is this an image?
+ *
+ * @since 1.0
+ * @param string $file
+ * @return bool (true/false)
+ */
+function sell_media_is_image( $file ) {
+    $ext = sell_media_get_file_extension( $file );
+
+    switch ( strtolower( $ext ) ) {
+        case 'jpg';
+            $return = true;
+            break;
+        case 'png';
+            $return = true;
+            break;
+        case 'gif';
+            $return = true;
+            break;
+        case 'tif';
+            $return = true;
+        case 'tiff';
+            $return = true;
+        case 'psd';
+            $return = true;
+        default:
+            $return = false;
+            break;
+    }
+
+    return (bool) apply_filters( 'sell_media_is_image_filter', $return, $file );
 }

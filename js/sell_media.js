@@ -71,7 +71,7 @@ jQuery(document).ready(function($){
     });
 
     $(document).on('click', '.sellMediaCart_checkout', function(){
-        $(this).prop('disabled', true).text(sell_media.checkout_wait_text);
+        $(this).prop('disabled', true).css({"cursor": "progress"}).text(sell_media.checkout_wait_text);
     });
 
     /**
@@ -150,6 +150,9 @@ jQuery(document).ready(function($){
                         sep = '';
                     }
                     var size = item.get( "size" );
+                    if ( size == undefined ) {
+                        size = '';
+                    }
 
                     return name + "<span class='size-license'>" + size + sep + license + "</span>";
                 },

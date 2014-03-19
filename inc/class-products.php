@@ -13,22 +13,22 @@ Class SellMediaProducts {
      *
      * @return $prices (array)
      */
-    public function verify_the_price( $product_id=null, $taxonomy=null, $price_id=null ){
+    public function verify_the_price( $product_id=null, $price_id=null ){
 
+        // price group price
         $price_group_price = sell_media_get_term_meta( $price_id, 'price', true );
         $custom_price = get_post_meta( $product_id, 'sell_media_price', true );
-        $settings = sell_media_get_plugin_options();
-
-        // get the default price from settings
-        $price = $settings->default_price;
-
-        // check if price id is set, get the price if so
-        if ( $price_group_price !== 0 && $price_group_price !== null ) {
+        // check that the price_id exists and that the price meta is set
+        if ( ! empty( $price_group_price ) ) {
             $price = $price_group_price;
         }
-        // check if a custom price is set on single item
-        else {
+        // finally, set the price to the custom price
+        elseif ( ! empty( $custom_price ) ) {
             $price = get_post_meta( $product_id, 'sell_media_price', true );
+        } else {
+            // set the default price from settings
+            $settings = sell_media_get_plugin_options();
+            $price = $settings->default_price;
         }
         return $price;
     }
@@ -134,8 +134,11 @@ Class SellMediaProducts {
         if ( $prices ) foreach ( $prices as $price ){
             $lowest_price[] = $price['price'];
         }
-
-        return min( $lowest_price );
+        if ( is_array( $lowest_price ) ) {
+            return min( $lowest_price );
+        } else {
+            return $lowest_price;
+        }
     }
 
 
@@ -188,7 +191,7 @@ Class SellMediaProducts {
         if ( empty( $license_obj ) ) {
             $markup_amount = 0;
         } else {
-            $price = $this->get_price( $post_id, $price_id );
+            $price = $this->verify_the_price( $post_id, $price_id );
             $markup_percent = str_replace( "%", "", sell_media_get_term_meta( $license_obj->term_id, 'markup', true ) );
             $markup_amount = ( $markup_percent / 100 ) * $price;
         }
