@@ -5,7 +5,7 @@ Donate link: http://graphpaperpress.com/plugins/sell-media/
 Tags: commerce, digital downloads, download, downloads, e-commerce, paypal, photography, sell digital, sell download, selling, sell photos, sell videos, sell media, stock photos
 Requires at least: 3.4
 Tested up to: 3.7
-Stable tag: 1.8.4
+Stable tag: 1.8.5
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -211,10 +211,20 @@ Action hooks available:
 
 == Changelog ==
 
+= 1.8.5 =
+* Feature: Packages feature added
+* Tweak: Make Sell_Media a singleton
+* Tweak: Add support for additional mime types
+* Tweak: Remove redundant calls to self::upload_dir, use one function now
+* Tweak: Hide file dimensions on cart if not image
+* Tweak: New file download method
+* Bug: Bulk uploads fix
+* Bug: PayPal tax
+* Bug: Deprecated functions missing for image caption
+
 = 1.8.4 =
 * Tweak: Template redirects for taxonomies
 * Bug: Terms dialog
-
 
 = 1.8.3 =
 * Bug: PayPal live mode or test mode

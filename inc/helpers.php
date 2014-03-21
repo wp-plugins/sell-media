@@ -450,25 +450,51 @@ function sell_media_test_mode(){
 
 
 /**
- * Change Downloads Upload Dir
+ * Change order by on frontend
  *
- * Hooks the sell_media_set_upload_dir filter when appropriate.
- *
- * @access private
  * @since 0.1
  * @return void
  */
-function sell_media_change_downloads_upload_dir() {
-    global $pagenow;
+function sell_media_order_by( $orderby_statement ) {
 
-    if ( ! empty( $_POST['post_id'] ) && ( 'async-upload.php' == $pagenow || 'media-upload.php' == $pagenow ) ) {
-        if ( 'sell_mediaproduct' == get_post_type( $_REQUEST['post_id'] ) ) {
-            add_filter( 'upload_dir', 'sell_media_set_upload_dir' );
+    $settings = sell_media_get_plugin_options();
+
+    if ( ! empty( $settings->order_by ) && is_archive() ||
+         ! empty( $settings->order_by ) && is_tax() ){
+        global $wpdb;
+        switch( $settings->order_by ){
+            case 'title-asc' :
+                $order_by = "{$wpdb->prefix}posts.post_title ASC";
+                break;
+            case 'title-desc' :
+                $order_by = "{$wpdb->prefix}posts.post_title DESC";
+                break;
+            case 'date-asc' :
+                $order_by = "{$wpdb->prefix}posts.post_date ASC";
+                break;
+            case 'date-desc' :
+                $order_by = "{$wpdb->prefix}posts.post_date DESC";
+                break;
         }
+    } else {
+        $order_by = $orderby_statement;
     }
+    return $order_by;
 }
-add_action('admin_init', 'sell_media_change_downloads_upload_dir', 999);
+if ( ! is_admin() )
+    add_filter( 'posts_orderby', 'sell_media_order_by' );
 
+
+/**
+ * Adjust wp_query for when search is submitted error no longer shows in "general-template.php"
+ * detail here: http://wordpress.stackexchange.com/questions/71157/undefined-property-stdclasslabels-in-general-template-php-post-type-archive
+ * @since 1.2.3
+ */
+function sell_media_search_warning_surpression( $wp_query ){
+    if ( $wp_query->is_post_type_archive && $wp_query->is_tax )
+        $wp_query->is_post_type_archive = false;
+}
+add_action( 'parse_query', 'sell_media_search_warning_surpression' );
 
 
 /**
@@ -679,34 +705,6 @@ function sell_media_get_price_groups( $post_id = NULL, $taxonomy = NULL ){
 }
 
 /**
- * Retrieve the URL of the symlink directory
- *
- * @since 1.8.5
- * @return string $url URL of the symlink directory
- */
-function sell_media_get_symlink_url() {
-    $wp_upload_dir = wp_upload_dir();
-    wp_mkdir_p( $wp_upload_dir['basedir'] . '/sell_media/symlinks' );
-    $url = $wp_upload_dir['baseurl'] . '/sell_media/symlinks';
-
-    return apply_filters( 'sell_media_get_symlink_url', $url );
-}
-
-/**
- * Retrieve the absolute path to the symlink directory
- *
- * @since  1.8.5
- * @return string $path Absolute path to the symlink directory
- */
-function sell_media_get_symlink_dir() {
-    $wp_upload_dir = wp_upload_dir();
-    wp_mkdir_p( $wp_upload_dir['basedir'] . '/sell_media/symlinks' );
-    $path = $wp_upload_dir['basedir'] . '/sell_media/symlinks';
-
-    return apply_filters( 'sell_media_get_symlink_dir', $path );
-}
-
-/**
  * Retrieve the absolute path to the file upload directory without the trailing slash
  *
  * @since  1.8.5
@@ -721,26 +719,32 @@ function sell_media_get_upload_dir() {
 }
 
 /**
- * Delete symbolic links after they have been used
+ * Retrieve the absolute path to the packages file upload directory without the trailing slash
  *
- * @access public
  * @since  1.8.5
- * @return void
+ * @return string $path Absolute path to the sell_media/packages upload directory
  */
-function sell_media_cleanup_file_symlinks() {
-    $path = sell_media_get_symlink_dir();
-    $dir = opendir( $path );
+function sell_media_get_packages_upload_dir() {
+    $wp_upload_dir = wp_upload_dir();
+    wp_mkdir_p( $wp_upload_dir['basedir'] . '/sell_media/packages' );
+    $path = $wp_upload_dir['basedir'] . '/sell_media/packages';
 
-    while ( ( $file = readdir( $dir ) ) !== false ) {
-        if ( $file == '.' || $file == '..' )
-            continue;
-
-        $transient = get_transient( md5( $file ) );
-        if ( $transient === false )
-            @unlink( $path . '/' . $file );
-    }
+    return apply_filters( 'sell_media_get_packages_upload_dir', $path );
 }
-add_action( 'sell_media_cleanup_file_symlinks', 'sell_media_cleanup_file_symlinks' );
+
+
+/**
+ * Retrieve the url to the file upload directory without the trailing slash
+ *
+ * @since  1.8.5
+ * @return string $url url to the sell_media upload directory
+ */
+function sell_media_get_upload_dir_url() {
+    $wp_upload_dir = wp_upload_dir();
+    $url = $wp_upload_dir['baseurl'] . '/sell_media';
+
+    return apply_filters( 'sell_media_get_upload_dir_url', $url );
+}
 
 /**
  * Get File Extension
@@ -767,8 +771,19 @@ function sell_media_get_file_extension( $str ) {
  * @return file path
  */
 function sell_media_get_original_protected_file( $product_id=null ){
+
+    // All uploads are saved to this meta field
+    // Single uploads are saved like /2014/14/file.zip
+    // Packages are saved like /packages/file.zip
     $attached_file = get_post_meta( $product_id, '_sell_media_attached_file', true );
-    $file = sell_media_get_upload_dir() . '/' . $attached_file;
+    // Check if this item is a package and change the file location
+    $is_package = get_post_meta( $product_id, '_sell_media_is_package', true );
+    if ( $is_package ) {
+        $file = sell_media_get_packages_upload_dir() . '/' . $attached_file;
+    } else {
+        $file = sell_media_get_upload_dir() . '/' . $attached_file;
+    }
+
     if ( file_exists( $file ) )
         return $file;
     else

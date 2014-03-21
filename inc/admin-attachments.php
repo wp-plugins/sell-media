@@ -12,27 +12,25 @@
  */
 function sell_media_attachment_fields_to_edit( $form_fields, $post ) {
 
-    $image_meta_a = wp_get_attachment_metadata( $post->ID );
-    $upload_url_a = wp_upload_dir();
+    $image_meta = wp_get_attachment_metadata( $post->ID );
 
     if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
         return $form_fields;
     }
 
-    if ( empty( $image_meta_a ) ){
+    if ( empty( $image_meta ) ){
         $att_arr = explode( 'uploads/', $post->guid );
         $file = $att_arr[1];
     } else {
-        $file = $image_meta_a['file'];
+        $file = $image_meta['file'];
     }
-    $dir = $upload_url_a['baseurl'];
 
-    $sell = get_post_meta($post->ID, '_sell_media_for_sale_product_id', true);
+    $sell = get_post_meta( $post->ID, '_sell_media_for_sale_product_id', true );
 
     $form_fields['sell'] = array(
         'label' => __( 'Sell This', 'sell_media' ),
         'input' => 'html',
-        'html' => '<input type="checkbox" class="sell-this-checkox" id="attachments-'.$post->ID.'-sell" name="attachments['.$post->ID.'][sell]" value="1"'.($sell ? ' checked="checked"' : '').' />',
+        'html' => '<input type="checkbox" class="sell-this-checkox" id="attachments-' . $post->ID . '-sell" name="attachments[' . $post->ID . '][sell]" value="1"'.($sell ? ' checked="checked"' : '') . ' />',
         'value' => $sell
         // 'helps' => __('If you select yes, this image will be added as a Product entry. You can modify the price and available licenses on the Products -> Edit Products tab. By default, the newly created Product will inherit the prices and licenses that you chose on the settings page.'), 'sell_media'
     );
@@ -97,10 +95,10 @@ function sell_media_attachment_field_sell_save( $post, $attachment ) {
         }
 
         /**
-         * From here we can assume that the image has been upload
+         * From here we can asusme that the image has been upload
          * and a post type has been created. We update post meta
          * read some meta data from the image, build paths, save
-         * IPTC data, set default license and finally copy the
+         * iptc data, set default license and finally copy the
          * image to our products directory.
          */
 
@@ -116,11 +114,22 @@ function sell_media_attachment_field_sell_save( $post, $attachment ) {
         $attached_file = get_post_meta( $post['ID'], '_wp_attached_file', true );
         $file_name = basename( $attached_file );
 
+        // Build paths to the original file and the destination
+        $dir = wp_upload_dir();
+        $original_file = $dir['path'] . '/' . $file_name;
 
-        $product_obj = new SellMediaProducts;
-        if ( $product_obj->mimetype_is_image( $post['ID'] ) ){
-            $images_obj = new SellMediaImages;
-            $images_obj->move_image_from_attachment( $post['ID'] );
+        $mime_type = wp_check_filetype( $original_file );
+
+        $image_mimes = array(
+            'image/jpeg',
+            'image/png',
+            'image/gif',
+            'image/bmp',
+            'image/tiff'
+            );
+
+        if ( in_array( $mime_type['type'], $image_mimes ) ){
+            Sell_Media()->images->move_image_from_attachment( $post['ID'] );
         } else {
             sell_media_default_move( $attached_file );
         }

@@ -143,15 +143,18 @@ jQuery(document).ready(function($){
                 view: function(item, column){
 
                     var name = item.get( "name" );
-                    var license = item.get( "usage" );
                     var sep = ', ';
+
+                    var license = item.get( "usage" );
                     if ( license == undefined ) {
                         license = '';
                         sep = '';
                     }
+                    
                     var size = item.get( "size" );
                     if ( size == undefined ) {
                         size = '';
+                        sep = '';
                     }
 
                     return name + "<span class='size-license'>" + size + sep + license + "</span>";

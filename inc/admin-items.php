@@ -43,7 +43,7 @@ function sell_media_add_tabs(){
     echo '<h2 id="sell-media-tabs" class="nav-tab-wrapper">';
     echo '<a href="' . admin_url( 'post-new.php?post_type=sell_media_item' ) . '" class="nav-tab' . $single_active . '">' . __( 'Add Single', 'sell_media' ) . '</a>';
     echo '<a href="' . admin_url( 'edit.php?post_type=sell_media_item&page=sell_media_add_bulk' ) . '" class="nav-tab' . $bulk_active . '" >' . __( 'Add Bulk', 'sell_media' ) . '</a>';
-    //echo '<a href="' . admin_url( 'edit.php?post_type=sell_media_item&page=sell_media_add_package' ) . '" class="nav-tab' . $package_active . '" >' . __( 'Add Package', 'sell_media' ) . '</a>';
+    echo '<a href="' . admin_url( 'edit.php?post_type=sell_media_item&page=sell_media_add_package' ) . '" class="nav-tab' . $package_active . '" >' . __( 'Add Package', 'sell_media' ) . '</a>';
     echo '</h2>';
 }
 
@@ -261,22 +261,16 @@ function sell_media_details_meta_box( $fields=null ) {
                 // File
                 case 'file':
 
-                    $sell_media_attachment_id = get_post_meta( $post->ID, '_sell_media_attachment_id', true );
-
-                    $attachment_id = ( $sell_media_attachment_id ) ? $sell_media_attachment_id : get_post_thumbnail_id( $post->ID );
-                    $src_attribute = wp_get_attachment_url( $attachment_id );
-                    $url = ( $src_attribute ) ? $src_attribute : null;
+                    $attachment_id = get_post_meta( $post->ID, '_sell_media_attachment_id', true );
                     $attached_file = get_post_meta( $post->ID, '_sell_media_attached_file', true );
 
-                    $thumbnail = sell_media_item_icon( $attachment_id, 'thumbnail', false );
+                    $thumbnail_id = ( $attachment_id ) ? $attachment_id : get_post_thumbnail_id( $post->ID );
+                    $thumbnail = sell_media_item_icon( $thumbnail_id, 'thumbnail', false );
                     $hide = empty( $thumbnail ) ? 'style="display: none";' : null;
 
                     echo '<input type="hidden" name="sell_media_selected_file_id" class="sell_media_selected_file_id" />';
-                    echo '<input type="hidden" name="_sell_media_attached_file" class="sell_media_attached_file sell-media-item-url field-has-button" value="' . $attached_file . '" size="30" />';
-
-                    echo '<input type="text" name="_sell_media_attached_file_url" id="_sell_media_attached_file_url" class="sell-media-item-url field-has-button" value="' . $url . '" size="30" />';
-
-                    echo '<a class="sell-media-upload-trigger button" value="Upload">' . __('Upload', 'sell_media') . '</a><br class="clear"/>';
+                    echo '<input type="text" name="_sell_media_attached_file" class="sell_media_attached_file sell-media-item-url field-has-button" value="' . $attached_file . '" size="30" />';
+                    echo '<a class="sell-media-upload-trigger button" value="Upload">' . __( 'Upload', 'sell_media' ) . '</a><br class="clear"/>';
 
                     echo '<div class="sell-media-upload-trigger">';
                     echo '<div class="sell-media-temp-target" ' . $hide . '>' . $thumbnail . '</div>';
@@ -314,17 +308,14 @@ function sell_media_details_meta_box( $fields=null ) {
 
                 case 'package':
 
-                    $folder_name = 'packages';
-                    $wp_upload_dir = wp_upload_dir();
-                    $package_dir = $wp_upload_dir['basedir'] . SellMedia::upload_dir . '/' . $folder_name . '/';
-                    $package_folder = $wp_upload_dir['baseurl'] . SellMedia::upload_dir . '/' . $folder_name . '/';
-                    $files = glob( $package_dir . '*.{zip,gz}', GLOB_BRACE );
+                    $packages_dir = sell_media_get_packages_upload_dir();
+                    $files = glob( $packages_dir . '/' . '*.{zip,gz}', GLOB_BRACE );
                     $saved = get_post_meta( $post->ID, '_sell_media_attached_file', true ); ?>
 
                     <select name="_sell_media_attached_file" id="_sell_media_attached_file" value="">
                         <option value=""><?php _e( 'Select a package', 'sell_media' ); ?></option>
                         <?php if ( $files ) foreach( $files as $file ) : ?>
-                            <option <?php selected( $saved, $package_folder . basename( $file ) ); ?> value="<?php echo $package_folder . basename( $file ); ?>"><?php echo basename( $file ); ?></option>
+                            <option <?php selected( $saved, basename( $file ) ); ?> value="<?php echo basename( $file ); ?>"><?php echo basename( $file ); ?></option>
                         <?php endforeach; ?>
                     </select>
 
@@ -385,38 +376,24 @@ function sell_media_save_custom_meta( $post_id ) {
         }
     }
 
-    $_thumbnail_id = get_post_thumbnail_id( $post_id );
-    $_sell_media_attachment_id = get_post_meta( $post_id, '_sell_media_attachment_id', true );
-
-    // If the selected file id was updated then we have
-    // a new attachment.
+    $attachment_id = get_post_meta( $post_id, '_sell_media_attachment_id', true );
+    
+    // If the selected file id exists, then this is a new upload
     if ( empty( $_POST['sell_media_selected_file_id'] ) ){
 
-        /**
-         * Retroactive: If we have no $_sell_media_attachment_id we use the
-         * old reference, $_thumbnail_id as the $attachment_id. Thus updating
-         * the _sell_media_attachment_id to be the value of the _thumbnail_id.
-         */
-        if ( empty( $_sell_media_attachment_id ) ){
-            $attachment_id = $_thumbnail_id;
-        } else {
-            $attachment_id = $_sell_media_attachment_id;
-        }
         $attached_file = $_POST['_sell_media_attached_file'];
+
     } else {
 
         $attachment_id = $_POST['sell_media_selected_file_id'];
         $attached_file = get_post_meta( $attachment_id, '_wp_attached_file', true );
 
         // Check if this is a new upload
-        $wp_upload_dir = wp_upload_dir();
-        if ( ! file_exists( $wp_upload_dir['basedir'] . SellMedia::upload_dir . '/' . $attached_file ) ){
+        if ( ! file_exists( sell_media_get_upload_dir() . '/' . $attached_file ) ){
 
             // Image mime type support
-            $product_obj = new SellMediaProducts;
-            if ( $product_obj->mimetype_is_image( $_sell_media_attachment_id ) ){
-                $images_obj = new SellMediaImages;
-                $images_obj->move_image_from_attachment( $attachment_id );
+            if ( Sell_Media()->products->mimetype_is_image( $attachment_id ) ){
+                Sell_Media()->images->move_image_from_attachment( $attachment_id );
             } else {
                 sell_media_default_move( $attached_file );
             }
@@ -634,8 +611,7 @@ function sell_media_before_delete_post( $postid, $attachment_id=null ){
 
     delete_post_meta( $attachment_id, '_sell_media_for_sale_product_id' );
 
-    $wp_upload_dir = wp_upload_dir();
-    $attached_file_path = $wp_upload_dir['basedir'] . SellMedia::upload_dir . '/' . $attached_file;
+    $attached_file_path = sell_media_get_upload_dir() . '/' . $attached_file;
 
     // Delete the file stored in sell_media
     if ( file_exists( $attached_file_path ) ) {
@@ -699,13 +675,11 @@ function sell_media_uploader_multiple(){
 add_action( 'wp_ajax_sell_media_uploader_multiple', 'sell_media_uploader_multiple' );
 
 
-
 /**
  * Redirect to custom url after move to trash in payments
  *
  * @since 1.6
  */
-add_action( 'load-edit.php', 'sell_media_trash_payment_redirect' );
 function sell_media_trash_payment_redirect() {
     $screen = get_current_screen();
     if( 'edit-sell_media_payment' == $screen->id ) {
@@ -716,31 +690,4 @@ function sell_media_trash_payment_redirect() {
         }
     }
 }
-
-/**
- * Moves and uploaded file from the uploads dir into the "protected"
- * Sell Media dir, note the original file is deleted.
- *
- * @param $original_file Full path of the file with the file.
- * @since 1.0.1
- */
-function sell_media_default_move( $original_file=null ){
-
-    $dir = wp_upload_dir();
-    $original_file_path = $dir['basedir'] . '/' . $original_file;
-    $destination_file = $dir['basedir'] . SellMedia::upload_dir . '/' . $original_file;
-
-    if ( file_exists( $original_file_path ) ){
-        // Check if the destinatin dir is exists, i.e.
-        // sell_media/YYYY/MM if not we create it first
-        $destination_dir = dirname( $destination_file );
-
-        if ( ! file_exists( $destination_dir ) ){
-            wp_mkdir_p( dirname( $destination_dir ) );
-        }
-
-        // Copy original to our protected area
-        @copy( $original_file_path, $destination_file );
-        @unlink( $original_file_path );
-    }
-}
+add_action( 'load-edit.php', 'sell_media_trash_payment_redirect' );
