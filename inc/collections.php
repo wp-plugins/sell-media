@@ -15,8 +15,6 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 /**
  * Collections
  *
- * Enqueues all necessary scripts in the WP Admin to run Sell Media
- *
  * @since 1.8.5
  * @return void
  */
@@ -192,7 +190,7 @@ function sell_media_collection_password_check( $query ){
             } else {
                 $custom = locate_template( 'collection-password.php' );
                 if ( empty( $custom ) ){
-                    load_template( plugin_dir_path( __FILE__ ) . 'themes/collection-password.php');
+                    load_template( SELL_MEDIA_PLUGIN_DIR . '/themes/collection-password.php');
                     exit();
                 } else {
                     load_template( $custom );

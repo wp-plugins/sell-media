@@ -1,5 +1,8 @@
 <?php
 
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) exit;
+
 Class SellMediaPayments {
 
 
@@ -108,7 +111,7 @@ Class SellMediaPayments {
     public function products_include_type( $post_id=null, $type=null ){
         $products = $this->get_products( $post_id );
         $types = array();
-        foreach ( $products as $product ) {
+        if ( $products ) foreach ( $products as $product ) {
             $types[] = $this->get_meta_key( $post_id, 'type' );
         }
         if ( in_array( $type, $types ) ) {
@@ -577,7 +580,7 @@ Class SellMediaPayments {
             foreach ( $this->get_products( $post_id ) as $product ){
                 $html .= '<tr class="" valign="top">';
                 $html .= '<td class="media-icon">';
-                $html .= '<a href="' . get_edit_post_link( $product['id'] ) . '">' . sell_media_item_icon( get_post_meta( $product['id'], '_sell_media_attachment_id', true ), 'medium', false) . '</a></td>';
+                $html .= '<a href="' . get_edit_post_link( $product['id'] ) . '">' . sell_media_item_icon( $product['id'], 'medium', false ) . '</a></td>';
                 if ( empty( $product['size']['name'] ) ) {
                     $size_name = null;
                 } else {
@@ -609,13 +612,15 @@ Class SellMediaPayments {
         } else {
 
             $payment_meta = get_post_meta( $post_id, '_sell_media_payment_meta' );
+            if ( ! $payment_meta ) return;
+            
             $products_legacy = maybe_unserialize( $payment_meta['products'] );
 
             if ( $products_legacy ) foreach ( $products as $product ) {
 
                 $html .= '<tr class="" valign="top">';
                 $html .= '<td class="media-icon">';
-                $html .= '<a href="' . get_edit_post_link( $product['id'] ) . '">' . sell_media_item_icon( get_post_meta( $product['id'], '_sell_media_attachment_id', true ), 'medium', false) . '</a></td>';
+                $html .= '<a href="' . get_edit_post_link( $product['id'] ) . '">' . sell_media_item_icon( $product['id'], 'medium', false ) . '</a></td>';
                 $html .= '<td>' . $product['price']['name'] . '</td>';
                 $html .= '<td>' . sell_media_get_currency_symbol() . $product['price']['amount'] . '</td>';
                 $html .= '<td>' . $product['qty'] . '</td>';

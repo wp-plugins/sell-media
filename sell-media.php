@@ -4,7 +4,7 @@
  * Plugin Name: Sell Media
  * Plugin URI: http://graphpaperpress.com/plugins/sell-media/
  * Description: A plugin for selling digital downloads and reprints.
- * Version: 1.8.5
+ * Version: 1.8.6
  * Author: Graph Paper Press
  * Author URI: http://graphpaperpress.com
  * Author Email: support@graphpaperpress.com
@@ -25,7 +25,7 @@
  * @package SellMedia
  * @category Core
  * @author Thad Allender
- * @version 1.8.5
+ * @version 1.8.6
  */
 
 // Exit if accessed directly
@@ -161,7 +161,7 @@ final class SellMedia {
         
         // Plugin version
         if ( ! defined( 'SELL_MEDIA_VERSION' ) ) {
-            define( 'SELL_MEDIA_VERSION', '1.8.5' );
+            define( 'SELL_MEDIA_VERSION', '1.8.6' );
         }
 
         // Plugin Folder Path
@@ -190,8 +190,6 @@ final class SellMedia {
      */
     private function includes() {
 
-        
-
         require_once SELL_MEDIA_PLUGIN_DIR . '/inc/class-customer.php';
         require_once SELL_MEDIA_PLUGIN_DIR . '/inc/class-downloads.php';
         require_once SELL_MEDIA_PLUGIN_DIR . '/inc/class-payments.php';
@@ -213,7 +211,6 @@ final class SellMedia {
 
         if ( is_admin() ) {
 
-            require_once SELL_MEDIA_PLUGIN_DIR . '/inc/admin-attachments.php';
             require_once SELL_MEDIA_PLUGIN_DIR . '/inc/admin-helpers.php';
             require_once SELL_MEDIA_PLUGIN_DIR . '/inc/admin-items.php';
             require_once SELL_MEDIA_PLUGIN_DIR . '/inc/admin-items-bulk.php';

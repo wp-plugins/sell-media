@@ -46,7 +46,6 @@ function sell_media_install() {
     // these terms and taxonomies are NOT derived from our object!
     $settings = sell_media_get_plugin_options();
     $admin_columns = empty( $settings->admin_columns ) ? null : $settings->admin_columns;
-    //$this->registerLicenses( $admin_columns );
 
     // Install new table for term meta
     $taxonomy_metadata = new SellMediaTaxonomyMetadata;
@@ -161,12 +160,16 @@ function sell_media_register_post_types(){
         'supports' => array( 'title' ),
         'public' => false,
         'show_ui' => true,
-        'show_in_menu' => false,
+        'show_in_menu' => 'edit.php?post_type=sell_media_item',
         'publicly_queryable' => false,
         'has_archive' => false,
         'query_var' => true,
         'rewrite' => false,
-        'capability_type' => 'post'
+        'capability_type' => 'post',
+        'capabilities' => array(
+            'create_posts' => false, // Removes support for the "Add New" function
+        ),
+        'map_meta_cap' => true // Allow users to edit/remove existing payments
     );
 
     register_post_type( 'sell_media_payment', $payment_args );

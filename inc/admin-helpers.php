@@ -7,7 +7,6 @@
 // Exit if accessed directly
 if ( ! defined( 'ABSPATH' ) ) exit;
 
-
 /**
  * Moves and uploaded file from the uploads dir into the "protected"
  * sell_media dir. Note the original file is deleted.
@@ -35,44 +34,22 @@ function sell_media_default_move( $original_file=null ){
 
 
 /**
- * Change Downloads Upload Dir
+ * Order the post type by date and descending order in admin
  *
- * Hooks the sell_media_set_upload_dir filter when appropriate.
- *
- * @access private
- * @since 1.0
- * @return void
+ * @param $wp_query
+ * @since 1.8.5
  */
-function sell_media_change_downloads_upload_dir() {
-    global $pagenow;
+function sell_media_post_type_admin_order( $wp_query ) {
+    
+    if ( is_admin() ) {
 
-    if ( ! empty( $_REQUEST['post_id'] ) && ( 'async-upload.php' == $pagenow || 'media-upload.php' == $pagenow ) ) {
-        if ( 'sell_media_item' == get_post_type( $_REQUEST['post_id'] ) ) {
-            add_filter( 'upload_dir', 'sell_media_set_upload_dir' );
+        $post_type = $wp_query->query['post_type'];
+
+        if ( $post_type == 'sell_media_item' && empty( $_GET['orderby'] ) ) {
+            $wp_query->set( 'orderby', 'date' );
+            $wp_query->set( 'order', 'DESC' );
         }
+
     }
 }
-//add_action( 'admin_init', 'sell_media_change_downloads_upload_dir', 999 );
-
-/**
- * Set the sell_media upload directory
- *
- * @since 1.0
- * @return array Upload directory information
- */
-function sell_media_set_upload_dir( $upload ) {
-
-    // Override the year / month being based on the post publication date, if year/month organization is enabled
-    if ( get_option( 'uploads_use_yearmonth_folders' ) ) {
-        // Generate the yearly and monthly directories
-        $time = current_time( 'mysql' );
-        $y = substr( $time, 0, 4 );
-        $m = substr( $time, 5, 2 );
-        $upload['subdir'] = "/$y/$m";
-    }
-
-    $upload['subdir'] = '/sell_media' . $upload['subdir'];
-    $upload['path'] = $upload['basedir'] . $upload['subdir'];
-    $upload['url'] = $upload['baseurl'] . $upload['subdir'];
-    return $upload;
-}
+add_filter ( 'pre_get_posts', 'sell_media_post_type_admin_order' );
