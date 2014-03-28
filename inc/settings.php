@@ -162,6 +162,18 @@ function sell_media_init_settings(){
             "default" => '',
             "valid_options" => sell_media_pages_options()
         ),
+        "search_page" => array(
+            "tab" => "sell_media_general_settings",
+            "name" => "search_page",
+            "title" => __("Search Page","sell_media"),
+            "description" => __( "Where is your search page? This page will contain the <code>[sell_media_searchform]</code> shortcode.", "sell_media" ),
+            "section" => "general_plugin_section_1",
+            "since" => "1.0",
+            "id" => "general_plugin_section_1",
+            "type" => "select",
+            "default" => '',
+            "valid_options" => sell_media_pages_options()
+        ),
         "customer_notification" => array(
             "tab" => "sell_media_general_settings",
             "name" => "customer_notification",
@@ -277,27 +289,6 @@ function sell_media_init_settings(){
             "sanitize" => "html",
             "type" => "textarea",
             "default" => ""
-        ),
-        "disable_search" => array(
-            "tab" => "sell_media_general_settings",
-            "name" => "disable_search",
-            "title" => __("Disable Sell Media Search","sell_media"),
-            "description" => __( "Set this to &quot;no&quot; if you do not want to use the built in Sell Media search.", "sell_media" ),
-            "section" => "general_plugin_section_1",
-            "since" => "1.0",
-            "id" => "general_plugin_section_1",
-            "type" => "select",
-            "default" => "no",
-            "valid_options" => array(
-                "no" => array(
-                    'name' => "no",
-                    'title' => 'No'
-                    ),
-                "yes" => array(
-                    'name' => "yes",
-                    'title' => 'Yes',
-                    )
-            )
         ),
         "hide_original_price" => array(
             "tab" => "sell_media_general_settings",

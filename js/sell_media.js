@@ -75,42 +75,20 @@ jQuery(document).ready(function($){
     });
 
     /**
-     * Hide our current search option when the user clicks off the input field
+     * Show search options when user clicks inside the search field
      */
-    $(document).on('blur', '#s', function(){
-        $('.sell-media-search-options', this).hide();
+    $('#search_query').on('click', function(){
+        $('.advanced-search, #wpas-tax_collection, #wpas-tax_keywords, #wpas-meta_sell_media_price, #wpas-1').show();
+        $('#wp-advanced-search').addClass('active');
     });
 
-    $(document).on('click', '.sell-media-search-options-trigger', function(e){
-        e.preventDefault();
-        $(this).closest('.sell-media-search-form').find('.sell-media-search-options:first').toggle();
-     });
-
-    $(document).on('change', '.post_type_selector', function(){
-
-        /**
-         * Cache the objects for later use.
-         */
-        $collection = $('#collection_select');
-        $keywords = $('#keywords_select');
-
-        /**
-         * We store the field name as an attribute since will toggle it later.
-         * For our purposes its easier to just remove the name attribute so it
-         * isn't sent to PHP in $_POST
-         */
-        if ( $('.sell-media-search-taxonomies').css('display') == 'block' ){
-            $('.sell-media-search-taxonomies').hide();
-
-            $collection.attr('name','');
-            $keywords.attr('name','');
-        } else {
-            $('.sell-media-search-taxonomies').show();
-
-            $collection.attr('name', $collection.attr('data-name'));
-            $keywords.attr('name', $keywords.attr('data-name'));
-        }
-     });
+    /**
+     * Hide search options when user clicks close
+     */
+    $('#sell-media-toggle-search-options').on('click', function(){
+        $('.advanced-search, #wpas-tax_collection, #wpas-tax_keywords, #wpas-meta_sell_media_price, #wpas-1').hide();
+        $('#wp-advanced-search').removeClass('active');
+    });
 
     $('#sell_media_terms_cb').on('click', function(){
         $this = $(this);
