@@ -5,7 +5,7 @@ Donate link: http://graphpaperpress.com/plugins/sell-media/
 Tags: commerce, digital downloads, download, downloads, e-commerce, paypal, photography, sell digital, sell download, selling, sell photos, sell videos, sell media, stock photos
 Requires at least: 3.4
 Tested up to: 3.7
-Stable tag: 1.8.7
+Stable tag: 1.8.8
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -217,6 +217,13 @@ Action hooks available:
 * You must enable Auto Return Payment Data Transfer in PayPal for purchases to be recorded. See readme.txt for instructions.
 
 == Changelog ==
+
+= 1.8.8 =
+* Feature: EXIF Widget added
+* Tweak: Set default price on all new uploads
+* Tweak: PayPal taxes when qty increases
+* Tweak: Cart button conditional fixes to allow for items without price groups or licenses
+* Bug: Show correct currency on cart
 
 = 1.8.7 =
 * Feature: Advanced Search integrated into core

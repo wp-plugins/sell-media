@@ -30,11 +30,11 @@ function sell_media_init_settings(){
     // Size & Price Tab
     $size_price_tab = array(
         "name" => "sell_media_size_settings",
-        "title" => __( "Size &amp; Price", "sell_media" ),
+        "title" => __( "Pricing", "sell_media" ),
         "sections" => array(
             "size_price_plugin_section_1" => array(
                 "name" => "size_price_plugin_section_1",
-                "title" => __( "Size &amp; Price", "sell_media" ),
+                "title" => __( "Pricing", "sell_media" ),
                 "description" => ""
             )
         )
@@ -290,32 +290,11 @@ function sell_media_init_settings(){
             "type" => "textarea",
             "default" => ""
         ),
-        "hide_original_price" => array(
-            "tab" => "sell_media_general_settings",
-            "name" => "hide_original_price",
-            "title" => __("Hide Original Price","sell_media"),
-            "description" => __( "You can also hide the original price by editing each individual item.", "sell_media" ),
-            "section" => "general_plugin_section_1",
-            "since" => "1.0",
-            "id" => "general_plugin_section_1",
-            "type" => "select",
-            "default" => "no",
-            "valid_options" => array(
-                "no" => array(
-                    "name" => "no",
-                    "title" => __("No","sell_media")
-                    ),
-                "yes" => array(
-                    "name" => "yes",
-                    "title" => __("Yes","sell_media"),
-                    )
-            )
-        ),
         "admin_columns" => array(
             "tab" => "sell_media_general_settings",
             "name" => "admin_columns",
             "title" => __("Show Columns","sell_media"),
-            "description" => __( "Select the columns to show on the admin page &quot;All Items&quot; page.", "sell_media" ),
+            "description" => __( "Select the columns to show on the admin page &quot;All Products&quot; page.", "sell_media" ),
             "section" => "general_plugin_section_1",
             "since" => "1.0",
             "id" => "general_plugin_section_1",
@@ -346,7 +325,7 @@ function sell_media_init_settings(){
             "tab" => "sell_media_size_settings",
             "name" => "default_price",
             "title" => __("Original Price","sell_media"),
-            "description" => __( "The default price of new items and bulk uploads. You can set unique prices by editing each individual item.", "sell_media" ),
+            "description" => __( "The original price of new items and bulk uploads. You can set unique prices by editing each individual item.", "sell_media" ),
             "section" => "size_price_plugin_section_1",
             "since" => "1.0",
             "id" => "size_price_plugin_section_1",
@@ -354,11 +333,32 @@ function sell_media_init_settings(){
             "sanitize" => "html",
             "type" => "text"
             ),
+        "hide_original_price" => array(
+            "tab" => "sell_media_size_settings",
+            "name" => "hide_original_price",
+            "title" => __("Hide Original Price","sell_media"),
+            "description" => __( "Select NO if you're selling single file downloads. Select YES to hide the original price above and rely solely on the Price Groups below. Please note: Price Groups can only be used when selling images. You can override this setting on a per-item basis.", "sell_media" ),
+            "section" => "size_price_plugin_section_1",
+            "since" => "1.0",
+            "id" => "size_price_plugin_section_1",
+            "type" => "select",
+            "default" => "no",
+            "valid_options" => array(
+                "no" => array(
+                    "name" => "no",
+                    "title" => __("No","sell_media")
+                    ),
+                "yes" => array(
+                    "name" => "yes",
+                    "title" => __("Yes","sell_media"),
+                    )
+            )
+        ),
         "default_price_group" => array(
             "tab" => "sell_media_size_settings",
             "name" => "default_price_group",
-            "title" => __("Select Default Price Group", "sell_media"),
-            "description" => "",
+            "title" => __("Default Image Price Group", "sell_media"),
+            "description" => "This is the default price group that will be assigned to all newly uploaded images for sale. You can override this setting on a per-item basis.",
             "id" => "size_price_plugin_section_1",
             "section" => "size_price_plugin_section_1",
             "type" => "select",
@@ -368,7 +368,7 @@ function sell_media_init_settings(){
         "price_group" => array(
             "tab" => "sell_media_size_settings",
             "name" => "price_group",
-            "title" => __("Price Groups","sell_media"),
+            "title" => __("Image Price Groups","sell_media"),
             "default" => "",
             "description" => "",
             "id" => "size_price_plugin_section_1",
