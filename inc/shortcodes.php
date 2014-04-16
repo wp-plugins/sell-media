@@ -61,7 +61,6 @@ add_shortcode( 'sell_media_searchform', 'sell_media_search_shortcode' );
 /**
  * Adds the 'sell_media' short code to the editor. [sell_media_item]
  *
- * @author Zane M. Kolnik
  * @since 0.1
  */
 function sell_media_item_shortcode( $atts ) {
@@ -88,7 +87,6 @@ add_shortcode( 'sell_media_item', 'sell_media_item_shortcode' );
 /**
  * Adds template to display all items for sale.
  *
- * @author Zane M. Kolnik
  * @since 1.0.4
  */
 function sell_media_all_items_shortcode( $atts ){
@@ -157,6 +155,7 @@ function sell_media_checkout_shortcode(){
                     <td class="sell-media-key"><?php _e( 'Subtotal', 'sell_media' ); ?>:</td>
                     <td class="sell-media-value"><span class="sellMediaCart_total"></span></td>
                 </tr>
+                <?php do_action( 'sell_media_checkout_registration_fields' ); ?>
                 <tr class="tax">
                     <td class="sell-media-key"><?php _e( 'Tax', 'sell_media' ); ?><span class="quiet"><?php if ( ! empty( $settings->tax ) ) echo ' (' . round( ( float ) $settings->tax_rate * 100 ) . '&#37)'; ?></span>:</td>
                     <td class="sell-media-value"><span class="sellMediaCart_tax"></span></td>
@@ -165,13 +164,11 @@ function sell_media_checkout_shortcode(){
                     <td class="sell-media-key"><?php _e( 'Shipping', 'sell_media' ); ?>:</td>
                     <td class="sell-media-value"><span class="sellMediaCart_shipping"></span></td>
                 </tr>
-                <?php do_action( 'sell_media_checkout_registration_fields' ); ?>
                 <tr class="total sell-media-bold">
                     <td class="sell-media-key"><?php _e( 'Total', 'sell_media' ); ?>:</td>
                     <td class="sell-media-value"><span class="sellMediaCart_grandTotal"></span></td>
                 </tr>
             </table>
-            <?php //do_action( 'sell_media_checkout_registration_fields' ); ?>
             <?php do_action( 'sell_media_checkout_after_registration_fields' ); ?>
             <div class="sell-media-checkout-button group">
                 <?php do_action( 'sell_media_above_checkout_button' ); ?>
