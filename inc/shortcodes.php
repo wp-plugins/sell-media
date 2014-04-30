@@ -77,7 +77,7 @@ function sell_media_item_shortcode( $atts ) {
 
     $image = sell_media_item_icon( $id, 'medium', false );
 
-    $button = '<a href="#" data-sell_media-product-id="' . esc_attr( $id ) . '" data-sell_media-thumb-id="' . esc_attr( $id ) . '" class="sell-media-cart-trigger sell-media-buy-' . esc_attr( $style ) . '">' . $text . '</a>';
+    $button = '<a href="#" data-sell_media-product-id="' . esc_attr( $id ) . '" data-sell_media-thumb-id="' . esc_attr( $id ) . '" class="sell-media-cart-trigger sell-media-' . esc_attr( $style ) . '">' . $text . '</a>';
 
     return '<div class="sell-media-item-container sell-media-align' . $align . ' "><a href="' . get_permalink( $id ) . '">' . $image . '</a>' . $button . '</div>';
 }
@@ -379,7 +379,7 @@ function sell_media_list_all_collections_shortcode( $atts ) {
                             );
 
                     $posts = New WP_Query( $args );
-                    
+
                     foreach( $posts->posts as $post ) :
 
                         $html .= '<a href="'. get_term_link( $term->slug, $taxonomy ) .'" class="collection">';
@@ -431,8 +431,8 @@ function sell_media_login_form_shortcode(){
         return sprintf( __( 'You are logged in. %1$s or %2$s.', 'sell_media'), '<a href="' . get_permalink( $settings->checkout_page ) . '">Checkout now</a>', '<a href="' . get_post_type_archive_link( 'sell_media_item' ) . '">continue shopping</a>' );
 
     } else {
-        if( isset( $_GET['login'] ) && "failed" == $_GET['login'] ) {
-            echo "<span class='error'>".__("Login Failed", "sell_media")."</span>";
+        if ( isset( $_GET['login'] ) && "failed" == $_GET['login'] ) {
+            echo '<span class="error">' . __( 'Login failed', 'sell_media' ) . '</span>';
         }
 
         $args = array(
@@ -443,6 +443,8 @@ function sell_media_login_form_shortcode(){
             'label_log_in' => __( 'Log In', 'sell_media' )        );
 
         wp_login_form( $args );
+
+        echo '<a href="' . wp_lostpassword_url( get_permalink() ) . '" title="' . __( 'Forgot Password', 'sell_media' ) . '">' . __( 'Forgot Password', 'sell_media' ) . '</a>';
 
     }
 
