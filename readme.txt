@@ -1,11 +1,11 @@
 === Sell Media ===
 
-Contributors: endortrails, ZaneMatthew
+Contributors: endortrails
 Donate link: http://graphpaperpress.com/plugins/sell-media/
 Tags: commerce, digital downloads, download, downloads, e-commerce, paypal, photography, sell digital, sell download, selling, sell photos, sell videos, sell media, stock photos
 Requires at least: 3.4
-Tested up to: 3.9.1
-Stable tag: 1.9.9
+Tested up to: 4.0
+Stable tag: 1.9.10
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -225,6 +225,11 @@ Action hooks available:
 * You must enable Auto Return Payment Data Transfer in PayPal for purchases to be recorded. See readme.txt for instructions.
 
 == Changelog ==
+
+= 1.9.10 =
+* Single license mark-up issue fix
+* BUY button in shortcode for free download fix
+* Search pagination fix
 
 = 1.9.9 =
 * Larger images sizes available for purchase bug fix
