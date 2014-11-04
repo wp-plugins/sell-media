@@ -85,13 +85,13 @@ Class SellMediaSearch {
         );
         $args['fields'][] = array(
             'type' => 'meta_key',
-            'label' => 'Max Price ( Example: 100 )',
+            'label' => 'Max Price',
             'meta_key' => 'sell_media_price',
             'values' => '',
             'data_type' => 'NUMERIC',
             'compare' => '<=',
             'format' => 'text',
-            'placeholder' => ''
+            'placeholder' => __( 'Example: 100', 'sell_media' )
         );
         $args['fields'][] = array(
             'type' => 'html',
