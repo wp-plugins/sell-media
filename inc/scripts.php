@@ -3,11 +3,9 @@
 /**
  * Scripts
  *
- * @package     Sell Media
- * @subpackage  Functions/Install
- * @license     http://opensource.org/licenses/gpl-2.0.php GNU Public License
- * @since       1.8.5
-*/
+ * @package Sell Media
+ * @author Thad Allender <support@graphpaperpress.com>
+ */
 
 // Exit if accessed directly
 if ( ! defined( 'ABSPATH' ) ) exit;
@@ -25,9 +23,10 @@ function sell_media_scripts( $hook ) {
     $settings = sell_media_get_plugin_options();
 
     // enqueue
-    wp_enqueue_script( 'sell_media', SELL_MEDIA_PLUGIN_URL . 'js/sell_media.js', array( 'jquery' ), SELL_MEDIA_VERSION );
+    wp_enqueue_script( 'sell_media_jquery_cookie', SELL_MEDIA_PLUGIN_URL . 'js/jquery.cookie.js', array( 'jquery'), SELL_MEDIA_VERSION );
+    wp_enqueue_script( 'sell_media', SELL_MEDIA_PLUGIN_URL . 'js/sell_media.js', array( 'jquery', 'sell_media_jquery_cookie' ), SELL_MEDIA_VERSION );
     wp_enqueue_script( 'sellMediaCart', SELL_MEDIA_PLUGIN_URL . 'js/sell_media_cart.js', array( 'jquery' ), SELL_MEDIA_VERSION );
-    wp_enqueue_style( 'sell_media', SELL_MEDIA_PLUGIN_URL . 'css/sell_media.css', null, SELL_MEDIA_VERSION );
+    wp_enqueue_style( 'sell_media', SELL_MEDIA_PLUGIN_URL . 'css/sell_media.css', array(), SELL_MEDIA_VERSION );
     wp_enqueue_style( 'sell_media-widgets-style', SELL_MEDIA_PLUGIN_URL . 'css/sell_media_widgets.css', null, SELL_MEDIA_VERSION );
 
     // register
@@ -51,14 +50,12 @@ function sell_media_scripts( $hook ) {
         'currency_symbol' => $settings->currency,
         'dashboard_page' => get_permalink( $settings->dashboard_page ),
         'error' => array(
-            'email_exists' => __('Sorry that email already exists or is invalid', 'sell_media')
+            'email_exists' => __( 'Sorry that email already exists or is invalid', 'sell_media' )
             ),
         'sandbox' => ( $settings->test_mode == 1 ) ? true : false,
         'paypal_email' => ( empty( $settings->paypal_email ) ) ? null : $settings->paypal_email,
-        // set this in stripe extension? and make use testing or live key
-        'stripe_public_key' => ( empty( $settings->stripe_test_publishable_key ) ) ? null : $settings->stripe_test_publishable_key,
         'thanks_page' => get_permalink( $settings->thanks_page ),
-        'listener_url' => site_url( '?sell_media-listener=IPN' ),
+        'listener_url' => add_query_arg( 'sell_media-listener', 'IPN', home_url( 'index.php' ) ),
         'added_to_cart' => sprintf(
             "%s! <a href='" . get_permalink( $settings->checkout_page ) . "' class='cart'>%s</a>!",
             __( 'Added', 'sell_media' ),
@@ -77,8 +74,8 @@ function sell_media_scripts( $hook ) {
         'cart_error' => __( 'There was an error loading the cart data. Please contact the site owner.', 'sell_media' ),
         'checkout_text' => __( 'Checkout Now', 'sell_media' ),
         'checkout_wait_text' => __( 'Please wait...', 'sell_media' ),
-        'remove_text' => __( 'Remove', 'sell_media' ),
-        'save_text' => __( 'Save', 'sell_media' )
+        'remove_text' => __( 'Remove from Lightbox', 'sell_media' ),
+        'save_text' => __( 'Save to Lightbox', 'sell_media' )
     ) );
 
     do_action( 'sell_media_scripts_hook' );

@@ -1,5 +1,12 @@
 <?php
 
+/**
+ * Deprecated Functions
+ *
+ * @package Sell Media
+ * @author Thad Allender <support@graphpaperpress.com>
+ */
+
 // Exit if accessed directly
 if ( ! defined( 'ABSPATH' ) ) exit;
 
@@ -17,4 +24,7 @@ function sell_media_countries_list(){
 }
 function sell_media_us_states_list( $current=null, $req=false ){
     return false;
+}
+function sell_media_collections(){
+    sell_media_get_taxonomy_terms( 'collection' );
 }

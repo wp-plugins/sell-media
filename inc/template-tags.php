@@ -1,5 +1,12 @@
 <?php
 
+/**
+ * Template Tags
+ *
+ * @package Sell Media
+ * @author Thad Allender <support@graphpaperpress.com>
+ */
+
 // Exit if accessed directly
 if ( ! defined( 'ABSPATH' ) ) exit;
 
@@ -14,9 +21,12 @@ function sell_media_item_buy_button( $post_id=null, $button=null, $text=null, $e
 
     $thumb_id = get_post_thumbnail_id( $post_id );
     $text = apply_filters('sell_media_purchase_text', $text, $post_id );
-    $html = '<a href="javascript:void(0)" data-sell_media-product-id="' . esc_attr( $post_id ) . '" data-sell_media-thumb-id="' . esc_attr( $thumb_id ) . '" class="sell-media-cart-trigger sell-media-' . $button . '">' . $text . '</a>';
+    $html = '<a href="javascript:void(0)" title="' . $text . '" data-sell_media-product-id="' . esc_attr( $post_id ) . '" data-sell_media-thumb-id="' . esc_attr( $thumb_id ) . '" class="sell-media-cart-trigger sell-media-' . $button . '">' . $text . '</a>';
 
-    if ( $echo ) print $html; else return $html;
+    if ( $echo )
+        echo $html;
+    else
+        return $html;
 }
 
 
@@ -80,44 +90,37 @@ function sell_media_get_filetype( $post_id=null ){
 function sell_media_item_icon( $post_id=null, $size='medium', $echo=true ){
 
     $attachment_id = get_post_meta( $post_id, '_sell_media_attachment_id', true );
-    // legacy function passed the $attachment_id into sell_media_item_icon
-    // that means the above get_post_meta wouldn't exist
-    // if that's the case, than we assume the $post_id is actually the $attachment_id
-    if ( empty( $attachment_id ) ){
-        $attachment_id = $post_id;
-    }
 
-    // check if featured image is set
+    // check if featured image exists
     if ( '' != get_the_post_thumbnail( $post_id ) ) {
         $image = get_the_post_thumbnail( $post_id, $size, array( 'class' => apply_filters( 'sell_media_image_class', 'sell_media_image' ) ) );
+
+    // check if attachment thumbnail exists
+    } elseif ( '' != wp_get_attachment_image( $attachment_id ) ) {
+        $image = wp_get_attachment_image( $attachment_id, $size, array( 'class' => apply_filters( 'sell_media_image_class', 'sell_media_image' ) ) );
+
+    // use default WP icons
     } else {
         $mime_type = get_post_mime_type( $attachment_id );
         switch ( $mime_type ) {
             case 'image/jpeg':
             case 'image/png':
             case 'image/gif':
-                $image_attr = wp_get_attachment_image_src( $attachment_id, $size );
-                $image = $image_attr[0]; break;
+                $src = wp_mime_type_icon( 'image/jpeg' ); break;
             case 'video/mpeg':
             case 'video/mp4':
             case 'video/quicktime':
-                $image = wp_mime_type_icon( 'video/mpeg' ); break;
+                $src = wp_mime_type_icon( 'video/mpeg' ); break;
             case 'text/csv':
             case 'text/pdf':
             case 'text/plain':
             case 'text/xml':
-                $image = wp_mime_type_icon( 'application/pdf' ); break;
+                $src = wp_mime_type_icon( 'application/pdf' ); break;
             default:
-                $image = wp_mime_type_icon(); break;
+                $src = wp_mime_type_icon(); break;
         }
 
-        $medium_url = wp_get_attachment_image_src( $attachment_id, 'medium' );
-        if ( $medium_url )
-            $medium_url = $medium_url[0];
-        else
-            $medium_url = null;
-
-        $image =  '<img src="' . $image . '" class="'. apply_filters( 'sell_media_image_class', 'sell_media_image' ) . ' wp-post-image" title="' . get_the_title( $post_id ) . '" alt="' . get_the_title( $post_id ) . '" data-sell_media_medium_url="' . $medium_url. '" data-sell_media_large_url="' . $image . '" data-sell_media_item_id="' . $post_id . '" style="max-width:100%;height:auto;"/>';
+        $image =  '<img src="' . $src . '" class="'. apply_filters( 'sell_media_image_class', 'sell_media_image' ) . ' wp-post-image" title="' . get_the_title( $post_id ) . '" alt="' . get_the_title( $post_id ) . '" data-sell_media_medium_url="' . $src . '" data-sell_media_large_url="' . $src . '" data-sell_media_item_id="' . $post_id . '" style="max-width:100%;height:auto;"/>';
     }
 
     if ( $echo )
@@ -125,6 +128,28 @@ function sell_media_item_icon( $post_id=null, $size='medium', $echo=true ){
     else
         return $image;
 }
+
+/**
+ * Main content loop used in all themes
+ * @return string html
+ */
+function sell_media_content_loop( $post_id, $i ){
+    $class = ( $i %3 == 0 ) ? ' end' : '';
+
+    $html  = '<div id="sell-media-' . $post_id . '" class="sell-media-grid' . $class . '">';
+    $html .= '<div class="item-inner">';
+    $html .= '<a href="' . get_permalink( $post_id ) . '">' . sell_media_item_icon( $post_id, apply_filters( 'sell_media_thumbnail', 'medium' ), false ) . '</a>';
+    $html .= '<span class="item-overlay">';
+    $html .= '<h3><a href="' . get_permalink( $post_id ) . '">' . get_the_title( $post_id ) . '</a></h3>';
+    $html .= sell_media_item_buy_button( $post_id, 'text', __( 'Buy' ), false );
+    $html .= apply_filters( 'sell_media_item_overlay', $output='', $post_id );
+    $html .= '</span>';
+    $html .= '</div>';
+    $html .= '</div>';
+
+    return $html;
+}
+add_filter('sell_media_content_loop', 'sell_media_content_loop', 10, 2);
 
 
 /**
@@ -140,7 +165,7 @@ function sell_media_item_min_price( $post_id=null ){
         $settings = sell_media_get_plugin_options();
         $price = $settings->default_price;
     }
-    if( isset( $value ) && "on" == $value ) {
+    if ( isset( $value ) && "on" == $value ) {
         return "0.00";
     } else {
         return $price;
@@ -160,8 +185,8 @@ function sell_media_item_min_price( $post_id=null ){
 function sell_media_plugin_credit() {
     $settings = sell_media_get_plugin_options();
 
-    if ( true == $settings->plugin_credit ) {
-        printf( '%s <a href="http://graphpaperpress.com/plugins/sell-media/" title="Sell Media WordPress plugin">Sell Media</a>', __( 'Shopping cart by ', 'sell_media' ) );
+    if ( $settings->plugin_credit ) {
+        printf( __( '<span id="sell-media-credit" class="sell-media-credit">Photo cart by <a href="%1$s" title="Photo cart">%2$s</a></span>', 'sell_media' ), 'http://graphpaperpress.com/plugins/sell-media/', 'Sell Media' );
     }
 }
 
@@ -196,34 +221,25 @@ function sell_media_get_excerpt( $post_id, $excerpt_length = 140, $trailing_char
  *
  * @since 0.1
  */
-function sell_media_collections(){
-
+function sell_media_get_taxonomy_terms( $taxonomy ){
     global $post;
-
-    $taxonomy = 'collection';
 
     $terms = wp_get_post_terms( $post->ID, $taxonomy );
 
-    if ( empty( $terms ) )
+    if ( empty( $terms ) || is_wp_error( $terms ) )
         return;
 
     $html = null;
-    $count = count( $terms );
-    $x = 0;
 
     foreach( $terms as $term ) {
-
-        ( $x == ( $count - 1 ) ) ? $last = 'sell_media-last' : $last = null;
 
         $html .= '<a href="' . get_term_link( $term->slug, $taxonomy ) . '" title="' . $term->description . '">';
         $html .= $term->name;
         $html .= '</a> ';
-        $x++;
+
     }
 
-    do_action( 'sell_media_collections_before' );
-    print $html;
-    do_action( 'sell_media_collections_after' );
+    return apply_filters( 'sell_media_get_taxonomy_terms', $html );
 }
 
 
@@ -284,6 +300,37 @@ function sell_media_taxonomy_breadcrumb() {
     echo '<li><a href="' . esc_url( get_term_link( $term->term_id, get_query_var( 'taxonomy' ) ) ) . '">' . $term->name . '</a></li>';
 }
 
+/**
+ * Breadcrumb navigation on single entries
+ *
+ * @since 1.9.2
+ * @global $post
+ *
+ * @return string the breadcrumb navigation
+ */
+function sell_media_breadcrumbs( $post_id ){
+    if ( is_post_type_archive( 'sell_media_item' ) || is_search() )
+        return;
+
+    $settings = sell_media_get_plugin_options();
+
+    if ( isset( $settings->breadcrumbs ) && $settings->breadcrumbs ) {
+        $obj = get_post_type_object( 'sell_media_item' );
+
+        $html = '<div class="sell-media-breadcrumbs">';
+        $html .= '<a href="' . get_post_type_archive_link( 'sell_media_item' ) . '">' . $obj->rewrite['slug'] . '</a>';
+        $html .= ' <span class="sell-media-breadcrumbs-sep">&raquo;</span> ';
+        if ( wp_get_post_terms( $post_id, 'collection' ) ) {
+            $html .= sell_media_get_taxonomy_terms( 'collection' );
+            $html .= ' <span class="sell-media-breadcrumbs-sep">&raquo;</span> ';
+        }
+        $html .= get_the_title( '', false );
+        $html .= '</div>';
+
+        return apply_filters( 'sell_media_breadcrumbs', $html );
+    }
+}
+
 
 /**
  * Count posts in a category, including subcategories
@@ -304,3 +351,190 @@ function sell_media_get_cat_post_count( $category_id, $taxonomy='collection' ) {
 
     return $count;
 }
+
+/**
+ * Filter the_content for sell_media_item post types
+ * and add an action before the content so we can do stuff.
+ *
+ * @since 1.9.2
+ * @global $post
+ *
+ * @param $content The the_content field of the sell_media_item object
+ * @return string the content with any additional data attached
+ */
+function sell_media_before_content( $content ) {
+    global $post;
+    $sell_media_taxonomies = get_object_taxonomies( 'sell_media_item' );
+
+    if ( $post && $post->post_type == 'sell_media_item' && is_main_query() && ! post_password_required() ) {
+        ob_start();
+        do_action( 'sell_media_before_content', $post->ID );
+        if ( is_post_type_archive( 'sell_media_item' ) || is_tax( $sell_media_taxonomies ) ) {
+            $content = '<div class="sell-media-content">' . ob_get_clean() . $content . '</div>';
+        } else {
+            $content = sell_media_breadcrumbs( $post->ID ) . '<div class="sell-media-content">' . ob_get_clean() . $content . '</div>';
+        }
+    }
+
+    return $content;
+}
+add_filter( 'the_content', 'sell_media_before_content' );
+
+/**
+ * Filter the_content on single templates for sell_media_item post types
+ * and add an action after the content so we can do stuff.
+ *
+ * @since 1.9.2
+ * @global $post
+ *
+ * @param $content The the_content field of the download object
+ * @return string the content with any additional data attached
+ */
+function sell_media_after_content( $content ) {
+    global $post;
+
+    if ( $post && $post->post_type == 'sell_media_item' && is_main_query() && ! post_password_required() ) {
+        ob_start();
+        do_action( 'sell_media_after_content', $post->ID );
+        $content .= ob_get_clean();
+    }
+
+    return $content;
+}
+add_filter( 'the_content', 'sell_media_after_content' );
+
+/**
+ * Add media (featured image, etc) before the_content
+ *
+ * @since 1.9.2
+ * @global $post
+ *
+ * @param $content The the_content field of the item object
+ * @return string the content with any additional data attached
+ */
+function sell_media_append_media( $post_id ) {
+    $sell_media_taxonomies = get_object_taxonomies( 'sell_media_item' );
+    if ( is_post_type_archive( 'sell_media_item' ) || is_tax( $sell_media_taxonomies ) || is_search() ) {
+        echo '<a href="' . get_permalink( $post_id ) . '">' . sell_media_item_icon( $post_id, 'large', false ) . '</a>';
+    } elseif ( is_singular( 'sell_media_item' ) ) {
+        sell_media_item_icon( $post_id, 'large' );
+    }
+}
+add_action( 'sell_media_before_content', 'sell_media_append_media', 10 );
+
+/**
+ * Append meta data
+ *
+ * Append buy button and add action to append more stuff (lightbox, keywords, etc)
+ *
+ * @since 1.9.2
+ * @param int $post_id Item ID
+ * @return void
+ */
+function sell_media_append_meta( $post_id ) {
+    $sell_media_taxonomies = get_object_taxonomies( 'sell_media_item' );
+
+    if ( is_post_type_archive( 'sell_media_item' ) || is_tax( $sell_media_taxonomies ) || is_search() ) {
+        echo '<p>' . sell_media_item_buy_button( $post_id, 'text', __( 'Buy', 'sell_media' ), false ) . ' | <a href="javascript:void(0);" title="' . sell_media_get_lightbox_text( $post_id ) . '" class="add-to-lightbox" id="lightbox-' . $post_id . '" data-id="' . $post_id . '">' . sell_media_get_lightbox_text( $post_id ) . '</a> | <a href="' . get_permalink( $post_id ) . '" class="sell-media-permalink">' . __( 'More', 'sell_media' ) . ' &raquo;</a></p>';
+    } elseif ( is_singular( 'sell_media_item' ) ) {
+        echo '<div class="sell-media-meta">';
+        echo '<p class="sell-media-buy-button">';
+        echo sell_media_item_buy_button( $post_id, 'button', __( 'Buy', 'sell_media' ), false );
+        echo '</p>';
+        do_action( 'sell_media_below_buy_button', $post_id );
+        sell_media_plugin_credit();
+        echo '</div>';
+    }
+}
+add_action( 'sell_media_after_content', 'sell_media_append_meta', 20 );
+
+/**
+ * Show lightbox
+ *
+ * @since 1.9.2
+ * @param int $post_id Item ID
+ * @return void
+ */
+function sell_media_show_lightbox( $post_id ) {
+    echo '<p class="sell-media-lightbox"><a href="javascript:void(0);" title="' . sell_media_get_lightbox_text( $post_id ) . '" class="add-to-lightbox" id="lightbox-' . $post_id . '" data-id="' . $post_id . '">' . sell_media_get_lightbox_text( $post_id ) . '</a></p>';
+}
+add_action( 'sell_media_below_buy_button', 'sell_media_show_lightbox', 10 );
+
+/**
+ * Show additional file info
+ *
+ * @since 1.9.2
+ * @param int $post_id Item ID
+ * @return void
+ */
+function sell_media_show_file_info( $post_id ){
+    echo '<h2 class="widget-title">' . __( 'Details', 'sell_media' ) . '</h2>';
+    echo '<ul>';
+    echo '<li class="filename"><span class="title">' . __( 'File ID', 'sell_media' ) . ':</span> ' . $post_id . '</li>';
+    echo '<li class="filetype"><span class="title">' . __( 'File Type', 'sell_media' ) . ':</span> ' . sell_media_get_filetype( $post_id ) . '</li>';
+    if ( wp_get_post_terms( $post_id, 'collection' ) ) {
+        echo '<li class="collections"><span class="title">' . __( 'Collections', 'sell_media' ) . ':</span> ' . sell_media_get_taxonomy_terms( 'collection' ) . '</li>';
+    }
+    if ( wp_get_post_terms( $post_id, 'keywords' ) ) {
+        echo '<li class="keywords"><span class="title">' . __( 'Keywords', 'sell_media' ) . ':</span> ' . sell_media_get_taxonomy_terms( 'keywords' ) . '</li>';
+    }
+    echo do_action( 'sell_media_additional_list_items', $post_id );
+    echo '</ul>';
+}
+add_action( 'sell_media_below_buy_button', 'sell_media_show_file_info', 12 );
+
+/**
+ * Adds Sell Media Version to the <head> tag
+ *
+ * @since 1.9.2
+ * @return void
+*/
+function sell_media_version_in_header(){
+    echo '<meta name="generator" content="Sell Media v' . SELL_MEDIA_VERSION . '" />' . "\n";
+}
+add_action( 'wp_head', 'sell_media_version_in_header' );
+
+/**
+ * Return the name of the template served
+ *
+ * @since 1.9.2
+ * @return string
+ */
+function sell_media_return_template() {
+    global $template;
+    return basename( $template );
+}
+
+/**
+ * Theme setup tweaks
+ *
+ * @since 1.9.2
+ * @return string
+ */
+function sell_media_theme_setup(){
+
+    /**
+     * Don't filter the_content if custom template is used.
+     * Prevents duplicate content on the_content filter.
+     * For backwards compatibility in case users upgrade Sell Media
+     * but have old themes with custom Sell Media templates.
+     */
+    if ( 'single-sell_media_item.php' == sell_media_return_template() ) {
+        remove_filter( 'the_content', 'sell_media_before_content' );
+        remove_filter( 'the_content', 'sell_media_after_content' );
+    }
+    if ( 'archive-sell_media_item.php' == sell_media_return_template() ) {
+    }
+}
+add_action( 'wp_head', 'sell_media_theme_setup', 999 );
+
+/**
+ * Check for Sell Media theme supprt
+ * @return boolean
+ */
+function sell_media_theme_support() {
+    if ( current_theme_supports( 'sell_media' ) ) {
+        return true;
+    }
+}
+add_action( 'after_setup_theme', 'sell_media_theme_support', 999 );

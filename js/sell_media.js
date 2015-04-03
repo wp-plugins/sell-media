@@ -49,10 +49,11 @@ jQuery(document).ready(function($){
      * Check the required fields and change state of add to cart button
      */
     function required_fields(){
-        if ($('#sell_media_product_type_fieldset').length == 0 && $('#sell_media_download_wrapper #sell_media_download_license_fieldset select').length == 0 ) {
-            $('.item_add').prop('disabled', false);
-        } else {
+        // if size, license, or type (print/download) fields exists, disable add button
+        if ( $('#sell_media_download_size_fieldset').length || $('#sell_media_download_license_fieldset').length || $('#sell_media_product_type').length ) {
             $('.item_add').prop('disabled', true);
+        } else {
+            $('.item_add').prop('disabled', false);
         }
 
         var required = $('#sell-media-dialog-box [required]');
@@ -99,25 +100,23 @@ jQuery(document).ready(function($){
     /**
      * Show search options when user clicks inside the search field
      */
-    $('#search_query').on('click', function(){
-        $('.advanced-search, #wpas-tax_collection, #wpas-tax_keywords, #wpas-meta_sell_media_price, #wpas-1').show();
-        $('#wp-advanced-search').addClass('active');
+    $('.sell-media-search-query').on('click', function(){
+        $('.sell-media-search-hidden, .sell-media-search-close').show();
+        $('.sell-media-search-form').addClass('active');
     });
 
     /**
      * Hide search options when user clicks close
      */
-    $('#sell-media-toggle-search-options').on('click', function(){
-        $('.advanced-search, #wpas-tax_collection, #wpas-tax_keywords, #wpas-meta_sell_media_price, #wpas-1').hide();
-        $('#wp-advanced-search').removeClass('active');
+    $('.sell-media-search-close').on('click', function(){
+        $('.sell-media-search-hidden, .sell-media-search-close').hide();
+        $('.sell-media-search-form').removeClass('active');
     });
 
     $('#sell_media_terms_cb').on('click', function(){
         $this = $(this);
         $this.val() == 'checked' ? $this.val('') : $this.val('checked');
     });
-
-    // console.log(sell_media);
 
     // Cart config
     sellMediaCart({
@@ -129,11 +128,22 @@ jQuery(document).ready(function($){
             cancel: sell_media.checkout_page,
             notify: sell_media.listener_url,
             shipping: sell_media.shipping, // 0 prompt & optional, 1 no prompt, 2 prompt & required
-            method: "POST"
+            method: "POST",
+            site: sell_media.site_name
         },
         cartStyle: sell_media.cart_style,
         taxRate: parseFloat(sell_media.tax),
         currency: sell_media.currency_symbol,
+        shippingCustom: function(){
+            var items = JSON.parse(localStorage.getItem("sellMediaCart_items"));
+            var shipping_cost = false;
+            sellMediaCart.each( items, function (item) {
+                if( "print" == item.type ) {
+                    shipping_cost = true;
+                }
+            });
+            return shipping_cost;
+        },
         cartColumns: [{
             view: "image",
             attr: "image",
@@ -227,6 +237,7 @@ jQuery(document).ready(function($){
                 cart: data
             },
             success: function( msg ){
+                console.log(data);
                 $.each( msg.cart, function( k, v ){
                     data[k] = v;
                 });
@@ -295,93 +306,51 @@ jQuery(document).ready(function($){
 
     });
 
-    // Lightbox variables
-    var key = 'sellMediaLightbox';
-    // get localStorage object, otherwise set to empty array
-    if (localStorage && localStorage.getItem(key)) {
-      var lightbox_data = JSON.parse(localStorage.getItem(key));
-    } else {
-      var lightbox_data = new Array();
-    }
+    // Add to lightbox on click
+    $( '.add-to-lightbox' ).on( 'click', function( e ) {
 
-    // Lightbox add
-    if($('.add-to-lightbox').length) {
+        var id = $(this).data('id'),
+            selector = $('#sell-media-lightbox-content #sell-media-' + id);
 
-        // set variables for use below
-        var selector = '.add-to-lightbox';
+        var data = {
+            action: 'sell_media_update_lightbox',
+            id: id
+        };
 
-        // check if item exits in lightbox already, add class
-        $.each(lightbox_data, function(i, item) {
-            var unique_selector = selector + '[data-id=' + item + ']';
-            if (lightbox_data.indexOf(item) > -1) {
-                $(unique_selector).addClass('saved-to-lightbox');
-                $(unique_selector).text(sell_media.remove_text);
+        $.ajax({
+            type: 'POST',
+            url: sell_media.ajaxurl,
+            data: data,
+            success: function(msg){
+                $('.lightbox-counter').text(msg.count);
+                $('#lightbox-' + id).text(msg.text);
+                $(selector).hide();
             }
         });
-
-        // add or remove items from lightbox on click
-        $(selector).on('click',function() {
-            var value = $(this).data('id');
-            if ($(this).hasClass('saved-to-lightbox')) {
-                $(this).text(sell_media.save_text);
-                // delete the item
-                $.each(lightbox_data, function(i, item) {
-                    if (item == value) {
-                        lightbox_data.splice($.inArray(value, lightbox_data),1);
-                        var count = $('.lightbox-menu .lightbox-counter').html();
-                        count = parseInt(count) - 1;
-                        $('.lightbox-menu .lightbox-counter').html(count);
-                    }
-                });
-                $(this).removeClass('saved-to-lightbox');
-            } else {
-                $(this).text(sell_media.remove_text);
-                lightbox_data.push(value);
-                var count = $('.lightbox-menu .lightbox-counter').html();
-                count = parseInt(count) + 1;
-                $('.lightbox-menu .lightbox-counter').html(count);
-                $(this).addClass('saved-to-lightbox');
-            }
-
-            // set the lightbox
-            localStorage.setItem(key, JSON.stringify(lightbox_data));
-            return false;
-        });
-    }
-
-    // Lightbox remove
-    $('#sell-media-lightbox-content').on('click', '.remove-lightbox', function() {
-        _this = $(this);
-        var value = $(this).data('id');
-        $.each(lightbox_data, function(i, item) {
-            if (item == value) {
-                _this.parents('.sell-media-grid').remove();
-                lightbox_data.splice($.inArray(value, lightbox_data),1);
-                var count = $('.lightbox-menu .lightbox-counter').html();
-                count = parseInt(count) - 1;
-                $('.lightbox-menu .lightbox-counter').html(count);
-            }
-        });
-        // console.log(lightbox_data);
-        // update the lightbox
-        localStorage.setItem(key, JSON.stringify(lightbox_data));
-        return false;
     });
+
+    // Count lightbox
+    function count_lightbox() {
+        var cookie = $.cookie('sell_media_lightbox');
+        if ( cookie == undefined ) {
+            return 0;
+        } else {
+            var data = $.parseJSON( cookie ),
+                keys = [];
+            $.each(data, function(key, value) {
+                keys.push(key);
+            });
+            return keys.length;
+        }
+    }
 
     // Lightbox menu
-    $('<span class="lightbox-counter">' + lightbox_data.length + '</span>').appendTo('.lightbox-menu a');
+    $('<span class="lightbox-counter">' + count_lightbox() + '</span>').appendTo('.lightbox-menu a');
 
-    sellMediaCart({
-        shippingCustom: function(){
-            var items = JSON.parse(localStorage.getItem("sellMediaCart_items"));
-            var shipping_cost = false;
-            sellMediaCart.each( items, function (item) {
-                if( "print" == item.type ) {
-                    shipping_cost = true;
-                }
-            });
-            return shipping_cost;
-        }
-    });
+    // Checkout total menu
+    $('(<span class="sellMediaCart_total checkout-price">0</span>)').appendTo('.checkout-total a');
+
+    // Checkout qty menu
+    $('(<span class="sellMediaCart_quantity checkout-counter">0</span>)').appendTo('.checkout-qty a');
 
 });

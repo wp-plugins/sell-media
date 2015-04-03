@@ -1,5 +1,12 @@
 <?php
 
+/**
+ * Helper Functions
+ *
+ * @package Sell Media
+ * @author Thad Allender <support@graphpaperpress.com>
+ */
+
 // Exit if accessed directly
 if ( ! defined( 'ABSPATH' ) ) exit;
 
@@ -9,61 +16,38 @@ if ( ! defined( 'ABSPATH' ) ) exit;
  */
 function sell_media_template_redirect( $original_template ){
 
-    $post_type = get_query_var('post_type');
+    if ( ! sell_media_theme_support() )
+        return $original_template;
+
     $sell_media_taxonomies = get_object_taxonomies( 'sell_media_item' );
-
-    if ( $post_type == '' )
-       $post_type = 'sell_media_item';
-
-    $default_templates = array(
-        'single'  => plugin_dir_path( dirname( __FILE__ ) ) . 'themes/single-sell_media_item.php',
-        'archive' => plugin_dir_path( dirname( __FILE__ ) ) . 'themes/archive-sell_media_item.php'
-        );
-
-    $custom_templates = array(
-        'single'   => locate_template( 'single-sell_media_item.php' ),
-        'archive'  => locate_template( 'archive-sell_media_item.php' ),
-        'taxonomy' => locate_template( 'taxonomy-' . get_query_var('taxonomy') . '.php' )
-        );
-
-    /**
-     * Single
-     */
-    if ( is_single() && get_query_var('post_type') == 'sell_media_item' ) {
-        $template = ( file_exists( $custom_templates['single'] ) ) ? $custom_templates['single'] : $default_templates['single'];
-    }
 
     /**
      * Archive -- Check if this is an archive page AND post type is sell media
      */
-    elseif ( is_post_type_archive( $post_type ) && $post_type == 'sell_media_item' ) {
-        $template = ( file_exists( $custom_templates['archive'] ) ) ? $custom_templates['archive'] : $default_templates['archive'];
-    }
-
-    /**
-     * Taxonomies
-     */
-    elseif ( is_tax() && in_array( get_query_var('taxonomy'), $sell_media_taxonomies ) ) {
-        // check if taxonomy template file exists in active theme
-        if ( file_exists( $custom_templates['taxonomy'] ) ) {
-            $template = $custom_templates['taxonomy'];
-        // cehck if archive template file exists in active theme
-        } elseif ( file_exists( $custom_templates['archive'] ) ) {
-            $template = $custom_templates['archive'];
-        // otherwise, use the archive-sell_media_item.php template in plugin
-        } else {
-            $template = $default_templates['archive'];
-        }
-    }
-
-    else {
+    if ( is_post_type_archive( 'sell_media_item' ) || is_tax( $sell_media_taxonomies ) ) {
+        $template = plugin_dir_path( dirname( __FILE__ ) ) . 'themes/archive.php';
+    } else {
         $template = $original_template;
     }
 
     return $template;
 }
-add_action( 'template_include', 'sell_media_template_redirect', 6 );
+add_filter( 'template_include', 'sell_media_template_redirect', 6 );
 
+/**
+ * Get search form
+ *
+ * @param  $form
+ * @return $form
+ */
+function sell_media_get_search_form( $form ){
+    // Change the default WP search form if is Sell Media search
+    if ( is_search() && 'sell_media_item' == get_query_var( 'post_type' ) ) {
+        $form = Sell_Media()->search->form();
+    }
+    return $form;
+}
+add_filter( 'get_search_form', 'sell_media_get_search_form' );
 
 /**
  * Loads a template from a specified path
@@ -72,7 +56,6 @@ add_action( 'template_include', 'sell_media_template_redirect', 6 );
  * @uses load_template()
  * @since 0.1
  */
-
 function sell_media_load_template() {
 
     if ( $overridden_template = locate_template( 'cart.php' ) ) {
@@ -95,7 +78,7 @@ add_action( 'wp_ajax_sell_media_load_template', 'sell_media_load_template' );
 function sell_media_redirect_login_dashboard( $redirect_to, $request, $user ) {
     global $user;
     if ( isset( $user->roles ) && is_array( $user->roles ) ){
-        if ( in_array( "sell_media_customer", $user->roles ) ){
+        if ( in_array( 'sell_media_customer', $user->roles ) ){
             return site_url('dashboard');
         } else {
             return admin_url();
@@ -104,6 +87,45 @@ function sell_media_redirect_login_dashboard( $redirect_to, $request, $user ) {
 }
 add_filter( 'login_redirect', 'sell_media_redirect_login_dashboard', 10, 3 );
 
+/**
+ * Add specific CSS classes to the body_class
+ *
+ * @since 1.9.2
+ */
+function sell_media_body_class( $classes ) {
+    $settings = sell_media_get_plugin_options();
+
+    // Layout settings
+    if ( isset( $settings->layout ) )
+        $classes[] = $settings->layout;
+
+    return $classes;
+}
+add_filter( 'body_class', 'sell_media_body_class' );
+
+/**
+ * Add custom class to nav menu items
+ */
+function sell_media_nav_menu_css_class( $classes, $item ){
+    $settings = sell_media_get_plugin_options();
+
+    if ( $item->object == 'page' ){
+        $template = get_post_meta( $item->object_id, '_wp_page_template', true );
+        if ( $template == 'page-lightbox.php' || $item->title == 'lightbox' ) {
+            $classes[] = 'lightbox-menu';
+        }
+        if ( $item->object_id == $settings->checkout_page ){
+            if ( in_array( 'total', $item->classes ) ) {
+                $classes[] = 'checkout-total';
+            } else {
+                $classes[] = 'checkout-qty';
+            }
+        }
+    }
+
+    return $classes;
+}
+add_filter( 'nav_menu_css_class', 'sell_media_nav_menu_css_class', 10, 2 );
 
 /**
  * Builds html select field
@@ -474,30 +496,23 @@ function sell_media_update_sales_stats( $product_id=null, $license_id=null, $pri
  *
  * @since 1.0.1
  */
-function sell_media_pagination_filter( $max_pages = "" ) {
+function sell_media_pagination_filter( $max_pages = '' ) {
 
     global $wp_query;
-    if ( "" != $max_pages ) {
-        $max_num_pages = $max_pages;
-    } else {
-        $max_num_pages = $wp_query->max_num_pages;
-    }
+    $max_num_pages = ( '' != $max_pages ) ? $max_pages : $wp_query->max_num_pages;
 
     $big = 999999999; // need an unlikely integer
 
     $params = array(
-        'base' => str_replace( $big, '%#%', esc_url( get_pagenum_link( $big ) ) ),
+        //'base' => str_replace( $big, '%#%', esc_url( get_pagenum_link( $big ) ) ),
         'format' => '?paged=%#%',
         'current' => max( 1, get_query_var('paged') ),
         'total' => $max_num_pages // note sometimes max_num_pages needs to be sent over
-        );
+    );
 
-    $params = apply_filters( 'sell_media_pagination', $params );
-
-    $links = paginate_links( $params );
-
-    print '<div class="sell-media-pagination-container">' . $links . '</div>';
+    return '<div class="sell-media-pagination-container">' . paginate_links( $params ) . '</div>';
 }
+add_filter( 'sell_media_pagination_filter', 'sell_media_pagination_filter', 10, 1 );
 
 
 /**
@@ -609,6 +624,7 @@ function sell_media_get_price_groups( $post_id = NULL, $taxonomy = NULL ){
 
 }
 
+
 /**
  * Retrieve the absolute path to the file upload directory without the trailing slash
  *
@@ -622,6 +638,7 @@ function sell_media_get_upload_dir() {
 
     return apply_filters( 'sell_media_get_upload_dir', $path );
 }
+
 
 /**
  * Retrieve the absolute path to the packages file upload directory without the trailing slash
@@ -677,6 +694,7 @@ function sell_media_get_file_extension( $str ) {
  */
 function sell_media_get_original_protected_file( $product_id=null ){
 
+    $file = null;
     // All uploads are saved to this meta field
     // Single uploads are saved like /2014/14/file.zip
     // Packages are saved like /packages/file.zip
@@ -689,10 +707,7 @@ function sell_media_get_original_protected_file( $product_id=null ){
         $file = sell_media_get_upload_dir() . '/' . $attached_file;
     }
 
-    if ( file_exists( $file ) )
-        return $file;
-    else
-        return false;
+    return apply_filters( 'sell_media_get_original_protected_file', $file );
 }
 
 

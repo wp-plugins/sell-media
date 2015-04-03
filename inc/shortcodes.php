@@ -1,5 +1,12 @@
 <?php
 
+/**
+ * Shortcodes
+ *
+ * @package Sell Media
+ * @author Thad Allender <support@graphpaperpress.com>
+ */
+
 // Exit if accessed directly
 if ( ! defined( 'ABSPATH' ) ) exit;
 
@@ -51,7 +58,6 @@ function sell_media_search_shortcode( $atts, $content = null ) {
 
     $html = null;
     $html .= Sell_Media()->search->form();
-    $html .= Sell_Media()->search->results();
 
     return $html;
 
@@ -94,6 +100,8 @@ add_shortcode( 'sell_media_item', 'sell_media_item_shortcode' );
  * @since 1.0.4
  */
 function sell_media_all_items_shortcode( $atts ){
+    $settings = sell_media_get_plugin_options();
+
     global $paged;
     if ( get_query_var('paged') ) {
         $paged = get_query_var('paged');
@@ -102,12 +110,15 @@ function sell_media_all_items_shortcode( $atts ){
     } else {
         $paged = 1;
     }
-    $settings = sell_media_get_plugin_options();
+
     extract( shortcode_atts( array(
-        'collection' => null,
-        'show' => -1
+        'collection' => '',
+        'columns' => '3',
+        'show' => get_option( 'posts_per_page' )
         ), $atts )
     );
+    //$class = ( $columns ) ? 'sell-media-grid sell-media-grid-' . $columns : 'sell-media-grid';
+
     $args = array(
         'posts_per_page' => $show,
         'post_type' => 'sell_media_item',
@@ -124,33 +135,29 @@ function sell_media_all_items_shortcode( $atts ){
             'paged' => $paged
         );
     }
-    $wp_query = null;
 
+    $wp_query = null;
     $wp_query = new WP_Query();
     $wp_query->query( $args );
-    ob_start(); ?>
-    <?php if ( $wp_query->have_posts() ) : ?>
-    <div class="sell-media">
-        <div class="sell-media-grid-container">
-            <?php $i = 0; ?>
-            <?php while ( $wp_query->have_posts() ) : $wp_query->the_post(); $i++; ?>
-                <div class="sell-media-grid<?php if ( $i %3 == 0 ) echo ' end'; ?>">
-                    <div class="item-inner">
-                        <a href="<?php echo get_permalink( get_the_ID() ); ?>"><?php sell_media_item_icon( get_the_ID(), apply_filters( 'sell_media_thumbnail', 'medium' ) ); ?></a>
-                        <span class="item-overlay">
-                            <h3><a href="<?php echo get_permalink( get_the_ID() ); ?>"><?php echo get_the_title( get_the_ID() ); ?></a></h3>
-                            <?php sell_media_item_buy_button( get_the_ID(), 'text', __( 'Buy' ) ); ?>
-                            <?php do_action( 'sell_media_item_overlay' ); ?>
-                        </span>
-                    </div>
-                </div>
-            <?php //endforeach; ?>
-            <?php endwhile;  wp_reset_query(); $args = null; ?>
-            <?php sell_media_pagination_filter( $wp_query->max_num_pages ); ?>
-        </div><!-- .sell-media-grid-container -->
-    </div><!-- #sell-media-shortcode-all .sell_media -->
-    <?php endif; ?>
-    <?php return ob_get_clean();
+    $i = 0;
+
+    if ( $wp_query->have_posts() ) :
+
+        $html = '<div class="sell-media">';
+        $html .= '<div class="sell-media-grid-container">';
+
+        while ( $wp_query->have_posts() ) : $wp_query->the_post(); $i++;
+            $html .= apply_filters( 'sell_media_content_loop', get_the_id(), $i );
+        endwhile; wp_reset_query(); $i = 0;
+
+        $html .= '</div><!-- .sell-media-grid-container -->';
+        if ( ! is_front_page() && is_main_query() )
+            $html .= sell_media_pagination_filter( $wp_query->max_num_pages );
+        $html .= '</div><!-- #sell-media-shortcode-all .sell_media -->';
+
+    endif;
+
+    return $html;
 }
 add_shortcode( 'sell_media_all_items', 'sell_media_all_items_shortcode' );
 

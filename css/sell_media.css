@@ -85,13 +85,12 @@
 }
 input[type="submit"].sell-media-button,
 .sell-media-button,
-a.sell-media-button:link,
 #sell-media-submit {
   border: none;
   background: #555;
   padding: 7px 5%;
-  display: block;
-  width: 90%;
+  display: inline-block;
+  width: auto;
   color: #FFF;
   text-align: center;
   text-transform: none;
@@ -99,6 +98,9 @@ a.sell-media-button:link,
   text-shadow: none;
   font-size: 14px;
   border-radius: 3px;
+}
+.sell-media-single-two-col .sell-media-button {
+  display: block;
 }
 input[type="submit"].sell-media-button:hover,
 .sell-media-button:hover,
@@ -178,72 +180,69 @@ table.sell-media-products {
 
 /*= Single
 -------------------------------------------------------------- */
-.sell-media .sell-media-content {
+.sell-media-breadcrumbs {
+  font-size: .7em;
+  text-transform: uppercase;
+  margin: 1em 0 2em;
+  letter-spacing: 1px;
+}
+.sell-media-content {
   float: left;
-  margin-right: 5%;
+  margin: 0 5% 1.5em 0;
   width: 65%;
   position: relative;
 }
-.sell-media img {
+.sell-media-single-one-col .sell-media-content {
+  float: none;
+  margin: 0 0 1.5em 0;
+  width: 100%;
+}
+.sell-media-content img {
   display: block;
   max-width: 100%;
   height: auto;
 }
-.sell-media .sell-media-content-text {
-  margin: 10px 0;
-}
-.sell-media .sell-media-meta {
-  clear: none;
+.sell-media-meta {
   float: right;
   line-height: 1.5;
   width: 30%;
 }
-.sell-media .sell-media-postmeta {
-  clear: both;
+.sell-media-single-one-col .sell-media-meta {
+  float: none;
+  width: 100%;
 }
-.sell-media ul {
-  margin: 0 0 20px;
-  padding: 0;
+.sell-media-meta ul {
+  list-style-position: inside;
   list-style: none;
+  margin: 0 0 1.5em 0;
+  padding: 0;
 }
-.sell-media li {
-  margin: 6px 0;
+.sell-media-meta li {
+  margin-bottom: .5em;
 }
-.sell-media li .title {
+.sell-media-meta .title {
   font-weight: 700;
-  border: 0;
 }
 #sell-media-single .gallery .gallery-item a img {
   max-width: 95%;
 }
-.sell-media .sell-media-prev-next {
-  text-align: center;
-  padding: 10px 0;
-  clear: both;
-}
-.sell-media .sell-media-prev-next .next {
-  margin: 0 0 0 10px;
-}
-.sell-media .sell-media-prev-next .prev {
-  margin: 0 10px 0;
-}
-.sell-media-single-button {
-  margin-bottom: 20px;
-}
+
 /*= Archives
 -------------------------------------------------------------- */
-.sell-media .sell-media-grid {
-  position: relative;
-  float: left;
-  margin: 0 2% 2% 0;
-  width: 32%;
-}
 .sell-media .sell-media-grid-container {
   margin: 10px 0;
 }
-.sell-media .sell-media-grid:nth-child(3n), .sell-media .end {
+.sell-media .sell-media-grid {
+  float: left;
+  margin: 0 2% 2% 0;
+  position: relative;
+  width: 32%;
+}
+.sell-media .end,
+.sell-media .sell-media-grid:nth-child(3n) {
   margin-right: 0;
 }
+.sell-media .end + .sell-media-grid,
 .sell-media .sell-media-grid:nth-child(3n+1) {
   clear: left;
 }
@@ -256,6 +255,9 @@ table.sell-media-products {
   -moz-transition: opacity .2s ease-in-out;
   -webkit-transition: opacity .2s ease-in-out;
   /*-webkit-backface-visibility: hidden;  fixes chrome jump */
+  display: block;
+  width: 100%;
+  height: auto;
 }
 .sell-media .sell-media-grid .item-overlay {
   display: none;
@@ -285,6 +287,11 @@ table.sell-media-products {
   text-align: center;
   width: 100%;
 }
+.sell-media .sell-media-grid-3 h3,
+.sell-media .sell-media-grid-4 h3,
+.sell-media .sell-media-grid-5 h3 {
+  font-size: 13px;
+}
 .sell-media .sell-media-grid .add-to-lightbox,
 .sell-media .sell-media-grid .remove-lightbox,
 .sell-media .sell-media-grid .sell-media-text {
@@ -304,7 +311,8 @@ table.sell-media-products {
 }
 .sell-media-pagination-container {
   clear: both;
-  text-align: center
+  margin: 3em auto;
+  text-align: center;
 }
 .sell-media-pagination-container .page-numbers {
   padding: 0 3px;
@@ -511,58 +519,54 @@ table.sell-media-products {
 -------------------------------------------------------------- */
 .sell-media-search {
   clear: both;
-  height: 125px;
+  height: 90px;
   margin: 20px 0;
   position: relative;
 }
-.wp-advanced-search {
+.sell-media-search-form {
   border: 1px solid #ccc;
   background-color: #ededed;
   color: #333;
-  margin: 0 0 40px;
-  padding: 3%;
+  margin: 0;
+  padding: 16px;
   position: absolute;
+  text-align: left;
   z-index: 100;
   width: 100%;
   -webkit-box-sizing: border-box;
   -moz-box-sizing: border-box;
   box-sizing: border-box;
 }
-.wp-advanced-search.active {
+.sell-media-search-form.active {
   box-shadow: 0 0 10px rgba(0,0,0,.2);
 }
-.wpas-search-field {
+.sell-media-search-query {
+  font-size: 20px;
   float: left;
   width: 70%;
 }
-.wpas-submit {
+.sell-media-search-submit {
   float: right;
   width: 30%;
 }
-.wpas-search_query input[type=text],
-.wpas-submit input[type=submit] {
+.sell-media-search-query input[type=text],
+.sell-media-search-submit input[type=submit] {
   height: 50px;
   padding: 10px;
   -webkit-box-sizing: border-box;
   -moz-box-sizing: border-box;
   box-sizing: border-box;
 }
-.wpas-search_query input[type=text] {
+.sell-media-search-query input[type=text] {
   border: 1px solid #ccc;
   border-right: 0;
 }
-.wpas-search_query input[type=text],
-.wpas-submit input[type=submit] {
+.sell-media-search-query input[type=text],
+.sell-media-search-submit input[type=submit] {
   border-radius: 0;
   width: 100%;
 }
-#search_query {
-  font-size: 20px;
-}
-.chosen-choices {
-  margin-bottom: 0 !important;
-}
-.wpas-submit input[type=submit] {
+.sell-media-search-submit input[type=submit] {
   background: #555;
   border: 0;
   border-radius: 0;
@@ -574,42 +578,43 @@ table.sell-media-products {
   text-shadow: none;
   text-transform: uppercase;
 }
-.wpas-submit input[type=submit]:hover {
+.sell-media-search-submit input[type=submit]:hover {
   background: #000;
 }
-.wpas-field {
-  border-radius: 0;
-  margin-bottom: 10px;
+.sell-media-search-hidden {
+  margin: 10px 0;
 }
-input.wpas-text[type=text] {
+input.sell-media-search-text[type=text] {
+  background: #fff;
   border-radius: 0;
-  font-size: 13px;
   color: #aaa;
+  font-size: 13px;
+  margin: 0;
 }
-#wpas-tax_collection,
-#wpas-tax_keywords,
-#wpas-meta_sell_media_price,
-#wpas-1 {
-  clear: both;
-  display: none;
-}
-#wpas-tax_collection input,
-#wpas-tax_keywords input,
-#wpas-meta_sell_media_price input {
+.sell-media-search-field input {
   padding: 6px;
-  height: 15px;
+  height: auto;
 }
-#wpas-1 {
-  float: right;
+.sell-media-search-field label {
+  display: inline-block;
+  font-size: 12px;
+  margin-right: 10px;
+  padding: 0;
 }
-#sell-media-toggle-search-options {
-  width: 12px;
-  height: 12px;
-  display: block;
-  background: url('../images/chosen-sprite.png') -42px 1px no-repeat;
-  text-indent: -999em;
+.sell-media-search-field select {
+  display: inline-block;
 }
-#sell-media-toggle-search-options:hover {
+.sell-media-search-hidden {
+  display: none;
+  margin-top: 10px;
+}
+.sell-media-search-close {
+  color: #222;
+  display: none;
+  float: right !important;
+  text-decoration: none !important;
+}
+.sell-media-search-close:hover {
   cursor: pointer;
 }
 
@@ -774,23 +779,29 @@ input.wpas-text[type=text] {
     clear: both;
 }
 
-/*= Lightbox
+/*= Lightbox & Checkout counters
 -------------------------------------------------------------- */
-.lightbox-counter {
-    margin-left: 4px;
+.lightbox-counter,
+.checkout-counter,
+.checkout-price {
+    margin-left: 5px;
 }
 .sell-media-label,
-.lightbox-counter {
+.lightbox-counter,
+.checkout-counter {
     display: inline;
-    padding: .2em .6em .3em;
-    font-size: 75%;
+    padding: 2px 5px;
+    font-size: 9px;
     line-height: 1;
     color: #fff;
     background: #d9534f;
     text-align: center;
     white-space: nowrap;
     vertical-align: baseline;
-    border-radius: .25em;
+    border-radius: 2px;
+}
+.checkout-price {
+   font-weight: bold;
 }
 
 /*= Media queries
@@ -798,22 +809,22 @@ input.wpas-text[type=text] {
 @media only screen and (max-width : 768px) {
   .sell-media-totals,
   .sell-media-checkout-button,
-  .sell-media .sell-media-content,
-  .sell-media .sell-media-meta {
+  .sell-media-content,
+  .sell-media-meta {
     float: none;
     width: 100%;
   }
-  .sell-media .sell-media-grid {
+  .sell-media-grid {
     float: none;
     margin: 25px auto;
     width: 100%;
   }
-  .sell-media .sell-media-grid img {
+  .sell-media-grid img {
     display: block;
     margin: 0 auto;
   }
-  .sell-media .sell-media-grid h3,
-  .sell-media .sell-media-grid .sell-media-text {
+  .sell-media-grid h3,
+  .sell-media-grid .sell-media-text {
     float: none;
     display: block;
     margin: 10px 0;

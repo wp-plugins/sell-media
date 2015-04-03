@@ -1,13 +1,11 @@
 <?php
 
 /**
- * Admin menu
+ * Admin Menu
  *
- * @package     Sell Media
- * @subpackage  Functions/Install
- * @license     http://opensource.org/licenses/gpl-2.0.php GNU Public License
- * @since       1.8.5
-*/
+ * @package Sell Media
+ * @author Thad Allender <support@graphpaperpress.com>
+ */
 
 // Exit if accessed directly
 if ( ! defined( 'ABSPATH' ) ) exit;
@@ -28,12 +26,14 @@ function sell_media_admin_menu() {
     add_submenu_page( 'edit.php?post_type=sell_media_item', __('Reports', 'sell_media'), __('Reports', 'sell_media'),  $permission, 'sell_media_reports', 'sell_media_reports_callback_fn' );
     add_submenu_page( 'edit.php?post_type=sell_media_item', __('Upgrades', 'sell_media'), __('Upgrades', 'sell_media'),  $permission, 'sell_media_upgrades', 'sell_media_upgrades_callback_fn' );
     remove_submenu_page( 'edit.php?post_type=sell_media_item', 'edit-tags.php?taxonomy=price-group&amp;post_type=sell_media_item' );
+    add_submenu_page( null, __('System Info', 'sell_media'), __('System Info', 'sell_media'),  $permission, 'sell_media_system_info', 'sell_media_system_info_callback_fn' );
+    remove_submenu_page( 'edit.php?post_type=sell_media_item', 'edit.php?post_type=sell_media_item&amp;page=sell_media_system_info' );
     remove_submenu_page( 'edit.php?post_type=sell_media_item', 'edit-tags.php?taxonomy=keywords&amp;post_type=sell_media_item' );
     remove_submenu_page( 'edit.php?post_type=sell_media_item', 'edit-tags.php?taxonomy=creator&amp;post_type=sell_media_item' );
 
     do_action( 'sell_media_menu_hook' );
 }
-add_action( 'admin_menu', 'sell_media_admin_menu' );
+add_action( 'admin_menu', 'sell_media_admin_menu', 999 );
 
 /**
  * Admin menu order
@@ -57,7 +57,7 @@ function sell_media_submenu_order( $menu_ord ) {
         '4'     => 'Licenses',
         '5'     => 'Payments',
         '6'     => 'Reports',
-        '98'    => 'Settings',
+        '97'    => 'Settings',
         '99'    => 'Upgrades'
     );
 
