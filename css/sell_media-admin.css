@@ -1,8 +1,17 @@
 /* Global
 -------------------------------------------------------------- */
-#adminmenu div.wp-menu-image { overflow: hidden; }
-#adminmenu div.wp-menu-image img{ display: none; }
-#product_meta_box input[type="file"] { padding: 0px; border: 0; background: transparent; margin: 1em 0; }
+#adminmenu div.wp-menu-image {
+    overflow: hidden;
+}
+#adminmenu div.wp-menu-image img{
+    display: none;
+}
+#product_meta_box input[type="file"] {
+    padding: 0px;
+    border: 0;
+    background: transparent;
+    margin: 1em 0;
+}
 
 /* jQuery UI Slider
 -------------------------------------------------------------- */
@@ -93,59 +102,27 @@
 
 /* Media attachment edit page
 -------------------------------------------------------------- */
-#poststuff #sell-media-tabs { margin-top: 0; padding: 0 0 0 10px; }
-.field-has-button { margin-right: 10px; float: left; }
-.sell-media-image { margin: 1em 0 0; }
-.sell-media-bulk-list-item {
-    width: 75px;
-    height: 75px;
-    background: #000;
-    }
-.sell-media-bulk-list-item .sell-media-bulk-list-item-img {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    }
-.sell-media-bulk-list-item .sell-media-bulk-list-item-img img { max-width: 100%; max-height: 100%; }
-.sell-media-bulk-list-item-edit {
-    color: #FFF;
-    position: absolute;
-    top: 0;
-    left: 0;
-    text-align: center;
-    text-decoration: none;
-    text-transform: uppercase;
-    height: 55px;
-    width: 75px;
-    padding: 20px 0 0 0;
-    }
-
-.sell-media-bulk-list-item-edit:hover { color: #fff; }
-.uploader { background: #F9F9F9; padding: 4em; text-align: center; border: 1px solid #EEE; }
-.uploader .button { font-size: 14px; height: 46px; line-height: 44px; padding: 0 36px; }
-.compat-field-sell th { padding: 0 5px 0 0; }
-.compat-field-sell input[type="checkbox"] { width: auto; }
-
+.field-has-button {
+    margin-right: 10px;
+    float: left;
+}
+.sell-media-image {
+    margin: 1em 0 0;
+}
+.compat-field-sell th {
+    padding: 0 5px 0 0;
+}
+.compat-field-sell input[type="checkbox"] {
+    width: auto;
+}
 .sell-media-item-table .sell-media-upload-trigger {
     cursor: pointer;
     float: left;
-    }
-
+}
 .sell_media_item_page_sell_media_add_bulk .media-sidebar .compat-field-sell,
 .media-sidebar .compat-field-sell {
     display: none;
-    }
-
-.sell-media-ajax-loader {
-    background: url("../images/ajax-loader.gif") no-repeat center top;
-    height: 58px;
-    width: 100%;
-    text-align: center;
-    padding-top: 20px;
-    color: #BBB;
-    font-size: 12px;
-    }
+}
 
 /* Settings Page
 -------------------------------------------------------------- */
@@ -160,21 +137,81 @@
 
 /* Item meta section
 -------------------------------------------------------------- */
-.sell-media-item-table th { width: 100%; display: block; font-weight: bold; padding: 10px 10px 0 10px; }
-.sell-media-item-table td { display: block; padding: 5px 10px 0; }
-.sell-media-item-table .sell-media-item-url { padding: 4px; margin: 0 5px 10px 0; }
-
-.sell-media-bulk-controls {
+.sell-media-upload-list:after {
+    content: "";
+    display: table;
     clear: both;
-    float: left;
-    }
-
-.sell-media-temp-target {
-    background: url('../images/ajax-loader.gif') no-repeat center;
+}
+.sell-media-field {
     display: block;
-    height: 58px;
-    width: 58px;
-    }
+    padding: 10px 0;
+}
+.sell-media-field label {
+    width: 30%;
+    float: left;
+}
+.sell-media-field label,
+.sell-media-field input,
+.sell-media-field select,
+.sell-media-field textarea {
+    display: inline-block;
+}
+.sell-media-field .desc {
+    color: #666;
+    font-style: italic;
+    margin-left: 10px;
+}
+.sell-media-upload-options {
+    vertical-align: -webkit-baseline-middle;
+    text-decoration: none;
+}
+.sell-media-upload-options .dashicons {
+    width: 13px;
+    height: 13px;
+    font-size: 13px;
+    vertical-align: baseline;
+}
+.sell-media-attachment:nth-child(4n+1){
+    clear: left;
+}
+.sell-media-attachment img {
+    opacity: 1;
+    -webkit-transition: opacity 0.25s ease;
+    -moz-transition: opacity 0.25s ease;
+    -o-transition: opacity 0.25s ease;
+    transition: opacity 0.25s ease;
+    /* prevents flickering */
+    -webkit-backface-visibility: hidden;
+}
+.sell-media-attachment:hover img {
+    opacity: 0.75;
+}
+.sell-media-attachment .sell-media-edit,
+.sell-media-attachment .sell-media-delete {
+    display: none;
+    position: absolute;
+    text-decoration: none;
+    color: rgba(255,255,255,.5);
+    background: rgba(0,0,0,.5);
+    z-index: 10;
+}
+.sell-media-attachment .sell-media-edit {
+    bottom: 20px;
+    left: 14px;
+}
+.sell-media-attachment .sell-media-delete {
+    bottom: 20px;
+    left: 44px;
+}
+.sell-media-attachment .sell-media-edit:hover,
+.sell-media-attachment .sell-media-delete:hover {
+    color: #fff;
+    background: #000;
+}
+.sell-media-attachment:hover .sell-media-edit,
+.sell-media-attachment:hover .sell-media-delete {
+    display: inline-block;
+}
 
 /* Term meta
 -------------------------------------------------------------- */

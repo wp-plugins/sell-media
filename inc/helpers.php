@@ -93,15 +93,46 @@ add_filter( 'login_redirect', 'sell_media_redirect_login_dashboard', 10, 3 );
  * @since 1.9.2
  */
 function sell_media_body_class( $classes ) {
+    global $post;
     $settings = sell_media_get_plugin_options();
 
-    // Layout settings
+    // Layout is set
     if ( isset( $settings->layout ) )
         $classes[] = $settings->layout;
+
+    // Gallery
+    if ( sell_media_is_gallery_page() )
+        $classes[] = 'sell-media-gallery-page';
 
     return $classes;
 }
 add_filter( 'body_class', 'sell_media_body_class' );
+
+/**
+ * Adds a custom query var for gallery links
+ *
+ * @param  $vars Existing query vars
+ * @return $vars Updated query vars
+ * @since 2.0.1
+ */
+function sell_media_add_query_vars_filter( $vars ){
+    $vars[] = 'id';
+    return $vars;
+}
+add_filter( 'query_vars', 'sell_media_add_query_vars_filter' );
+
+/**
+ * Checks if on sell media gallery page
+ *
+ * @return boolean true/false
+ * @since 2.0.1
+ */
+function sell_media_is_gallery_page(){
+    global $post;
+
+    if ( $post->ID && sell_media_has_multiple_attachments( $post->ID ) && get_query_var( 'id' ) == false )
+        return true;
+}
 
 /**
  * Add custom class to nav menu items
@@ -110,8 +141,7 @@ function sell_media_nav_menu_css_class( $classes, $item ){
     $settings = sell_media_get_plugin_options();
 
     if ( $item->object == 'page' ){
-        $template = get_post_meta( $item->object_id, '_wp_page_template', true );
-        if ( $template == 'page-lightbox.php' || $item->title == 'lightbox' ) {
+        if ( $item->object_id == $settings->lightbox_page ) {
             $classes[] = 'lightbox-menu';
         }
         if ( $item->object_id == $settings->checkout_page ){
@@ -359,6 +389,94 @@ function sell_media_is_license_term_page(){
 
 
 /**
+ * Get Attachments
+ *
+ * Get attachment ids from post meta.
+ * This function checks for both and returns a WP_Post object
+ *
+ * @param $post_id
+ * @return WP_Post object
+ * @since 2.0.1
+ */
+function sell_media_get_attachments( $post_id ) {
+    $meta = get_post_meta( $post_id, '_sell_media_attachment_id', true );
+    return ( ! empty ( $meta ) ) ? explode( ',', $meta ) : false;
+}
+
+/**
+ * Get Attachment
+ *
+ * If the item has multiple attachments,
+ * set the attachment_id to the query variable.
+ * Otherwise, get the attachments and assign
+ * the first as the $attachment_id.
+ *
+ * @param int $post_id
+ * @return int $attachment_id
+ * @since 2.0.1
+ */
+function sell_media_get_attachment_id( $post_id=null ) {
+
+    if ( sell_media_has_multiple_attachments( $post_id ) ) {
+        $attachment_id = get_query_var( 'id' );
+    } else {
+        $attachments = sell_media_get_attachments( $post_id );
+        $attachment_id = $attachments[0];
+    }
+
+    return $attachment_id;
+}
+
+/**
+ * Check if item has multiple attachments
+ */
+function sell_media_has_multiple_attachments( $post_id ) {
+
+    $attachments = sell_media_get_attachments( $post_id );
+    $count = count( $attachments );
+
+    if ( $count > 1 ) {
+        return true;
+    }
+}
+
+/**
+ * Checks if product is a package
+ */
+function sell_media_is_package( $post_id ){
+
+    $is_package = get_post_meta( $post_id, '_sell_media_is_package', true );
+
+    if ( $is_package )
+        return true;
+}
+
+/**
+ * Return full path to package file
+ */
+function sell_media_get_package_filepath( $post_id ){
+
+    $is_package = get_post_meta( $post_id, '_sell_media_is_package', true );
+    $file = get_post_meta( $post_id, '_sell_media_attached_file', true );
+
+    if ( $is_package && $file )
+        return sell_media_get_packages_upload_dir() . '/' . $file;
+}
+
+/**
+ * Determines if a post, identified by the specified ID, exist
+ * within the WordPress database.
+ *
+ * @param    int    $id    The ID of the post to check
+ * @return   bool          True if the post exists; otherwise, false.
+ * @since    2.0.1
+ */
+function sell_media_post_exists( $id ) {
+    return is_string( get_post_status( $id ) );
+}
+
+
+/**
  * Get Currency
  *
  * @since 0.1
@@ -464,13 +582,18 @@ if ( ! is_admin() )
  * @return string
  * @since 1.6.9
  */
-function sell_media_get_size( $attachment_id=null ){
+function sell_media_get_filesize( $post_id=null, $attachment_id=null ){
 
-    $file_path = get_attached_file( $attachment_id );
-    $bytes = filesize( $file_path );
-    $s = array( 'b', 'Kb', 'Mb', 'Gb' );
-    $e = floor( log( $bytes )/log( 1024 ) );
-    return sprintf( '%.2f ' . $s[$e], ( $bytes/pow( 1024, floor( $e ) ) ) );
+    $file_path = Sell_Media()->products->get_protected_file( $post_id, $attachment_id );
+
+    if ( file_exists( $file_path ) ) {
+
+        $bytes = filesize( $file_path );
+        $s = array( 'b', 'Kb', 'Mb', 'Gb' );
+        $e = floor( log( $bytes )/log( 1024 ) );
+
+        return sprintf( '%.2f ' . $s[$e], ( $bytes/pow( 1024, floor( $e ) ) ) );
+    }
 }
 
 
@@ -580,7 +703,6 @@ function sell_media_build_select( $items=array(), $args=array() ){
  * @param $post_id, $taxonomy
  * @return $price_groups (object)
  */
-
 function sell_media_get_price_groups( $post_id = NULL, $taxonomy = NULL ){
 
     // first, check price group set on the item
@@ -625,6 +747,31 @@ function sell_media_get_price_groups( $post_id = NULL, $taxonomy = NULL ){
 
 }
 
+/**
+ * Get the assigned price group
+ *
+ * @param $post_id, $taxonomy
+ * @since 2.0.1
+ * @return integer $price_group_id
+ */
+function sell_media_get_item_price_group( $post_id, $taxonomy ) {
+    $settings = sell_media_get_plugin_options();
+    $terms = get_the_terms( $post_id, $taxonomy );
+    if ( $terms && ! is_wp_error( $terms ) ) foreach ( $terms as $term ) {
+        if ( $term->parent == 0 ){
+            $price_group_id = $term->term_id;
+        }
+    } elseif ( $taxonomy == 'reprints-price-group' ) {
+        $price_group_id = $settings->reprints_default_price_group;
+    } elseif ( $taxonomy == 'price-group' ) {
+        $price_group_id = $settings->default_price_group;
+    } else {
+        $price_group_id = 0;
+    }
+
+    return $price_group_id;
+}
+
 
 /**
  * Retrieve the absolute path to the file upload directory without the trailing slash
@@ -657,6 +804,40 @@ function sell_media_get_packages_upload_dir() {
 
 
 /**
+ * Retrieve the absolute path to the import directory without the trailing slash
+ *
+ * @since  2.0.1
+ * @return string $path Absolute path to the sell_media/import directory
+ */
+function sell_media_get_import_dir() {
+    $wp_upload_dir = wp_upload_dir();
+    wp_mkdir_p( $wp_upload_dir['basedir'] . '/sell_media/import' );
+    $path = $wp_upload_dir['basedir'] . '/sell_media/import';
+
+    return apply_filters( 'sell_media_get_import_dir', $path );
+}
+
+
+/**
+ * Get directories
+ *
+ * @since 2.0.1
+ * @param $dir (packages or import)
+ * @return array (directories)
+ */
+function sell_media_get_directories( $dir=null ) {
+
+    $directories = '';
+    $path = ( $dir == 'packages' ) ? sell_media_get_packages_upload_dir() : sell_media_get_import_dir();
+
+    foreach ( glob( $path . "/*", GLOB_ONLYDIR ) as $directory ) {
+        $directories[] = $directory;
+    }
+    return $directories;
+}
+
+
+/**
  * Retrieve the url to the file upload directory without the trailing slash
  *
  * @since  1.8.5
@@ -667,111 +848,4 @@ function sell_media_get_upload_dir_url() {
     $url = $wp_upload_dir['baseurl'] . '/sell_media';
 
     return apply_filters( 'sell_media_get_upload_dir_url', $url );
-}
-
-/**
- * Get File Extension
- *
- * Returns the file extension of a filename.
- *
- * @since 1.8.5
- * @param unknown $str File name
- * @return mixed File extension
- */
-function sell_media_get_file_extension( $str ) {
-    $parts = explode( '.', $str );
-    return end( $parts );
-}
-
-
-/**
- * Get full system path to the originally uploaded file
- *
- * Returns the full system path to the file
- *
- * @since 1.8.5
- * @param product id ( post_id )
- * @return file path
- */
-function sell_media_get_original_protected_file( $product_id=null ){
-
-    $file = null;
-    // All uploads are saved to this meta field
-    // Single uploads are saved like /2014/14/file.zip
-    // Packages are saved like /packages/file.zip
-    $attached_file = get_post_meta( $product_id, '_sell_media_attached_file', true );
-    // Check if this item is a package and change the file location
-    $is_package = get_post_meta( $product_id, '_sell_media_is_package', true );
-    if ( $is_package ) {
-        $file = sell_media_get_packages_upload_dir() . '/' . $attached_file;
-    } else {
-        $file = sell_media_get_upload_dir() . '/' . $attached_file;
-    }
-
-    return apply_filters( 'sell_media_get_original_protected_file', $file );
-}
-
-
-/**
- * Resize an image to the specified dimensions
- * http://codex.wordpress.org/Class_Reference/WP_Image_Editor
- *
- * Returns the new image file path
- *
- * @since 1.8.5
- * @param file path
- * @param width
- * @param width
- * @return resized image file path
- */
-function sell_media_resize_original_image( $product_id=null, $width=null, $height=null ){
-    $file_path = sell_media_get_original_protected_file( $product_id );
-    $img = wp_get_image_editor( $file_path );
-    if ( ! is_wp_error( $img ) ) {
-        // resize if height and width supplied
-        if ( $width || $height ) {
-            if ( $width >= $height ) {
-                $max = $width;
-            } else {
-                $max = $height;
-            }
-            $img->resize( $max, $max, false );
-            $img->set_quality( 100 );
-        }
-        $img->stream();
-    }
-}
-
-/**
- * Is this an image?
- *
- * @since 1.0
- * @param string $file
- * @return bool (true/false)
- */
-function sell_media_is_image( $file ) {
-    $ext = sell_media_get_file_extension( $file );
-
-    switch ( strtolower( $ext ) ) {
-        case 'jpg';
-            $return = true;
-            break;
-        case 'png';
-            $return = true;
-            break;
-        case 'gif';
-            $return = true;
-            break;
-        case 'tif';
-            $return = true;
-        case 'tiff';
-            $return = true;
-        case 'psd';
-            $return = true;
-        default:
-            $return = false;
-            break;
-    }
-
-    return (bool) apply_filters( 'sell_media_is_image_filter', $return, $file );
 }
