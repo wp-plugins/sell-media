@@ -50,8 +50,12 @@ $settings = sell_media_get_plugin_options();
 
                 $terms = get_terms( $taxonomy_name, $args );
 
+                // count number of child terms
+                $c = 0;
+
                 if ( ! is_wp_error( $terms ) ) {
                     foreach ( $terms as $child ) {
+                        $c++;
                         $args = array(
                             'post_status' => 'publish',
                             'taxonomy' => 'collection',
@@ -70,6 +74,7 @@ $settings = sell_media_get_plugin_options();
 
                                         <div class="item-overlay">
                                             <div class="collection-details">
+                                                <h3 class="collection-title"><?php echo $child->name; ?></h3>
                                                 <span class="collection-count"><span class="count"><?php echo $post_count; ?></span><?php _e( ' images in ', 'sell_media' ); ?><span class="collection"><?php echo $child->name; ?></span><?php _e(' collection', 'sell_media'); ?></span>
                                                 <span class="collection-price"><?php _e( 'Starting at', 'sell_media' ); ?> <span class="price"><?php echo sell_media_get_currency_symbol(); ?><?php echo $settings->default_price; ?></span></span>
                                             </div>
@@ -93,7 +98,6 @@ $settings = sell_media_get_plugin_options();
                                                     sell_media_item_icon( $post->ID, 'sell_media_item' );
                                                 }
                                             ?>
-                                            <h3 class="collection-title"><?php echo $child->name; ?></h3>
                                         <?php endforeach; ?>
                                     </a>
                                 </div><!-- .item-inner -->
@@ -119,7 +123,12 @@ $settings = sell_media_get_plugin_options();
             <?php endif; ?><!-- show child terms check -->
 
             </div><!-- .sell-media-grid-container -->
-            <?php echo sell_media_pagination_filter( $wp_query->max_num_pages ); ?>
+            <?php if ( ! is_wp_error( $terms ) ) {
+                $pages = ceil ( $c / get_option('posts_per_page ') );
+            } else {
+                $pages = $wp_query->max_num_pages;
+            }
+            echo sell_media_pagination_filter( $pages ); ?>
         </div><!-- #content -->
     </div><!-- #sell_media-single .sell_media -->
 

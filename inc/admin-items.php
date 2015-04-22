@@ -287,6 +287,8 @@ function sell_media_upload_bulk_callback(){
 
     check_ajax_referer( '_sell_media_meta_box_nonce', 'security' );
 
+    @ini_set( 'max_execution_time', '300' );
+
     if ( isset( $_POST['dir'] ) ) {
 
         $path = sell_media_get_import_dir() . '/' . $_POST['dir'] . '/';
@@ -543,7 +545,7 @@ function sell_media_trash_payment_redirect() {
     $screen = get_current_screen();
     if( 'edit-sell_media_payment' == $screen->id ) {
         if( isset( $_GET['trashed'] ) &&  intval( $_GET['trashed']) > 0 ) {
-            $redirect = add_query_arg( array( 'post_type' => 'sell_media_item', 'page'=>'sell_media_payments' ), admin_url() . "edit.php" );
+            $redirect = esc_url_raw( add_query_arg( array( 'post_type' => 'sell_media_item', 'page'=>'sell_media_payments' ), admin_url() . "edit.php" ) );
             wp_redirect($redirect);
             exit();
         }
