@@ -397,92 +397,32 @@ Class SellMediaPayments {
 
 
     /**
-    * Loop over products in payment meta and format them for plaintext email
-    *
-    * @param $post_id (int) The post_id for a post of post type "sell_media_payment"
-    *
-    * @return string
-    */
-    public function get_payment_products_unformatted( $post_id=null ){
-
-        $products = $this->get_products( $post_id );
-        $discount = $this->get_meta_key( $post_id, $key='discount' );
-        $tax = $this->get_meta_key( $post_id, $key='tax' );
-        $shipping = $this->get_meta_key( $post_id, $key='shipping' );
-        $total = $this->get_meta_key( $post_id, $key='total' );
-        $text = '<br /><br />';
-        $text .= '---';
-        $text = '<br /><br />';
-
-        if ( $products ) foreach ( $products as $k => $v ) {
-
-            $v['attachment'] = ( ! empty( $v['attachment'] ) ) ? $v['attachment'] : sell_media_get_attachment_id( $v['id'] );
-
-            if ( $v['name'] )
-                $text .= __( 'PRODUCT', 'sell_media' ) . ': ' . $v['name'] . '<br />';
-            if ( $v['size']['name'] )
-                $text .= __( 'SIZE', 'sell_media' ) . ': ' . $v['size']['name'] . '<br />';
-            if ( $v['license']['name'] )
-                $text .= __( 'LICENSE', 'sell_media' ) . ': ' . $v['license']['name'] . '<br />';
-            if ( $v['license']['description'] )
-                $text .= __( 'LICENSE DESCRIPTION', 'sell_media' ) . ': ' . $v['license']['description'] . '<br /';
-            if ( $v['qty'] )
-                $text .= __( 'QTY', 'sell_media' ) . ': ' . $v['qty'] . '<br />';
-            if ( $v['type'] )
-                $text .= __( 'TYPE', 'sell_media' ) . ': ' . $v['type'] . '<br />';
-            if ( $v['total'] )
-                $text .= __( 'SUBTOTAL', 'sell_media' ) . ': ' . sell_media_get_currency_symbol() . number_format( $v['total'], 2, '.', ',' ) . '<br />';
-            if ( 'download' == $v['type'] )
-                $text .= __( 'DOWNLOAD LINK', 'sell_media' ) . ': ' . $this->get_download_link( $post_id, $v['id'], $v['attachment'], $v['size']['id'] ) . '<br />';
-            elseif ( 'print' == $v['type'] )
-                $text .= __( 'DELIVERY', 'sell_media' ) . ': ' . apply_filters( 'sell_media_product_delivery_text', 'Your print will be mailed to you shortly.' ) . '<br />';
-            $text .= '<br />';
-            do_action( 'sell_media_after_products_unformatted_list', $post_id );
-        }
-        $text .= '<br /><br />';
-        $text .= '---';
-        $text .= '<br />';
-        if ( $discount ) {
-            $text .= __( 'DISCOUNT', 'sell_media' ) . ': -' . sell_media_get_currency_symbol() . $this->get_discount_total( $post_id ) . '<br />';
-        }
-        if ( $tax ) {
-            $text .= __( 'TAX', 'sell_media' ) . ': ' . sell_media_get_currency_symbol() . number_format( $tax, 2, '.', ',' ) . '<br />';
-        }
-        if ( $shipping ) {
-            $text .= __( 'SHIPPING', 'sell_media' ) . ': ' . sell_media_get_currency_symbol() . number_format( $shipping, 2, '.', ',' ) . '<br />';
-        }
-        $text .= __( 'TOTAL', 'sell_media' ) . ': ' . sell_media_get_currency_symbol() . number_format( $total, 2, '.', ',' ) . '<br />';
-        $text .= '---';
-
-        return $text;
-    }
-
-
-    /**
     * Loop over products in payment meta and format them
     *
     * @param $post_id (int) The post_id for a post of post type "sell_media_payment"
     *
     * @return html
     */
-    public function get_payment_products_formatted( $post_id=null ){
+    public function get_payment_products_formatted( $post_id=null, $inline_css=false ){
         $products = $this->get_products( $post_id );
         $tax = $this->get_meta_key( $post_id, $key='tax' );
         $shipping = $this->get_meta_key( $post_id, $key='shipping' );
         $discount = $this->get_meta_key( $post_id, $key='discount' );
         $total = $this->get_meta_key( $post_id, $key='total' );
+        $css = ( $inline_css ) ? 'border-bottom: 1px solid #ccc; padding: 0.5rem; text-align: left;' : '';
+        $style = apply_filters( 'sell_media_products_table_style', $css );
 
         if ( $products ) {
 
             $html = null;
-            $html .= '<table class="sell-media-products sell-media-products-payment-' . $post_id . '" border="0" cellpadding="0" cellspacing="0" width="100%">';
+            $html .= '<table class="sell-media-products sell-media-products-payment-' . $post_id . '" border="0" width="100%" style="border-collapse:collapse">';
             $html .= '<thead>';
             $html .= '<tr>';
-            $html .= '<th>' . __( 'Product', 'sell_media' ) . '</th>';
-            $html .= '<th>' . __( 'Size', 'sell_media' ) . '</th>';
-            $html .= '<th>' . __( 'License', 'sell_media' ) . '</th>';
-            $html .= '<th class="text-center">' . __( 'Qty', 'sell_media' ) . '</th>';
-            $html .= '<th class="sell-media-product-subtotal">' . __( 'Subtotal', 'sell_media' ) . '</th>';
+            $html .= '<th style="' . $style . '  font-weight: bold;">' . __( 'Product', 'sell_media' ) . '</th>';
+            $html .= '<th style="' . $style . '  font-weight: bold;">' . __( 'Size', 'sell_media' ) . '</th>';
+            $html .= '<th style="' . $style . '  font-weight: bold;">' . __( 'License', 'sell_media' ) . '</th>';
+            $html .= '<th class="text-center" style="' . $style . ' text-align: center; font-weight: bold;">' . __( 'Qty', 'sell_media' ) . '</th>';
+            $html .= '<th class="sell-media-product-subtotal" style="' . $style . ' text-align: right; font-weight: bold;">' . __( 'Subtotal', 'sell_media' ) . '</th>';
             $html .= '</tr>';
             $html .= '</thead>';
             $html .= '<tbody>';
@@ -492,15 +432,16 @@ Class SellMediaPayments {
             // Old purchase links didn't have attachment_id set
             // So we derive the attachment_id from the product's post_meta
             $product['attachment'] = ( ! empty( $product['attachment'] ) ) ? $product['attachment'] : sell_media_get_attachment_id( $product['id'] );
+            // If license description exists, show it.
+            $product['license']['desc'] = ( term_description( $product['license']['id'], 'licenses' ) ) ? '<br /><span class="license_desc">' . term_description( $product['license']['id'], 'licenses' ) . '</span>' : '';
 
                 if ( ! empty( $product['id'] ) ) {
 
                     $html .= '<tr class="sell-media-product sell-media-product-' . $product['id'] . '">';
-                    $html .= '<td class="sell-media-product-id">';
+                    $html .= '<td class="sell-media-product-id" style="' . $style . '">';
                     if ( isset ( $product['id'] ) && ! is_array( $product['id'] ) ) {
-                        $html .= '<strong>' . __( 'ID', 'sell_media' ) . ':</strong> ' . $product['id'] . '<br />';
-                        $html .= '<strong>' . __( 'Title', 'sell_media' ) . ':</strong> ' . $product['name'] . '<br />';
-                        $html .= '<a href="' . $this->get_download_link( $post_id, $product['id'], $product['attachment'], $product['size']['id'] ) . '">' . sell_media_item_icon( $product['attachment'], 'medium', false ) . '</a><br />';
+                        $html .= '#' . $product['id'] . ', ' . $product['name'] . '<br />';
+                        $html .= '<a href="' . $this->get_download_link( $post_id, $product['id'], $product['attachment'], $product['size']['id'] ) . '">' . sell_media_item_icon( $product['attachment'], 'thumbnail', false ) . '</a><br />';
                         if ( 'download' == $product['type'] ) {
                             $html .= '<a href="' . $this->get_download_link( $post_id, $product['id'], $product['attachment'], $product['size']['id'] ) . '" class="text-center">' . __( 'Download', 'sell_media' ) . '</a>';
                         } elseif ( 'print' == $product['type'] ) {
@@ -508,19 +449,19 @@ Class SellMediaPayments {
                         }
                     }
                     $html .= '</td>';
-                    $html .= '<td class="sell-media-product-size">';
+                    $html .= '<td class="sell-media-product-size" style="' . $style . '">';
                     if ( isset ( $product['size']['name'] ) && ! is_array( $product['size']['name'] ) )
                         $html .= $product['size']['name'];
                     $html .= '</td>';
-                    $html .= '<td class="sell-media-product-license">';
+                    $html .= '<td class="sell-media-product-license" style="' . $style . '">';
                     if ( isset ( $product['license']['name'] ) && ! is_array( $product['license']['name'] ) )
-                        $html .= $product['license']['name'] . '<span class="license_desc">' . term_description( $product['license']['id'], 'licenses' ) . '</span>';
+                        $html .= $product['license']['name'] . $product['license']['desc'];
                     $html .= '</td>';
-                    $html .= '<td class="sell-media-product-qty text-center">';
+                    $html .= '<td class="sell-media-product-qty text-center" style="' . $style . ' text-align: center;">';
                     if ( isset ( $product['qty'] ) && ! is_array( $product['qty'] ) )
                         $html .= $product['qty'];
                     $html .= '</td>';
-                    $html .= '<td class="sell-media-product-total">';
+                    $html .= '<td class="sell-media-product-total" style="' . $style . ' text-align: right;">';
                     if ( isset ( $product['total'] ) && ! is_array( $product['total'] ) )
                         $html .= sell_media_get_currency_symbol() . sprintf( "%0.2f", $product['total'] );
                     $html .= '</td>';
@@ -534,7 +475,7 @@ Class SellMediaPayments {
             $html .= '<td>&nbsp;</td>';
             $html .= '<td>&nbsp;</td>';
             $html .= '<td>&nbsp;</td>';
-            $html .= '<td class="sell-media-products-grandtotal">';
+            $html .= '<td class="sell-media-products-grandtotal" style="border-bottom: 3px solid #ccc; padding: 0.5rem; text-align: right;">';
             if ( $discount ) {
                 $html .= __( 'DISCOUNT', 'sell_media' ) . ': -' . sell_media_get_currency_symbol() . $this->get_discount_total( $post_id ) . '<br />';
             }
@@ -765,7 +706,7 @@ Class SellMediaPayments {
     public function email_receipt( $payment_id=null, $email=null ) {
 
         $settings = sell_media_get_plugin_options();
-        $products = $this->get_payment_products_unformatted( $payment_id );
+        $products = $this->get_payment_products_formatted( $payment_id, $inline_css = true );
 
         $message['from_name'] = get_bloginfo( 'name' );
         $message['from_email'] = $settings->from_email;
@@ -774,7 +715,7 @@ Class SellMediaPayments {
         if ( $email == $message['from_email'] ) {
 
             $message['subject'] = __( 'New sale notification', 'sell_media' );
-            $message['body'] = apply_filters( 'sell_media_email_admin_receipt_message_intro', '<p style="margin: 10px 0;">Congrats! You just made a sale!</p>' );
+            $message['body']  = apply_filters( 'sell_media_email_admin_receipt_message_intro', '<p style="margin: 10px 0;">Congrats! You just made a sale!</p>' );
             $message['body'] .= '<p style="margin: 10px 0;">' . __( 'Customer', 'sell_media' ) . ': ' . $this->get_buyer_name( $payment_id ) . '</p>';
             $message['body'] .= '<p style="margin: 10px 0;">' . __( 'Address', 'sell_media' ) . ': ' . $this->get_buyer_address( $payment_id ) . '</p>';
             $message['body'] .= '<p style="margin: 10px 0;">' . __( 'Email', 'sell_media' ) . ': ' . $this->get_meta_key( $payment_id, 'email' ) . '</p>';
