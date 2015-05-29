@@ -90,7 +90,11 @@ function sell_media_item_shortcode( $atts ) {
     $image = sell_media_item_icon( $id, $size, false );
     $text = apply_filters('sell_media_purchase_text', $text, $id );
 
-    $button = sell_media_item_buy_button( $id, $attachment, 'button', $text, false );
+    if ( sell_media_has_multiple_attachments( $id ) ) {
+        $button = sell_media_item_buy_button( $id, $attachment, 'button', $text, false );
+    } else {
+        $button = '';
+    }
 
     return '<div class="sell-media-item-container sell-media-align' . $align . ' "><a href="' . get_permalink( $id ) . '">' . $image . '</a>' . $button . '</div>';
 }
@@ -228,14 +232,16 @@ add_shortcode( 'sell_media_checkout', 'sell_media_checkout_shortcode' );
  * @since 1.0.4
  */
 function sell_media_download_shortcode( $atts ) {
+
+    $html = do_shortcode( '[sell_media_login_form]' );
+
     if ( is_user_logged_in() ) {
         global $current_user;
         get_currentuserinfo();
 
         $purchases = Sell_Media()->payments->get_user_payments( $current_user->user_email );
 
-        $html = null;
-        $html = '<h2>';
+        $html .= '<h2>';
         $html .= __( 'Your Purchase History', 'sell_media' );
         $html .= '</h2>';
 
@@ -247,13 +253,10 @@ function sell_media_download_shortcode( $atts ) {
             $html .= '</p>';
             $html .= Sell_Media()->payments->get_payment_products_formatted( $purchase );
             $html .= '</div>';
+            $html .= '<div id="purchase-history">' . $html . '</div>';
         }
-
-        return '<div id="purchase-history">' . $html . '</div>';
-
-    } else {
-            do_shortcode( '[sell_media_login_form]' );
     }
+    return $html;
 }
 add_shortcode( 'sell_media_download_list', 'sell_media_download_shortcode' );
 
@@ -456,7 +459,7 @@ function sell_media_login_form_shortcode(){
 
     if ( is_user_logged_in() ) {
 
-        return sprintf( __( 'You are logged in. %1$s or %2$s.', 'sell_media'), '<a href="' . get_permalink( $settings->checkout_page ) . '">Checkout now</a>', '<a href="' . get_post_type_archive_link( 'sell_media_item' ) . '">continue shopping</a>' );
+        return '<p class="sell-media-login-out">' . sprintf( __( 'You are logged in. %1$s or %2$s.', 'sell_media'), '<a href="' . apply_filters( 'sell_media_logout_redirect_url', wp_logout_url( site_url() ) ) . '">' . __( 'Logout', 'sell_media' ) . '</a>', '<a href="' . get_post_type_archive_link( 'sell_media_item' ) . '">' . __( 'continue shopping', 'sell_media' ) . '</a>' ) . '</p>';
 
     } else {
         if ( isset( $_GET['login'] ) && "failed" == $_GET['login'] ) {

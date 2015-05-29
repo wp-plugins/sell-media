@@ -5,7 +5,7 @@ Donate link: http://graphpaperpress.com/plugins/sell-media/
 Tags: photography, photos, sell media, sell photos, sell downloads, download, downloads, e-commerce, paypal, stock photos
 Requires at least: 3.4
 Tested up to: 4.2
-Stable tag: 2.0.3
+Stable tag: 2.0.4
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -33,11 +33,12 @@ These [WordPress themes](http://graphpaperpress.com/wordpress-themes/sell-media/
 
 Take Sell Media to the next level with these powerful extensions:
 
-* [Sell photo prints](http://graphpaperpress.com/?download=reprints-self-fulfillment)
-* [Watermark your images](http://graphpaperpress.com/?download=watermark)
-* [Newsletter integration with Mailchimp](http://graphpaperpress.com/?download=mailchimp)
-* [Sales Commissions](http://graphpaperpress.com/?download=commissions)
-* [And many more](http://graphpaperpress.com/downloads/category/extensions/)
+* [Sell photo prints](http://graphpaperpress.com/plugins/sell-media-reprints)
+* [Cloud Backups](http://graphpaperpress.com/plugins/sell-media-s3)
+* [Watermark your images](http://graphpaperpress.com/plugins/sell-media-watermark)
+* [Newsletter integration with Mailchimp](http://graphpaperpress.com/plugins/sell-media-mailchimp)
+* [Sales Commissions](http://graphpaperpress.com/plugins/sell-media-commissions)
+* [And many more](https://graphpaperpress.com/extensions/sell-media/)
 
 == Installation ==
 
@@ -204,6 +205,16 @@ Action hooks available:
 
 
 == Changelog ==
+
+= 2.0.4 =
+* Tweak: New filters for Access Control extension
+* Tweak: Minor UI changes in admin
+* Tweak: Show image caption and title on gallery images
+* Tweak: Added logout url to dashboard, with filter
+* Tweak: New translation files
+* Tweak: Grunt tasks for translations, coding standards
+* Bugfix: sell_media_item shortcode shouldn't show buy button for galleries
+* Bugfix: Deleting collection thumbnail fix
 
 = 2.0.3 =
 * New Feature: Check for newest version of Sell Media extensions.

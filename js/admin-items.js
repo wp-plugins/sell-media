@@ -24,10 +24,10 @@ jQuery( document ).ready(function( $ ){
 
         // Create the media frame.
         file_frame = wp.media.frames.file_frame = wp.media({
-            title: 'Select Images To Sell',
+            title: 'Select Files To Sell',
             description: 'This is the description',
             button: {
-              text: 'Sell All Selected Images',
+              text: 'Sell All Selected Files',
             },
             multiple: 'add'  // Set to true to allow multiple files to be selected
         });
@@ -201,6 +201,15 @@ jQuery( document ).ready(function( $ ){
 
         // Finally, open the modal
         file_frame.open();
+    });
+
+    /**
+     * Remove thumbnail icon for collections
+     */
+    $(document).on('click', '.upload_image_remove', function(){
+        $('#collection_icon_input_field').val('');
+        $('#collection_icon_url').val('');
+        $('#collection_icon_target img').remove();
     });
 
 });
