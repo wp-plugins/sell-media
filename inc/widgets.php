@@ -17,6 +17,7 @@ require_once( SELL_MEDIA_PLUGIN_DIR . '/inc/widgets/sell-media-exif.php' );
 require_once( SELL_MEDIA_PLUGIN_DIR . '/inc/widgets/sell-media-featured.php' );
 require_once( SELL_MEDIA_PLUGIN_DIR . '/inc/widgets/sell-media-keywords.php' );
 require_once( SELL_MEDIA_PLUGIN_DIR . '/inc/widgets/sell-media-recent.php' );
+require_once( SELL_MEDIA_PLUGIN_DIR . '/inc/widgets/sell-media-search.php' );
 require_once( SELL_MEDIA_PLUGIN_DIR . '/inc/widgets/sell-media-similar.php' );
 
 /**
@@ -43,7 +44,7 @@ function sell_media_widgets_init() {
     ) );
 
 }
-add_action( 'widgets_init', 'sell_media_widgets_init' );
+add_action( 'widgets_init', 'sell_media_widgets_init', 20 );
 
 /**
  * Display Widget Below Single Content

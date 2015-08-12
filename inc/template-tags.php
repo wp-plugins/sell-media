@@ -36,15 +36,19 @@ function sell_media_item_buy_button( $post_id=null, $attachment_id=null, $button
  * @return (string) url to product image or feature image
  */
 function sell_media_item_image_src( $post_id=null, $attachment_id=null ) {
+    $size = 'medium';
 
     /**
      * If the post has multiple attachments, get the attributes of the attachment.
-     * Otherwise, get the attributes of the featured image.
+     * Otherwise, get the attributes of the featured image,
+     * or finally the attached image.
      */
     if ( sell_media_has_multiple_attachments( $post_id ) ) {
-        $image_attributes = wp_get_attachment_image_src( $attachment_id, 'medium', true );
+        $image_attributes = wp_get_attachment_image_src( $attachment_id, $size, true );
+    } elseif ( '' != get_the_post_thumbnail( $post_id ) ) {
+        $image_attributes = wp_get_attachment_image_src( get_post_thumbnail_id( $post_id ), $size );
     } else {
-        $image_attributes = wp_get_attachment_image_src( get_post_thumbnail_id( $post_id ), 'medium' );
+        $image_attributes = wp_get_attachment_image_src( $attachment_id, $size );
     }
 
     if ( $image_attributes ) {
@@ -93,7 +97,6 @@ function sell_media_item_icon( $post_id=null, $size='medium', $echo=true ){
         $image_attr = wp_get_attachment_image_src( $attachment_id, $size );
         $src = $image_attr[0];
         $image = wp_get_attachment_image( $attachment_id, $size, '', array( 'class' => apply_filters( 'sell_media_image_class', 'sell-media-image sell_media_image' ), 'data-sell_media_medium_url' => $src, 'data-sell_media_large_url' => $src, 'data-sell_media_item_id' => $post_id ) );
-
     // use default WP icons
     } else {
         $mime_type = get_post_mime_type( $attachment_id );
@@ -149,8 +152,11 @@ function sell_media_gallery( $post_id ) {
         if ( ! empty( $attachment_id ) && sell_media_post_exists( $attachment_id ) ) {
             $html .= sell_media_item_icon( $attachment_id, 'large', false );
             $html .= '<p class="sell-media-caption">';
-            $html .= '<span class="sell-media-title">' . sell_media_get_attachment_meta( $post_id, 'title' ) . '</span> &mdash; ';
-            $html .= sell_media_get_attachment_meta( $post_id, 'caption' );
+            $html .= '<span class="sell-media-title">' . sell_media_get_attachment_meta( $post_id, 'title' ) . '</span>';
+            if ( sell_media_get_attachment_meta( $post_id, 'caption' ) ) {
+                $html .= ' &mdash; ';
+                $html .= sell_media_get_attachment_meta( $post_id, 'caption' );
+            }
             $html .= '</p>';
         }
         /**
@@ -162,7 +168,7 @@ function sell_media_gallery( $post_id ) {
             $html .= '<div id="sell-media-gallery-' . $post_id . '" class="sell-media-gallery sell-media-gallery-' . $post_id . '">';
             if ( $attachment_ids ) foreach ( $attachment_ids as $attachment_id ) {
                 $attr = array(
-                    'class' => 'sell-media-gallery-image sell_media_image'
+                    'class' => 'sell-media-gallery-image sell_media_image sell_media_watermark'
                 );
                 $html .= '<div class="sell-media-gallery-item">';
                 $html .= '<a href="' . esc_url( add_query_arg( 'id', $attachment_id, get_permalink() ) ) . '">';
@@ -209,7 +215,7 @@ function sell_media_content_loop( $post_id, $i ){
 
     $html  = '<div id="sell-media-' . $post_id . '" class="sell-media-grid' . $class . '">';
     $html .= '<div class="item-inner">';
-    $html .= '<a href="' . get_permalink( $post_id ) . '">' . sell_media_item_icon( $post_id, apply_filters( 'sell_media_thumbnail', 'medium' ), false ) . '</a>';
+    $html .= '<a href="' . get_permalink( $post_id ) . '" ' . sell_media_link_attributes( $post_id ) . '>' . sell_media_item_icon( $post_id, apply_filters( 'sell_media_thumbnail', 'medium' ), false ) . '</a>';
     $html .= '<span class="item-overlay">';
     $html .= '<h3><a href="' . get_permalink( $post_id ) . '">' . get_the_title( $post_id ) . '</a></h3>';
     // Don't show buy button, lightbox, etc, if post has multiple attachments
@@ -507,7 +513,7 @@ function sell_media_append_media( $post_id ) {
     $html = '';
     $sell_media_taxonomies = get_object_taxonomies( 'sell_media_item' );
     if ( is_post_type_archive( 'sell_media_item' ) || is_tax( $sell_media_taxonomies ) || is_search() ) {
-        $html .= '<a href="' . get_permalink( $post_id ) . '">' . sell_media_item_icon( $post_id, 'large', false ) . '</a>';
+        $html .= '<a href="' . get_permalink( $post_id ) . '" ' . sell_media_link_attributes( $post_id ) . '>' . sell_media_item_icon( $post_id, 'large', false ) . '</a>';
     } elseif ( is_singular( 'sell_media_item' ) ) {
         sell_media_set_post_views( $post_id );
         if ( sell_media_has_multiple_attachments( $post_id ) ) {
@@ -515,8 +521,11 @@ function sell_media_append_media( $post_id ) {
         } else {
             sell_media_item_icon( $post_id, 'large' );
             $html .= '<p class="sell-media-caption">';
-            $html .= '<span class="sell-media-title">' . sell_media_get_attachment_meta( $post_id, 'title' ) . '</span> &mdash; ';
-            $html .= sell_media_get_attachment_meta( $post_id, 'caption' );
+            $html .= '<span class="sell-media-title">' . sell_media_get_attachment_meta( $post_id, 'title' ) . '</span>';
+            if ( sell_media_get_attachment_meta( $post_id, 'caption' ) ) {
+                $html .= ' &mdash; ';
+                $html .= sell_media_get_attachment_meta( $post_id, 'caption' );
+            }
             $html .= '</p>';
         }
     }
@@ -561,8 +570,26 @@ add_action( 'sell_media_after_content', 'sell_media_append_meta', 20 );
  * @return $html
  * @since 2.0.1
  */
-function sell_media_item_links( $post_id ){
-    return '<p id="sell-media-item-links-' . $post_id . '" class="sell-media-item-links">' . sell_media_item_buy_button( $post_id, $attachment_id = '', 'text', __( 'Buy', 'sell_media' ), false ) . ' | ' . sell_media_lightbox_link( $post_id ) . ' | <a href="' . get_permalink( $post_id ) . '" class="sell-media-permalink">' . __( 'More', 'sell_media' ) . ' &raquo;</a></p>';
+function sell_media_item_links( $post_id ) {
+
+    $links = sell_media_item_buy_button( $post_id, $attachment_id = '', 'text', __( 'Buy', 'sell_media' ), false ) . ' | ' . sell_media_lightbox_link( $post_id ) . ' | <a href="' . get_permalink( $post_id ) . '" class="sell-media-permalink">' . __( 'More', 'sell_media' ) . ' &raquo;</a>';
+
+    $html  = '<p id="sell-media-item-links-' . $post_id . '" class="sell-media-item-links">';
+    $html .= apply_filters( 'sell_media_item_links_filter', $links, $post_id );
+    $html .= '</p>';
+
+    return $html;
+}
+
+/**
+ * Link attributes
+ * Use for adding data-attributes for lightboxes, etc.
+ *
+ * @param $post_id
+ * @return $html
+ */
+function sell_media_link_attributes( $post_id ) {
+    return apply_filters( 'sell_media_link_attribute', $attributes='', $post_id );
 }
 
 /**
@@ -623,13 +650,15 @@ add_action( 'wp_head', 'sell_media_version_in_header' );
  * @return title
  */
 function sell_media_wp_title( $title, $sep ) {
+
     global $paged, $page;
     $settings = sell_media_get_plugin_options();
 
     if ( is_post_type_archive( 'sell_media_item' ) ) {
-        $obj = get_post_type_object( 'sell_media_item' );
-        $slug = ( $settings->post_type_slug ) ? ucfirst( preg_replace( '/[^a-zA-Z0-9]+/', ' ', $settings->post_type_slug ) ) : $obj->labels->name;
-        $title = "$slug $sep ";
+        $name   = get_bloginfo( 'name' );
+        $obj    = get_post_type_object( 'sell_media_item' );
+        $slug   = ( $settings->post_type_slug ) ? ucfirst( preg_replace( '/[^a-zA-Z0-9]+/', ' ', $settings->post_type_slug ) ) : $obj->labels->name;
+        $title  = "$slug $sep $name";
     }
 
     return $title;
