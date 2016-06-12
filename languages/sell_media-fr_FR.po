@@ -1987,7 +1987,7 @@ msgstr ""
 
 #, fuzzy
 #~ msgid "Example: 100"
-#~ msgstr "Saisir la largeur du CTA en pixels. Exemple : 100% ou 300px."
+#~ msgstr "Saisir la largeur du CTA en pixels. Example : 100% ou 300px."
 
 #~ msgid "X"
 #~ msgstr "X"
@@ -2067,7 +2067,7 @@ msgstr ""
 #~ msgstr "Code"
 
 #~ msgid "Enter a code for this discount, such as 10PERCENT"
-#~ msgstr "Encoder un code pour cette remise, par exemple 10POURCENT."
+#~ msgstr "Encoder un code pour cette remise, par example 10POURCENT."
 
 #~ msgid "Percentage"
 #~ msgstr "Pourcentage"

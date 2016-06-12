@@ -1707,7 +1707,7 @@ msgstr "Активиране удостоверяване на клиента"
 #: inc/term-meta.php:464
 msgid ""
 "Check this to allow clients with password access to download items in this "
-"collecton as proofs. Clients must add an item to their Lightbox in order to "
+"collection as proofs. Clients must add an item to their Lightbox in order to "
 "download proofs. A record of which images were downloaded will be sent to "
 "both the site admin and the client via email."
 msgstr ""

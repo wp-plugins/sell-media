@@ -164,7 +164,7 @@
                     var info        = values || {},
                         newItem     = new sellMediaCart.Item(info),
                         addItem     = true,
-                        // optionally supress event triggers
+                        // optionally suppress event triggers
                         quiet       = opt_quiet === true ? opt_quiet : false,
                         oldItem;
 

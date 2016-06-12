@@ -50,7 +50,7 @@ function sell_media_install() {
     $taxonomy_metadata->activate();
     $taxonomy = 'licenses';
 
-    // Add Personal and Commerical default license terms
+    // Add Personal and Commercial default license terms
     $r_personal = wp_insert_term( 'Personal', $taxonomy, array( 'slug' => 'personal' ) );
     $r_commercial = wp_insert_term( 'Commercial', $taxonomy, array( 'slug' => 'commercial' ) );
 

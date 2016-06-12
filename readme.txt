@@ -260,7 +260,7 @@ Action hooks available:
 * New Feature: Upgrade notices for extensions.
 * New Feature: Dashicon integration.
 * Tweak: Updated download methods for accepting $attachment_id.
-* Tweak: Lightbox changes to accomodate $attachment_id.
+* Tweak: Lightbox changes to accommodate $attachment_id.
 * Tweak: Lightbox now uses serialized multidimensional array.
 * Tweak: Flush permalinks if slug changed on settings.
 * Tweak

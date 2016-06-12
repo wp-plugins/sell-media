@@ -285,7 +285,7 @@ msgstr "Estes são os dados que foram enviados de"
 
 #: inc/admin-payments.php:169
 msgid " at time of purchase. Use this for debugging, if needed."
-msgstr "no momento da compra. Use isto para depurção, se necessário."
+msgstr "no memento da compra. Use isto para depurção, se necessário."
 
 #: inc/admin-payments.php:188
 msgid "Earnings Report"
@@ -1220,7 +1220,7 @@ msgid ""
 msgstr ""
 "Selecione 'Sim' para ocultar o preço original acima e basear-se unicamente "
 "nos grupos de preço (Veja abaixo. Grupos de Preço podem somente ser usados "
-"no momento de venda das imagens). Selecione 'Não' se você está vendendo "
+"no memento de venda das imagens). Selecione 'Não' se você está vendendo "
 "downloads de arquivos individuais ou se você deseja listar o preço original "
 "de cada produto. Você pode substituir essa configuração em cada item."
 
